@@ -98,8 +98,7 @@ class TooManyCandidates(Exception):
 
 
 class SinglePulseReaderBase(object):
-    def __init__(self, directory, delays_file, max_downfact=30, lodm=None,
-                 hidm=None):
+    def __init__(self, directory, data, max_downfact=30):
         '''
         Read PRESTO single pulse data set.
 
@@ -107,21 +106,14 @@ class SinglePulseReaderBase(object):
         subdirectory of <directory> called INF and the .singlepulse files
         in a subdirectory of <directory> callsed SINGELPULSE.
         '''
-        self.sp_dir = os.path.join(directory, 'SINGLEPULSE')
-        self.inf_dir = os.path.join(directory, 'INF')
-        self.sp_map = find_files(self.sp_dir, SP_PATTERN)
-        self.inf_map = find_files(self.inf_dir, INF_PATTERN)
-        self.md_map = read_metadata(self.inf_dir, self.inf_map)
-        self.dms = list(set(self.sp_map.keys()) & set(self.inf_map.keys()))
+        self.data = data
+        
+        self.dms = list(self.data.DM)
 
         if len(self.dms) == 0:
             raise Exception('No matching .inf AND .singlepulse files in %s' %
                             directory)
-        if lodm is not None:
-            self.dms = [dm for dm in self.dms if dm >= lodm]
-        if hidm is not None:
-            self.dms = [dm for dm in self.dms if dm <= hidm]
-        self.dms.sort()
+ 
 
         if len(self.dms) == 0:
             raise Exception('No data for selected DM range [%.2f, %.2f],' %
@@ -135,15 +127,12 @@ class SinglePulseReaderBase(object):
         self.n_rejected = 0
 
         self.dm_delay_map = dict((dm, 0) for dm in self.dms)
-        if delays_file:
-            # may need more checking (the delays file that is)
-            self.dm_delay_map = read_delays(delays_file, self.dm_delay_map)
 
     def get_t_overlap(self, dm):
         '''
         TBD
         '''
-        return self.max_downfact * self.md_map[dm].bin_width + EPSILON
+        return self.max_downfact * self.data.Sampling + EPSILON
 
     def is_ok(self, t, dm):
         '''
@@ -160,8 +149,10 @@ class SinglePulseReaderBase(object):
         '''
         epsilon = EPSILON
         max_n_candidates = HARD_LIMIT_N_CANDIDATES
+        
         sp_file = os.path.join(self.sp_dir, self.sp_map[dm])
-        bin_width = self.md_map[dm].bin_width
+
+        bin_width = self.data.Sampling
         i = self.dm2idx[dm]
         dm_delay = self.dm_delay_map[dm]
 

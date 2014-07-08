@@ -24,7 +24,7 @@ DMS_ADJACENT = 4
 
 
 
-def ssps_grab(searchoutdir):
+def ssps_grab(searchoutdir,data):
     t0 = time.time()
   
     odir = '.'
@@ -32,27 +32,14 @@ def ssps_grab(searchoutdir):
     print '=' * 77
     print 'Processing %s' % searchoutdir
     print 'Looking for datafiles.'
-    spr = candidate.SinglePulseReaderBase(searchoutdir, delays_file, 30,
-                                          options.lo_dm, options.hi_dm)
-
+    spr = candidate.SinglePulseReaderBase(searchoutdir,data)
+        
     print 'DM range after reading: [%.2f, %.2f]' % (spr.dms[0], spr.dms[-1])
 
-    if options.ndms is not None:
-        ndms = len(spr.dms)
-        if ndms < options.ndms:
-            print 'Too few DM trials, aborting!'
-            print 'Needed %d and found %d DM trials.' % (options.ndms, ndms)
-            sys.exit(1)
-    # determine the basename for the output files:
-    if options.o is None:
-        dm_str = '_DM%.2f' % spr.dms[0]
-        basename = spr.md_map[spr.dms[0]].data_file[:-len(dm_str)]
-    else:
-        basename = options.o
     print 'Looking for pulses.'
     # Call the rewritten ssps candidate grouping algorithm to find single
     # pulses by combining candidates across DM trials.
-    pulses = pulse.group(spr, DMS_ADJACENT)
+    pulses = pulse.group(spr, DMS_ADJACENT, data)
     pulses = pulse.annotate_pulses(spr, pulses)
 
     # Find the bright pulses and the dim ones, sort them for SNR.

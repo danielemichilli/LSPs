@@ -41,10 +41,8 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
   #remove pulses in more than 1 sap
   
   print 'MB'
-  
-  data_tmp = data
+  data_tmp = data.copy()   #occupa molta memoria
   data_tmp['ind'] = data_tmp.index
-  
   
   #confronta i beam anche con se stessi, aggiustare
   
@@ -62,8 +60,7 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
     #msk = msk[(msk.BEAM_l != msk.BEAM_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 3.) & ((abs(msk.Time_l - msk.Time_r)) < (2. * (msk.Downfact_l * msk.Sampling_l + msk.Downfact_r * msk.Sampling_r)))]  #SOLO PER I TEST!
     data.drop(msk.ind_l,inplace=True)
     data.drop(msk.ind_r,inplace=True)
-    
-    
+        
   return data  
 
 

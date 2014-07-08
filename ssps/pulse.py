@@ -7,6 +7,9 @@ import copy
 
 import candidate
 
+EPSILON = 1e-5
+
+
 # --------------------------------------------------------------------------
 # -- Pulse class and friends -----------------------------------------------
 
@@ -16,9 +19,10 @@ class Pulse(object):
         '''
         Holds a group of single pulse candidate detections that form a pulse.
         '''
-        self.head = set([cand])
+
+        self.head = cand        
         self.body = []
-        self.interval = [cand[5], cand[6]]
+        self.interval = [cand[1][7], cand[1][8]]
         self.dms_adjacent = dms_adjacent
 
     def add(self, cand):
@@ -31,8 +35,8 @@ class Pulse(object):
         tuple.)
         '''
         self.interval = [
-            min(self.interval[0], cand[5]),
-            max(self.interval[1], cand[6])
+            min(self.interval[0], cand[1][7]),
+            max(self.interval[1], cand[1][8])
         ]
         self.head.add(cand)
 
@@ -50,8 +54,12 @@ class Pulse(object):
         tmp = set()
         ret_val = False
         for c in self.head:
-            if cand[7] - c[7] < self.dms_adjacent:
-                if cand[5] <= c[6] and c[5] <= cand[6]:
+	    
+	    print 'bbbbbbbb ', self.head, ' - ', type(self.head)
+	    
+	    
+            if cand[0] - c[0] < self.dms_adjacent:
+                if cand[1][7] <= c[1][8] and c[1][7] <= cand[1][8]:
                     ret_val = True
                     break
             else:
@@ -151,7 +159,7 @@ def remove_done(pulses, done):
     return pulses, done
 
 
-def group(spr, dms_adjacent):
+def group(spr, dms_adjacent, data):
     '''
     Drive the grouping algorithm by calling it for each consecutive trial DM.
 
@@ -183,7 +191,7 @@ def group(spr, dms_adjacent):
         # Add this DM's candidates to the list of pulses. A candidate either
         # gets added to an existing pulse if a match is found or added as a
         # new pulse is no match was found.
-        pulses = group_dm(pulses, spr.iterate_trial(dm), t_overlap,
+        pulses = group_dm(pulses, data, t_overlap,
                           dms_adjacent)
         # Remove pulses from the list that can no longer match (because their
         # highest DM candidate is too low to still match any of the new
@@ -203,7 +211,7 @@ def group(spr, dms_adjacent):
     return done
 
 
-def group_dm(pulses, it, t_overlap, dms_adjacent):
+def group_dm(pulses, data, t_overlap, dms_adjacent):  #BRUTTISSIMO, cambiare!
     '''
     Group this trial-DM's candidates.
 
@@ -211,27 +219,30 @@ def group_dm(pulses, it, t_overlap, dms_adjacent):
     '''
     min_idx = 0
     tmp_idx = 0
-
-    for cand in it:
-        MAXDT2 = 2 * t_overlap
+    
+    data['t-delta_t'] = data.Time - (data.Downfact * data.Sampling + EPSILON)
+    data['t+delta_t'] = data.Time + (data.Downfact * data.Sampling + EPSILON)
+    
+    for cand in data.iterrows():
+        MAXDT2 = 2 * t_overlap[cand[0]]
         insert_idx = 0
         matches = []
         for i, pulse in enumerate(pulses[min_idx:]):
             idx = i + min_idx
 
             # Find valid insertion point:
-            if cand[5] > pulse.interval[0]:
+            if cand[1][7] > pulse.interval[0]:
                 insert_idx = idx + 1
 
             # Avoid expensive intersection test and find an appropriate
             # place to start the search window for next ``cand'':
-            if cand[5] - MAXDT2 > pulse.interval[1]:
+            if cand[1][7] - MAXDT2 > pulse.interval[1]:
                 tmp_idx = idx
             elif pulse.intersects(cand):
                 matches.append(idx)
 
             # Cut off the search, no more matches can be found.
-            if pulse.interval[0] - MAXDT2 > cand[6]:
+            if pulse.interval[0] - MAXDT2 > cand[1][8]:
                 break
 
         if not matches:

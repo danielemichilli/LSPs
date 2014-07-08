@@ -7,6 +7,7 @@
 #####################################################################################################
 import pandas as pd
 import tarfile
+import os.path
 
 import RFIexcision
 
@@ -26,7 +27,7 @@ def openSB(idL,sap,beam):
     data.columns = ['DM','Sigma','Time','Sample','Downfact','Sampling','a','b','c']
 
     #Select the interesting columns
-    datac = data.ix[:,['DM','Sigma','Time','Downfact','Sampling']]
+    data = data.ix[:,['DM','Sigma','Time','Downfact','Sampling']]
        
     pulses.close()
     pulses_tar.close()
@@ -41,6 +42,14 @@ def openSB(idL,sap,beam):
 
 
 def obs_events(idL):
+  
+  if os.path.isfile('SinlgePulses.hdf5'):
+    print "DataBase already exists in the current folder.\nIt will not be overwritten.\n"
+    store = pd.HDFStore('SinlgePulses.hdf5','r')
+    data = store[idL]
+    return data
+
+  
   #Create the table in the memory
   data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Downfact','Sampling'])
 
