@@ -53,9 +53,7 @@ except IOError:
 
 data = store[idL]
 
-print data.count()[0]
-
-
+print len(data)
 
 #provare se e piu veloce (mettere default=[-1] nei parser):
 #if dmlo>0:
@@ -77,19 +75,27 @@ else:
   linewidths=1
   
 if args.c: 
-  col = data.SAP *10 + (data.BEAM-13) *10./62.
+  #col = data.SAP *10 + (data.BEAM-13) *10./62.
+  
+  #data.Pulse[data.Pulse=='']=10.
+  col = data.Pulse.astype(float)
+  
 else:
   col='b'  
+  
+print data
+
+
 
 plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
 
-if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
-  ticks = np.linspace(col.min(),col.max(),num=10)
-  bar = plt.colorbar(ticks=ticks)
-  bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
-  bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-  bar.update_ticks
-  bar.ax.xaxis.set_ticks_position('top')
+#if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
+#  ticks = np.linspace(col.min(),col.max(),num=10)
+#  bar = plt.colorbar(ticks=ticks)
+#  bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
+#  bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+#  bar.update_ticks
+#  bar.ax.xaxis.set_ticks_position('top')
   
   
 #confrontare plot e scatter: velocita e bellezza
@@ -99,10 +105,7 @@ plt.xlabel('Time (s)')
 plt.ylabel('DM (pc/cm3)')
 plt.axis([tmlo,tmhi,dmlo,dmhi])
 
-
-plt.plot([3457,500],[3600,0],c='r-')
-
-
 plt.show()
+
 
 store.close()

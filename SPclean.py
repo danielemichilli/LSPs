@@ -7,9 +7,9 @@
 #####################################################################################################
 import pandas as pd
 import tarfile
-import os.path
 
 import RFIexcision
+import Group
 
 
 def openSB(idL,sap,beam):
@@ -22,7 +22,7 @@ def openSB(idL,sap,beam):
     pulses = pulses_tar.extractfile(name+'.singlepulse')
 
     #Write beam data in a temporary dirty table
-    data = pd.read_csv(pulses, delim_whitespace=True)#, skiprows=1)
+    data = pd.read_csv(pulses, delim_whitespace=True)
  
     data.columns = ['DM','Sigma','Time','Sample','Downfact','Sampling','a','b','c']
 
@@ -42,14 +42,6 @@ def openSB(idL,sap,beam):
 
 
 def obs_events(idL):
-  
-  if os.path.isfile('SinlgePulses.hdf5'):
-    print "DataBase already exists in the current folder.\nIt will not be overwritten.\n"
-    store = pd.HDFStore('SinlgePulses.hdf5','r')
-    data = store[idL]
-    return data
-
-  
   #Create the table in the memory
   data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Downfact','Sampling'])
 
@@ -66,11 +58,6 @@ def obs_events(idL):
     ########################   
 
     for beam in range(13,74):  #13,74
-      #Select the single pulse file
-      name = idL+'_SAP'+str(sap)+'_BEAM'+str(beam)
-      #pulses_file = 'SAP'+str(sap)+'/'+name+'/BEAM'+str(beam)+'/'+name+'.tar'
-      pulses_file = name+'_singlepulse.tgz'
-      
       data_sb = openSB(idL,sap,beam)
       if not data_sb.empty: 
         
@@ -88,10 +75,16 @@ def obs_events(idL):
         #Add clean data to the table
         data = data.append(data_sb,ignore_index=True)
         
+        
   # Si puo diminuire il consumo di memoria facendo partire RFIexcision.MB durante l'elaborazione di sap 3
   #Remove RFI with multi-beam techniques
   data = RFIexcision.MB(data)
   
+
+  
+  Group.TimeAll(data)  
+  Group.Pulses(data)
+
   
   #Store the table in a DB
   store = pd.HDFStore('SinlgePulses.hdf5','w')

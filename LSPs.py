@@ -12,28 +12,31 @@ import time
 
 import SPclean
 from ssps import ssps_grab_lotaas
-
+import Group
 
 
 def main():
   
   idL = os.path.basename(os.getcwd())
   
-  #Write the empty DB if it doesn't exist
-  #if 'SinlgePulses.hdf5': 
-  #  print "The DataBase already exists."
-  #  exit()
+  
+  
+  #if os.path.isfile('SinlgePulses.hdf5'):
+  #  print "DataBase already exists in the current folder.\nIt will not be overwritten.\n"
+  #  store = pd.HDFStore('SinlgePulses.hdf5','r')
+  #  data = store[idL]
+  #  store.close()
+  #else:
+  #  
     
   data = SPclean.obs_events(idL)
   
-  data.sort(['SAP','BEAM','DM','Time','Sigma'],inplace=True)
   
-  
-  for sap in range(0,3):  #0,3
-    for beam in range(13,74):  #13,74
-      SB = data[(data.SAP==sap)&(data.BEAM==beam)]
-      if not SB.empty:
-        ssps_grab_lotaas.ssps_grab(idL,data[(data.SAP==sap)&(data.BEAM==beam)])
+#  for sap in range(0,3):  #0,3
+#    for beam in range(13,74):  #13,74
+#      SB = data[(data.SAP==sap)&(data.BEAM==beam)]
+#      if not SB.empty:
+#        ssps_grab_lotaas.ssps_grab(idL,data[(data.SAP==sap)&(data.BEAM==beam)])
   
   
   

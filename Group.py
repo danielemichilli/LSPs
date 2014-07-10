@@ -15,81 +15,43 @@ def TimeAll(data):
 
 def Pulses(data):  #AGGIUNGERE funzione per beam diversi
   
+  ERR = 0.001
+  
   data.sort(['SAP','BEAM','DM','Time','Sigma'],inplace=True)
 
   
-  data['Pulse'] = ''  #meglio cosi o zeri?
+  data['Pulse'] = 0  #meglio cosi o zeri?
   code = 0
   
-  print 'ok'
   
-  for ind,event in data.iterrows():  #probabilmente meglio apply
-    
-    #if event['DM']==500: break
+  for ind,event in data.iterrows():  #probabilmente meglio apply  #provare anche Cython  #provare DataFrame.itertuples(index=True)  #provare modificando righe successive
     
     if event.DM < 40: step = 0.01
     elif event.DM < 140: step = 0.05
     else: step = 0.1
     
-    #event.Pulse=data.Pulse[ind]
-    
-    new = (event.Pulse == '')
-
-    
-    line = data[(data.Pulse=='') & (data.DM == event.DM+step)]  #(data.DM >= event['DM']+step) & (data.DM <= event['DM']+3.*step)]
+    line = data[(data.DM >= event['DM']-step-ERR) & (data.DM <= event['DM']-step+ERR)]  #probabilmente meglio mettere in range
+    #if not line.empty: print 'line:\n',line
     cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(np.multiply(event.Downfact,event.Sampling),np.multiply(line.Downfact,line.Sampling))  #forse meglio selezionare in range
     line = line[cond]
-    #line = line[line.DM==line.DM.min()]
-    
     
     rows = len(line)
         
-    
-
     if rows > 1:
-      erase = line.drop(line[line.Sigma==line.Sigma.max()].index)
+      erase = line[line.index!=line.Sigma.idxmax()]
       data.drop(erase.index,inplace=True)
-      
-      line = line[line.Sigma==line.Sigma.max()]
+      line = line[line.index==line.Sigma.idxmax()]
       rows = len(line)
       
-      if rows > 1: print 'Attenzione: ',rows
-#      
-#      line = line[line.Sigma==line.Sigma.max()]
-#      rows = len(line)
+    if rows == 0:
+      code += 1
+      data.loc[ind,'Pulse'] = code
+
     if rows == 1:
-      if new:
-        code += 1
-        event['Pulse'] = code
-      data.loc[line.index,'Pulse']=event.Pulse
-      #data.Pulse[data.index==line.index]=event.Pulse
-      
-      #if (event.DM < 5) & (event.DM > 4.7): 
-      #  print 'event: ',event
-      #  print 'line: ',line
-      #  print 'data',data.Pulse[data.index==line.index]
-
-
-    # if event.Pulse == '': data.drop(ind,inplace=True)
-    
+      data.loc[ind,'Pulse'] = line['Pulse'].iloc[0]
  
-  data.drop(data.index[data.Pulse == ''],inplace=True)
-  data = data.groupby('Pulse').filter(lambda x: len(x) > 5)
-    
- 
-      
-
-#    for ind2,event_new in data[data.DM==event['DM']+step].iterrows():
-#      if event_new['Pulse'] == '':
-#        if abs(event.Time - event_new.Time) <= (2. * (event.Downfact * event.Sampling + event_new.Downfact * event_new.Sampling)):  #Si potrebbe mettere una condizione sulla sigma dei due eventi per RFI
-#                                                  #meglio cosi o con gruppi?
-#          if event['Pulse'] == '': 
-#            code += 1
-#            event['Pulse'] = code 
-#          event_new['Pulse'] = event['Pulse']
-#          
-#          break
-#    if event['Pulse'] == '': data.drop(ind,inplace=True)
+  #data.drop(data.index[data.Pulse == ''],inplace=True)
+  #data = data.groupby('Pulse').filter(lambda x: len(x) > 5)
   
   return
 

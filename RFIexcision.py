@@ -1,8 +1,8 @@
 import numpy as np
 
-DMmin = 3.
-SigmaMin = 6.
-DownfactMax = 90
+DMmin = 10.
+SigmaMin = 7.
+DownfactMax = 60
 
 
 def SB(data):
