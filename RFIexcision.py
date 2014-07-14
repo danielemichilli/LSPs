@@ -1,14 +1,15 @@
 import numpy as np
 
-DMmin = 10.
-SigmaMin = 7.
-DownfactMax = 60
-
-
 def SB(data):
   #Remove RFI with sinle-beam techniques
   
   print 'SB'
+
+
+  DMmin = 3.
+  SigmaMin = 6.
+  DownfactMax = 90
+
 
   #Remove low DM
   data = data[data.DM>DMmin]
@@ -31,7 +32,7 @@ def IB(data,incoher):  #confrontare anche dm vicine
   if not incoher.empty:
     
     msk = data.merge(incoher,on='DM',suffixes=['','_inc'],copy=False,right_index=True)
-    cond = (msk.Sigma < np.dot(msk.Sigma_inc,2)) & (np.absolute(np.subtract(msk.Time,msk.Time_inc)) < np.multiply(np.add(np.multiply(msk.Downfact,msk.Sampling),np.multiply(msk.Downfact_inc,msk.Sampling_inc)),2))
+    cond = (msk.Sigma < np.dot(msk.Sigma_inc,2)) & (np.absolute(np.subtract(msk.Time,msk.Time_inc)) < np.add(np.multiply(np.multiply(event.Downfact,event.Sampling),.5),np.multiply(np.multiply(line.Downfact,line.Sampling),.5)))
     data.drop(msk.index[cond],inplace=True)
 
   return data
@@ -46,22 +47,34 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
   
   #confronta i beam anche con se stessi, aggiustare
   
+  #for ind1, sap_group in data.groupby('SAP'):
+  #  for ind2, event in sap_group.iterrows():
+      
  
   for beam in range(13,73):
     msk = data_tmp[(data_tmp.SAP==1)|(data_tmp.SAP==2)].merge(data_tmp[(data_tmp.SAP==0) & (data_tmp.BEAM==beam)],on='DM',suffixes=['_l','_r'],copy=False)
-    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 1.) & (abs(msk.Time_l - msk.Time_r) < (2. * (msk.Downfact_l * msk.Sampling_l + msk.Downfact_r * msk.Sampling_r)))]  #provare con operazioni di numpy per aumentare efficienza
+    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 1.) & (abs(msk.Time_l - msk.Time_r) < (msk.Downfact_l * msk.Sampling_l / 2.+ msk.Downfact_r * msk.Sampling_r / 2.))]  #provare con operazioni di numpy per aumentare efficienza
     #msk = msk[(msk.BEAM_l != msk.BEAM_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 3.) & ((abs(msk.Time_l - msk.Time_r)) < (2. * (msk.Downfact_l * msk.Sampling_l + msk.Downfact_r * msk.Sampling_r)))]  #SOLO PER I TEST!
     data.drop(msk.ind_l,inplace=True)
     data.drop(msk.ind_r,inplace=True)
     
   for beam in range(13,73):
     msk = data_tmp[data_tmp.SAP==2].merge(data_tmp[(data_tmp.SAP==1) & (data_tmp.BEAM==beam)],on='DM',suffixes=['_l','_r'],copy=False)
-    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 2.) & (abs(msk.Time_l - msk.Time_r) < (2. * (msk.Downfact_l * msk.Sampling_l + msk.Downfact_r * msk.Sampling_r)))]  #provare con operazioni di numpy per aumentare efficienza
+    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 2.) & (abs(msk.Time_l - msk.Time_r) < (msk.Downfact_l * msk.Sampling_l / 2. + msk.Downfact_r * msk.Sampling_r / 2.))]  #provare con operazioni di numpy per aumentare efficienza
     #msk = msk[(msk.BEAM_l != msk.BEAM_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 3.) & ((abs(msk.Time_l - msk.Time_r)) < (2. * (msk.Downfact_l * msk.Sampling_l + msk.Downfact_r * msk.Sampling_r)))]  #SOLO PER I TEST!
     data.drop(msk.ind_l,inplace=True)
     data.drop(msk.ind_r,inplace=True)
         
   return data  
+
+
+def Pulses(data):
+  
+  
+  
+  data = data.groupby(['SAP','BEAM','Pulse']).filter(lambda x: (x.DM.max() - x.DM.min()) < 3)
+  
+  return data
 
 
 #def Isolated(data):   #forse prima sort in DM and Time, poi slice up and down 
@@ -81,6 +94,10 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
   
   
 
+#AGGIUNGERE analisi dei pulses (sia in beam diversi che estensione massima in dm)
+
+
+#AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)
 
 #
 

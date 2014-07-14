@@ -77,16 +77,13 @@ else:
 if args.c: 
   #col = data.SAP *10 + (data.BEAM-13) *10./62.
   
-  #data.Pulse[data.Pulse=='']=10.
   col = data.Pulse.astype(float)
   
 else:
   col='b'  
   
 print data
-
-
-
+  
 plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
 
 #if args.c:   #Testare che faccia tutto bene, sembra troppo robusto

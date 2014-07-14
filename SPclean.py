@@ -8,6 +8,8 @@
 import pandas as pd
 import tarfile
 
+import time
+
 import RFIexcision
 import Group
 
@@ -82,13 +84,22 @@ def obs_events(idL):
   
 
   
-  Group.TimeAll(data)  
-  Group.Pulses(data)
-
+  data = Group.TimeAll(data)  
+  
+  
+  time0=time.clock()
+  data = Group.Pulses(data)
+  print 'Time: ',time.clock()-time0,' s'
+  
+  #pulses = Group.Table(data)
+  
+  #data = RFIexcision.Pulses(data) #,pulses)
+  
   
   #Store the table in a DB
   store = pd.HDFStore('SinlgePulses.hdf5','w')
   store[idL] = data
+  #store[idL+'_pulses'] = pulses
   store.close()
 
   return data
