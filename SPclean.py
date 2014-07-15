@@ -27,9 +27,12 @@ def openSB(idL,sap,beam):
     data = pd.read_csv(pulses, delim_whitespace=True)
  
     data.columns = ['DM','Sigma','Time','Sample','Downfact','Sampling','a','b','c']
+    
+    data.Sampling = data.Sampling*data.Downfact/2.
+    data.rename(columns={'Sampling': 'Down_Time'},inplace=True)
 
     #Select the interesting columns
-    data = data.ix[:,['DM','Sigma','Time','Downfact','Sampling']]
+    data = data.ix[:,['DM','Sigma','Time','Downfact','Down_Time']]
        
     pulses.close()
     pulses_tar.close()
@@ -45,7 +48,7 @@ def openSB(idL,sap,beam):
 
 def obs_events(idL):
   #Create the table in the memory
-  data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Downfact','Sampling'])
+  data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Downfact','Down_Time'])
 
   #Read each beam data
   for sap in range(0,3):  #0,3
@@ -89,9 +92,11 @@ def obs_events(idL):
   
   time0=time.clock()
   data = Group.Pulses(data)
-  print 'Time: ',time.clock()-time0,' s'
+  #print 'Time: ',time.clock()-time0,' s'
   
-  #pulses = Group.Table(data)
+  pulses = Group.Table(data)
+  
+  #print pulses
   
   #data = RFIexcision.Pulses(data) #,pulses)
   

@@ -56,7 +56,7 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
       else: step = 0.1
       
       line = data[(data.DM >= event['DM']-STEPS*step-ERR) & (data.DM <= event['DM']-step+ERR)]  #probabilmente meglio mettere in range
-      cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(np.multiply(np.multiply(event.Downfact,event.Sampling),.5),np.multiply(np.multiply(line.Downfact,line.Sampling),.5))  #forse meglio selezionare in range
+      cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(event.Down_Time,line.Down_Time)  #forse meglio selezionare in range
       line = line[cond]
       line = line[line.DM==line.DM.max()]
       rows = len(line)
@@ -76,29 +76,19 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
 
   data.drop(data.index[data.Pulse == 0],inplace=True)
   data = data.groupby('Pulse').filter(lambda x: len(x) > 3)
-  
-  print data
-  
+    
   return data
 
 
 def Table(data):
   
-  pulses = pd.DataFrame(columns=['SAP','BEAM','Pulse','DM','dDM','dTime','Sigma'])
-  
-  for ind, beam_group in data.groupby(['SAP','BEAM']):
+    pulses = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())]
+    pulses.index = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())].Pulse
     
+    pulses = pulses.ix[:,['SAP','BEAM','DM','Sigma','Time','Downfact']]
     
-    pulses['Sigma'] = data.groupby('Pulse').Sigma.max()
-    pulses.index = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())].Pulses
-    pulses['DM'] = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())].DM
-    pulses['DM_max'] = data.groupby('Pulse').DM.max()
-    pulses['DM_min'] = data.groupby('Pulse').DM.min()
-    pulses['Time'] = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())].Time
-    pulses['Time_max'] = data.groupby('Pulse').Down_Time.max()
-    pulses['Time_min'] = data.groupby('Pulse').Down_Time.min()
-
-
-  #si potrebbe aggiungere downfact*sampling
+    pulses['dDM'] = (data.groupby('Pulse').DM.max() - data.groupby('Pulse').DM.min()) / 2.
+    pulses['dTime'] = (data.groupby('Pulse').Down_Time.max() - data.groupby('Pulse').Down_Time.min()) / 2.
+    pulses['Down_Time'] = data.groupby('Pulse').Down_Time.max()
     
-  return pulses
+    return pulses

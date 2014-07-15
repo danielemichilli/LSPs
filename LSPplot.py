@@ -82,7 +82,7 @@ if args.c:
 else:
   col='b'  
   
-print data
+print data[data.Pulse==6]
   
 plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
 

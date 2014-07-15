@@ -22,15 +22,16 @@ def main():
   
   
   #if os.path.isfile('SinlgePulses.hdf5'):
-  #  print "DataBase already exists in the current folder.\nIt will not be overwritten.\n"
+  #  print "DataBase already exists in the current folder, it will be plotted.\nUse -w to force the creation of a new DataBase.\n"
   #  store = pd.HDFStore('SinlgePulses.hdf5','r')
   #  data = store[idL]
   #  store.close()
   #else:
   #  
     
+  time0 =time.clock()  
   data = SPclean.obs_events(idL)
-  
+  print 'Time: ',time.clock()-time0,' s'
   
 #  for sap in range(0,3):  #0,3
 #    for beam in range(13,74):  #13,74
