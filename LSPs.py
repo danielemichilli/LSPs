@@ -19,7 +19,9 @@ def main():
   
   idL = os.path.basename(os.getcwd())
   
-  
+  #-------------------------------------------------------------------
+  #If the DataBase already exists open it, otherwise creates a new one
+  #-------------------------------------------------------------------
   
   #if os.path.isfile('SinlgePulses.hdf5'):
   #  print "DataBase already exists in the current folder, it will be plotted.\nUse -w to force the creation of a new DataBase.\n"

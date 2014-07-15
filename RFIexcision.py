@@ -6,9 +6,9 @@ def SB(data):
   print 'SB'
 
 
-  DMmin = 5.
-  SigmaMin = 8.
-  DownfactMax = 50
+  DMmin = 2.
+  SigmaMin = 6.
+  DownfactMax = 90
 
 
   #Remove low DM
@@ -53,7 +53,7 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
  
   for beam in range(13,73):
     msk = data_tmp[(data_tmp.SAP==1)|(data_tmp.SAP==2)].merge(data_tmp[(data_tmp.SAP==0) & (data_tmp.BEAM==beam)],on='DM',suffixes=['_l','_r'],copy=False)
-    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 1.) & (abs(msk.Time_l - msk.Time_r) < (msk.Down_Time_l + msk.Down_Time_r ))]  #provare con operazioni di numpy per aumentare efficienza
+    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 2.) & (abs(msk.Time_l - msk.Time_r) < (msk.Down_Time_l + msk.Down_Time_r ))]  #provare con operazioni di numpy per aumentare efficienza
     data.drop(msk.ind_l,inplace=True)
     data.drop(msk.ind_r,inplace=True)
     
@@ -68,33 +68,39 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
 
 def Pulses(data,grouped):
   
-  data.drop(data[data.Pulse==grouped.Pulse[dDM>3.]].index,inplace=True)
-  data.drop(data[data.Pulse==grouped.Pulse[dTime>3.*Down_Time]].index,inplace=True)
+  data.drop(data[data.Pulse.isin(grouped[grouped.dDM>3.].index)].index,inplace=True)
+  data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Down_Time].index)].index,inplace=True)
   
+  group_temp = grouped
   
+  for ind1, sap_group in group_temp[group_temp.SAP.isin([0,1])].groupby('SAP'):
+    print 'SAP: ',ind1
   
-  
+    for ind2, beam_group in sap_group.groupby('BEAM'):
+      
+      for ind3, beam_new in group_temp[group_temp.SAP==ind1+1].groupby('BEAM'):
+        
+        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)
+        
+      for ind3, beam_new in group_temp[group_temp.SAP==ind1+2].groupby('BEAM'):
+        
+        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)        
+
   return data
 
 
-#def Isolated(data):   #forse prima sort in DM and Time, poi slice up and down 
-#  #Remove isolate events
-#  msk = data
-#  msk.DM[msk.DM<=40.] = np.trunc(msk.DM[msk.DM<=40.],0)  #mask,truncate
-#  msk.Time = np.trunc(msk.Time,3)
-#  msk = msk.groupby([DM,Time],sort=false).count > 1
-#  data.drop(msk.index,inplace=True)
-#  
-#  data.sort(['DM','Time','Sigma'],inplace=True)
-#  data['DM'<40].drop((data.diff()>0.3) & (data['Time'].diff()>3.*DownfactLow) )
-#
-#
-#def myround(x, base=5):
-#    return int(base * round(float(x)/base))
+def compare(row,beam,grouped):
+  
+  msk = beam[ (abs(beam.DM-row.DM)<beam.dDM+row.dDM) & (abs(beam.Time-row.Time)<beam.dTime+row.dTime) & (abs(beam.Sigma-row.Sigma)<2.) ]
+    
+  if len(msk)>0: 
+    grouped.drop(grouped[(grouped.SAP==row.SAP) & (grouped.BEAM==row.BEAM) & (grouped.index==row.index)],inplace=True)
+    grouped.drop(grouped[(grouped.SAP==beam.SAP.iloc[0]) & (grouped.BEAM==beam.BEAM.iloc[0]) & (grouped.index.isin(msk.index))],inplace=True)
+  
+  #  for ind2, event in sap_group.iterrows():
   
   
 
-#AGGIUNGERE analisi dei pulses (sia in beam diversi che estensione massima in dm)
 
 
 #AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)

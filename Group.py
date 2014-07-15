@@ -25,7 +25,7 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
   code = 0
   
   #for ind, event in data.iterrows(): 
-  for ind1, beam_group in data.groupby(['SAP','BEAM']):
+  for ind1, beam_group in data.groupby(['SAP','BEAM'],sort=False):
     for ind, event in beam_group.iterrows():
      #provare anche Cython  #provare modificando righe successive
       
@@ -56,7 +56,7 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
       else: step = 0.1
       
       line = data[(data.DM >= event['DM']-STEPS*step-ERR) & (data.DM <= event['DM']-step+ERR)]  #probabilmente meglio mettere in range
-      cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(event.Down_Time,line.Down_Time)  #forse meglio selezionare in range
+      cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(event.Down_Time,line.Down_Time)  #forse si puo allargare il range per selezionare rfi 
       line = line[cond]
       line = line[line.DM==line.DM.max()]
       rows = len(line)
@@ -75,20 +75,25 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
         data.loc[ind,'Pulse'] = line['Pulse'].iloc[0]
 
   data.drop(data.index[data.Pulse == 0],inplace=True)
-  data = data.groupby('Pulse').filter(lambda x: len(x) > 3)
-    
+  data = data.groupby('Pulse',sort=False).filter(lambda x: len(x) > 3)
+  
   return data
 
+  
 
 def Table(data):
+    
+  gb = data.groupby(['SAP','BEAM','Pulse'],sort=False)  #provare se va piu veloce mettendo il comando in ogni riga
+
+  pulses = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
+  pulses.index = pulses.Pulse
   
-    pulses = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())]
-    pulses.index = data[data.index.isin(data.groupby('Pulse').Sigma.idxmax())].Pulse
-    
-    pulses = pulses.ix[:,['SAP','BEAM','DM','Sigma','Time','Downfact']]
-    
-    pulses['dDM'] = (data.groupby('Pulse').DM.max() - data.groupby('Pulse').DM.min()) / 2.
-    pulses['dTime'] = (data.groupby('Pulse').Down_Time.max() - data.groupby('Pulse').Down_Time.min()) / 2.
-    pulses['Down_Time'] = data.groupby('Pulse').Down_Time.max()
-    
-    return pulses
+  pulses = pulses.ix[:,['SAP','BEAM','DM','Sigma','Time','Downfact']]
+  
+  pulses['dDM'] = (gb.DM.max().values - gb.DM.min().values) / 2.
+  pulses['dTime'] = (gb.Time.max().values - gb.Time.min().values) / 2.
+  pulses['Down_Time'] = gb.Down_Time.max().values
+  
+  #print pulses
+  
+  return pulses

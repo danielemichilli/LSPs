@@ -83,7 +83,7 @@ def obs_events(idL):
         
   # Si puo diminuire il consumo di memoria facendo partire RFIexcision.MB durante l'elaborazione di sap 3
   #Remove RFI with multi-beam techniques
-  data = RFIexcision.MB(data)
+  #data = RFIexcision.MB(data)
   
 
   
@@ -98,13 +98,13 @@ def obs_events(idL):
   
   #print pulses
   
-  #data = RFIexcision.Pulses(data) #,pulses)
+  data = RFIexcision.Pulses(data,pulses)
   
   
   #Store the table in a DB
   store = pd.HDFStore('SinlgePulses.hdf5','w')
   store[idL] = data
-  #store[idL+'_pulses'] = pulses
+  store[idL+'_pulses'] = pulses
   store.close()
 
   return data
