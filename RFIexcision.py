@@ -1,24 +1,19 @@
 import numpy as np
+from Parameters import *
 
 def SB(data):
   #Remove RFI with sinle-beam techniques
   
   print 'SB'
 
-
-  DMmin = 2.
-  SigmaMin = 6.
-  DownfactMax = 90
-
-
   #Remove low DM
-  data = data[data.DM>DMmin]
+  data = data[data.DM>DM_MIN]
   
   #Remove low sigma
-  data = data[data.Sigma>SigmaMin]
+  data = data[data.Sigma>SIGMA_MIN]
 
   #Remove high downfactors
-  data = data[data.Downfact<DownfactMax]
+  data = data[data.Downfact<DOWNFACT_MAX]
   
   return data
 
@@ -68,13 +63,25 @@ def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla 
 
 def Pulses(data,grouped):
   
+  data.drop(data.index[data.Pulse == 0],inplace=True)
+  data = data.groupby('Pulse',sort=False).filter(lambda x: len(x) > 3)
+  
   data.drop(data[data.Pulse.isin(grouped[grouped.dDM>3.].index)].index,inplace=True)
   data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Down_Time].index)].index,inplace=True)
+  
+  cond1 = (grouped.DM/(grouped.DM_min+grouped.dDM) > 0.095) & (grouped.DM/(grouped.DM_min+grouped.dDM) < 1.005)
+  cond2 = grouped.Sigma/grouped.Sigma_min> 1.1
+
+  data = data[data.Pulse.isin(grouped[cond1 & cond2].index)]
+    
+  
+  #data = data[data.Pulse.isin(grouped.index)]
+  
+  #data.drop(data[data.Pulse.isin(grouped[cond]).index].index,inplace=True)
   
   group_temp = grouped
   
   for ind1, sap_group in group_temp[group_temp.SAP.isin([0,1])].groupby('SAP'):
-    print 'SAP: ',ind1
   
     for ind2, beam_group in sap_group.groupby('BEAM'):
       
@@ -84,7 +91,9 @@ def Pulses(data,grouped):
         
       for ind3, beam_new in group_temp[group_temp.SAP==ind1+2].groupby('BEAM'):
         
-        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)        
+        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)    
+        
+  data = data[data.Pulse]
 
   return data
 
@@ -96,6 +105,7 @@ def compare(row,beam,grouped):
   if len(msk)>0: 
     grouped.drop(grouped[(grouped.SAP==row.SAP) & (grouped.BEAM==row.BEAM) & (grouped.index==row.index)],inplace=True)
     grouped.drop(grouped[(grouped.SAP==beam.SAP.iloc[0]) & (grouped.BEAM==beam.BEAM.iloc[0]) & (grouped.index.isin(msk.index))],inplace=True)
+    
   
   #  for ind2, event in sap_group.iterrows():
   

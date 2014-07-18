@@ -47,6 +47,7 @@ def openSB(idL,sap,beam):
 
 
 def obs_events(idL):
+ 
   #Create the table in the memory
   data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Downfact','Down_Time'])
 
