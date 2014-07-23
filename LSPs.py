@@ -58,10 +58,10 @@ def main():
   else:
     if (args.w): print "\nThe -w option has been chosen,other options will be ignored.\nA new DataBase will be created. ATTENTION: The old DataBase will be deleted!"
     else: print "\nDataBase doesn't exists"
-    if raw_input("Would you create a new DataBase? It may requires many minutes. [y] n\n") == 'y':
+    if 1: #raw_input("Would you create a new DataBase? It may requires many minutes. [y] n\n") == 'y':
       time0 = time.clock()  
       data = SPclean.obs_events(idL)
-      print 'Time: ',time.clock()-time0,' s'
+      #print 'Time: ',time.clock()-time0,' s'
   
 
 

@@ -3,9 +3,7 @@ import numpy as np
 
 import time
 
-
-F_MIN = 119.43  #MHz
-F_MAX = F_MIN + 31.64  #MHz
+from Parameters import *
 
 def TimeAll(data):
   k = 4.1488078e3  #s
@@ -25,28 +23,17 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
 
   data['Pulse'] = 0  #meglio cosi o ''?
   code = 0
-
+  
   #for ind, event in data.iterrows(): 
   for ind1, beam_group in data.groupby(['SAP','BEAM'],sort=False):
     
+    
     time0 = time.clock()
-    
-    for ind2, DM_group in data.groupby(['DM'],sort=True):
-      
-      if ind2 < 40: step = 0.01
-      elif ind2 < 140: step = 0.05
-      else: step = 0.1
-      
-      line = data[(data.DM >= ind2-STEPS*step-ERR) & (data.DM <= ind2-step+ERR)]
-      
-      
-      
-      DM_group.apply(lambda x: group(x,data,code), axis=1)
-    
+    beam_group.apply(lambda x: group(x,data,code), axis=1)
+    print 'Time: ',time.clock()-time0,' s'
     #beam_group.apply(group,args=(data,code),axis=1) #,raw=True)     
      #provare anche Cython  #provare modificando righe successive
-    print '\n',ind1
-    print 'Time: ',time.clock()-time0,' s'
+    
   
   #print data
 
@@ -54,6 +41,12 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
 
 
 def group(event,data,code):
+      
+      if event.DM < 40: step = 0.01
+      elif event.DM < 140: step = 0.05
+      else: step = 0.1
+      
+      line = data[(data.DM >= event.DM-STEPS_GROUP*step-ERR_FLOAT) & (data.DM <= event.DM-step+ERR_FLOAT)]
       
       cond = np.absolute(np.subtract(event.Time,line.Time)) < np.add(event.Down_Time,line.Down_Time)
       line = line[cond]
@@ -76,7 +69,7 @@ def group(event,data,code):
         event.Pulse = line['Pulse'].iloc[0]
         #data.loc[event.index,'Pulse'] = line['Pulse'].iloc[0]
 
-
+      
   
 
 

@@ -44,13 +44,13 @@ def plot(idL,args):
 
   plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
 
-  #if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
-  #  ticks = np.linspace(col.min(),col.max(),num=10)
-  #  bar = plt.colorbar(ticks=ticks)
-  #  bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
-  #  bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-  #  bar.update_ticks
-  #  bar.ax.xaxis.set_ticks_position('top')
+  if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
+    ticks = np.linspace(col.min(),col.max(),num=10)
+    bar = plt.colorbar(ticks=ticks)
+    bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
+    bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+    bar.update_ticks
+    bar.ax.xaxis.set_ticks_position('top')
   
   
   #confrontare plot e scatter: velocita e bellezza

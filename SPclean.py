@@ -92,20 +92,20 @@ def obs_events(idL):
   
   
   time0=time.clock()
-  data = Group.Pulses(data)
+  #data = Group.Pulses(data)
   #print 'Time: ',time.clock()-time0,' s'
   
-  pulses = Group.Table(data)
+  #pulses = Group.Table(data)
   
   #print pulses
   
-  data = RFIexcision.Pulses(data,pulses)
+  #data = RFIexcision.Pulses(data,pulses)
   
   
   #Store the table in a DB
   store = pd.HDFStore('SinlgePulses.hdf5','w')
   store[idL] = data
-  store[idL+'_pulses'] = pulses
+  #store[idL+'_pulses'] = pulses
   store.close()
 
   return data
