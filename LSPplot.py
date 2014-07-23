@@ -20,7 +20,7 @@ def plot(idL,args):
   store = pd.HDFStore('SinlgePulses.hdf5','r')
   data = store[idL]
 
-  data=data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
+  data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
 
   if args.s: 
     sig=(data.Sigma/5.)**3
@@ -63,3 +63,5 @@ def plot(idL,args):
   plt.show()
 
   store.close()
+
+  

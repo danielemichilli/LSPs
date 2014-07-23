@@ -1,5 +1,4 @@
 cimport cython
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 
@@ -9,16 +8,14 @@ def group(double[::1] DM not None,
           double[::1] Down_Time not None,
           long[::1] Pulse not None):
   
-  
   cdef:
-    unsigned int i, j, j_min, empty, SNR_max
-    unsigned int n_steps = 2
-    unsigned int j_max = 0
+    unsigned int i, j, k, j_min, j_max, empty, SNR_max
+    unsigned int n_steps = 4
     unsigned int code = 0
     unsigned int dim = len(DM)
-    double step_min, step_max, dDM
-    double DM_new=-1.
-    double float_err=0.0001
+    double step, step_min, step_max, dDM, DM_min
+    double DM_new = -1.
+    double float_err = 0.0001
 
 
   
@@ -29,63 +26,68 @@ def group(double[::1] DM not None,
     if Pulse[i]==0: 
       code += 1
       Pulse[i] = code
+      
   
     if DM[i] != DM_new:
       
       j_min = 0
+      j_max = dim
       
       DM_new = DM[i]
       
-      if DM_new < 40.: 
+      if DM_new < 40.: step = 0.01
         
-        step_min = 0.01-float_err
+      elif DM_new < 140.: step = 0.05
         
-        step_max = n_steps*0.01+float_err
+      else: step = 0.1
+        
+      step_min = step - float_err
       
-      elif DM_new < 140.: 
+      step_max = step * n_steps + float_err
         
-        step_min = 0.05-float_err
-        
-        step_max = n_steps*0.05+float_err
-      
-      else: 
-        
-        step_min = 0.1-float_err
-        
-        step_min = n_steps*0.1+float_err
         
       for j in range(i+1,dim):
-      
+        
         dDM = DM[j] - DM_new
 
-        if (dDM>step_min) and (dDM<step_max): 
+        if dDM > step_max:
           
-          if j_min == 0: j_min = j
           j_max = j
           
-    
-    empty = 0
+          break
+
+        if dDM > step_min: 
           
-    for j in range(j_min,j_max):
-      
-      if abs(Time[i]-Time[j]) < Down_Time[i]+Down_Time[j]:
+          if j_min == 0: j_min = j
         
-        if empty == 0:
+
+    empty = 0
+    
+    if j_min > 0:
+      
+      for j in range(j_min,j_max):
+        
+        if abs(Time[i]-Time[j]) < Down_Time[i]+Down_Time[j]:
           
-          Pulse[j] = code
-          SNR_max = j
-          empty = 1
-          
-        else:
-          
-          if Sigma[j] > Sigma[SNR_max]:
+          if empty == 0:
             
-            Pulse[SNR_max] = -1
+            Pulse[j] = Pulse[i]
             SNR_max = j
-            Pulse[j] = code
+            empty = 1
+            DM_min = DM[j]
             
           else:
             
-            Pulse[j] = -1
-  
+            if DM[j] > DM_min: break
+            
+            if Sigma[j] > Sigma[SNR_max]:
+              
+              Pulse[SNR_max] = -1
+              SNR_max = j
+              Pulse[j] = Pulse[i]
+              
+            else:
+              
+              Pulse[j] = -1
+    
   return
