@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from get_groups import pulse_code
+import get_groups
 
 from Parameters import *
 
@@ -25,7 +25,7 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
     
     data_copy = beam_group.ix[:,['DM','Sigma','Time','Down_Time']].astype(np.float64)
     
-    group(data_copy.DM.values,data_copy.Sigma.values,data_copy.Time.values,data_copy.Down_Time.values,data.Pulse.values)
+    get_groups.group(data_copy.DM.values,data_copy.Sigma.values,data_copy.Time.values,data_copy.Down_Time.values,data.Pulse.values)
 
     data = data[data.Pulse>0]
     
