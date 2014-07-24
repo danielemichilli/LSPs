@@ -1,8 +1,10 @@
-#######################################################
+#############################
+#
+# LOTAAS Single Pulse plots
 #
 # Written by Daniele Michilli
 #
-########################################################
+#############################
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -19,8 +21,12 @@ def plot(idL,args):
 
   store = pd.HDFStore('SinlgePulses.hdf5','r')
   data = store[idL]
+  puls = store[idL+'_pulses']
 
   data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
+
+  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi)]
+
 
   if args.s: 
     sig=(data.Sigma/5.)**3
@@ -40,17 +46,22 @@ def plot(idL,args):
   else:
     col='b'  
 
-  print args.dmhi
-
-  plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
-
-  if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
-    ticks = np.linspace(col.min(),col.max(),num=10)
-    bar = plt.colorbar(ticks=ticks)
-    bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
-    bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-    bar.update_ticks
-    bar.ax.xaxis.set_ticks_position('top')
+  
+  plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col) #cmap=mpl.cm.rainbow)
+  
+    
+  plt.errorbar(puls.Time, puls.DM, xerr=puls.Duration, yerr=puls.dDM, fmt=None) #ecolor=puls.index.values.astype(float), 
+  
+  
+  #plt.scatter(puls.Time, puls.DM, marker='+')
+  
+  #if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
+    #ticks = np.linspace(col.min(),col.max(),num=10)
+    #bar = plt.colorbar(ticks=ticks)
+    #bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
+    #bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+    #bar.update_ticks
+    #bar.ax.xaxis.set_ticks_position('top')
   
   
   #confrontare plot e scatter: velocita e bellezza

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 '''
-Read data from singlepulse beam files, transfer it on the memory, elaborate it and store at the end.
+
+LOTAAS Single Pulse searcher
 
 Written by Daniele Michilli
-'''
 
+'''
 
 import os
 import time
@@ -15,15 +16,14 @@ import SPclean
 import LSPplot
 
 
-def parser():
-  #--------------------
-  #Command-line options
-  #--------------------
+#aggiungere verbosity e output su file e diagnostic plots
 
-  #Define the command-line parsers
+def parser():
+  #---------------------
+  # Command-line options
+  #---------------------
+
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program read the database in the current directory created through DBmaker.py")
-  #parser.add_argument("-p", type=int, nargs=1, default=0, help="Plot level: 0-no plot, 1-plot on screen, 2-plot on file, 3-plot on screen AND file.")
-  #parser.add_argument("-v", help="Print the output on screen.")
   parser.add_argument("-w", help="Force the creation of a DataBase also if another is already present.", action='store_true')
   parser.add_argument("-s", help="Plot marks with size depending on sigma (slower).", action='store_true')
   parser.add_argument("-l", help="Plot marks with line width depending on down factor (slower).", action='store_true')
@@ -42,27 +42,25 @@ def parser():
 
 
 def main():
-  
-  args = parser()
-  idL = os.path.basename(os.getcwd())
-  
   #--------------------------------------------------------------------
   # If the DataBase already exists open it, otherwise creates a new one
   #--------------------------------------------------------------------
   
+  args = parser()
+  idL = os.path.basename(os.getcwd())
+  
+  #If the DataBase exists and the -w option is abstent plots it
   if (~args.w) & (os.path.isfile('SinlgePulses.hdf5')):
     print "DataBase will be plotted.\nUse -w to force the creation of a new DataBase.\n"
     LSPplot.plot(idL,args)
     
-  
+  #Otherwise create a new DataBase
   else:
     if (args.w): print "\nThe -w option has been chosen,other options will be ignored.\nA new DataBase will be created. ATTENTION: The old DataBase will be deleted!"
     else: print "\nDataBase doesn't exists"
     if 1: #raw_input("Would you create a new DataBase? It may requires many minutes. [y] n\n") == 'y':
       time0 = time.clock()  
-      data = SPclean.obs_events(idL)
-      #print 'Time: ',time.clock()-time0,' s'
-  
+      SPclean.obs_events(idL)  
 
 
 if __name__ == '__main__':

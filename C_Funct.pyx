@@ -1,11 +1,22 @@
+#############################
+#
+# Cython Functions
+#
+# Written by Daniele Michilli
+#
+#############################
+
 cimport cython
 @cython.boundscheck(False)
 @cython.wraparound(False)
 
-def group(double[::1] DM not None,
+#---------------------------------
+# Gives a pulse-code to each event
+#---------------------------------
+def Get_Group(double[::1] DM not None,
           double[::1] Sigma not None,
           double[::1] Time not None,
-          double[::1] Down_Time not None,
+          double[::1] Duration not None,
           long[::1] Pulse not None):
   
   cdef:
@@ -67,7 +78,7 @@ def group(double[::1] DM not None,
       
       for j in range(j_min,j_max):
         
-        if abs(Time[i]-Time[j]) < Down_Time[i]+Down_Time[j]:
+        if abs(Time[i]-Time[j]) < Duration[i]+Duration[j]:
           
           if empty == 0:
             

@@ -1,10 +1,20 @@
+########################################
+#
+# Radio Frequency Interferences excision
+#
+# Written by Daniele Michilli
+#
+########################################
+
 import numpy as np
+
+import C_Funct
 from Parameters import *
 
-def SB(data):
-  #Remove RFI with sinle-beam techniques
-  
-  print 'SB'
+def Event_Thresh(data):
+  #-----------------------------------------------------
+  # Applies thresholds to the events in a coherent beams
+  #-----------------------------------------------------
 
   #Remove low DM
   data = data[data.DM>DM_MIN]
@@ -12,118 +22,139 @@ def SB(data):
   #Remove low sigma
   data = data[data.Sigma>SIGMA_MIN]
 
-  #Remove high downfactors
-  data = data[data.Downfact<DOWNFACT_MAX]
+  #Remove high durations
+  data = data[data.Duration<DURATION_MAX]
   
   return data
 
 
-def IB(data,incoher):  #confrontare anche dm vicine
-  #Remove RFI with multi-beam techniques
-  
-  print 'IB'
-  
-  #incoherent beam
-  if not incoher.empty:
-    
-    msk = data.merge(incoher,on='DM',suffixes=['','_inc'],copy=False,right_index=True)
-    cond = (msk.Sigma < np.dot(msk.Sigma_inc,2)) & (np.absolute(np.subtract(msk.Time,msk.Time_inc)) < np.add(msk.Down_Time,msk.Down_Time))
-    data.drop(msk.index[cond],inplace=True)
 
+def IB_Event_Thresh(data):
+  #--------------------------------------------------------
+  # Applies thresholds to the events in an incoherent beams
+  #--------------------------------------------------------
+
+  #Remove low DM
+  data = data[data.DM>DM_MIN]
+  
+  #Remove low sigma
+  data = data[data.Sigma>SIGMA_MIN]
+
+  #Remove high durations
+  data = data[data.Duration<DURATION_MAX]
+  
   return data
 
 
-def MB(data):  #dividere tabella data in ogni sap e beam e confrontare uno alla volta
-  #remove pulses in more than 1 sap
-  
-  print 'MB'
-  data_tmp = data.copy()   #occupa molta memoria
-  data_tmp['ind'] = data_tmp.index
-  
-  #confronta i beam anche con se stessi, aggiustare
-  
-  #for ind1, sap_group in data.groupby('SAP'):
-  #  for ind2, event in sap_group.iterrows():
-      
- 
-  for beam in range(13,73):
-    msk = data_tmp[(data_tmp.SAP==1)|(data_tmp.SAP==2)].merge(data_tmp[(data_tmp.SAP==0) & (data_tmp.BEAM==beam)],on='DM',suffixes=['_l','_r'],copy=False)
-    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 2.) & (abs(msk.Time_l - msk.Time_r) < (msk.Down_Time_l + msk.Down_Time_r ))]  #provare con operazioni di numpy per aumentare efficienza
-    data.drop(msk.ind_l,inplace=True)
-    data.drop(msk.ind_r,inplace=True)
-    
-  for beam in range(13,73):
-    msk = data_tmp[data_tmp.SAP==2].merge(data_tmp[(data_tmp.SAP==1) & (data_tmp.BEAM==beam)],on='DM',suffixes=['_l','_r'],copy=False)
-    msk = msk[(msk.SAP_l != msk.SAP_r) & (abs(msk.Sigma_l - msk.Sigma_r) < 2.) & (abs(msk.Time_l - msk.Time_r) < (msk.Down_Time_l + msk.Down_Time_r))]  #provare con operazioni di numpy per aumentare efficienza
-    data.drop(msk.ind_l,inplace=True)
-    data.drop(msk.ind_r,inplace=True)
-        
-  return data  
 
-
-def Pulses(data,grouped):
+def Pulse_Thresh(data,grouped):
+  #-----------------------------------------------------
+  # Applies thresholds to the pulses in a coherent beams
+  #-----------------------------------------------------
   
-  data.drop(data.index[data.Pulse == 0],inplace=True)
+  
+  data = data[data.Pulse>0]
+  
   data = data.groupby('Pulse',sort=False).filter(lambda x: len(x) > 3)
-  
+    
   data.drop(data[data.Pulse.isin(grouped[grouped.dDM>3.].index)].index,inplace=True)
-  data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Down_Time].index)].index,inplace=True)
+  data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Duration].index)].index,inplace=True)
   
   cond1 = (grouped.DM/(grouped.DM_min+grouped.dDM) > 0.095) & (grouped.DM/(grouped.DM_min+grouped.dDM) < 1.005)
   cond2 = grouped.Sigma/grouped.Sigma_min> 1.1
 
   data = data[data.Pulse.isin(grouped[cond1 & cond2].index)]
-    
   
+  #AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)
+  
+  return data
+
+
+
+  
+def IB_Pulse_Thresh(data,grouped):
+  #--------------------------------------------------------
+  # Applies thresholds to the pulses in an incoherent beams
+  #--------------------------------------------------------
+
+
+  data = data.groupby('Pulse',sort=False).filter(lambda x: len(x) > 3)
+  
+  data.drop(data[data.Pulse.isin(grouped[grouped.dDM>3.].index)].index,inplace=True)
+  data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Duration].index)].index,inplace=True)
+  
+  cond1 = (grouped.DM/(grouped.DM_min+grouped.dDM) > 0.095) & (grouped.DM/(grouped.DM_min+grouped.dDM) < 1.005)
+  cond2 = grouped.Sigma/grouped.Sigma_min> 1.1
+
+  data = data[data.Pulse.isin(grouped[cond1 & cond2].index)]
+  
+  #AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)
+  
+  return data
+
+
+def Compare_IB(data,pulses):
+  
+  a=0
+  
+  return data
+
+
+def Compare_Beams(data,puls):
+  
+
   #data = data[data.Pulse.isin(grouped.index)]
   
   #data.drop(data[data.Pulse.isin(grouped[cond]).index].index,inplace=True)
   
-  group_temp = grouped
+  puls_copy = puls
   
-  for ind1, sap_group in group_temp[group_temp.SAP.isin([0,1])].groupby('SAP'):
+  #provare mettendo gb0=puls[puls.SAP==0].groupby('BEAM',sort=False), gb1=... e veder se e' piu' veloce
   
-    for ind2, beam_group in sap_group.groupby('BEAM'):
+  for ind0, beam0 in puls[puls.SAP==0].groupby('BEAM',sort=False):
+    
+    beam0_ind = beam0.Pulse.astype(np.int64)
+    beam0 = beam0.ix[:,['DM','dDM','Time','Duration','Sigma']].astype([np.float64)
+    
+    
+    for ind1, beam1 in puls[puls.SAP==1].groupby('BEAM',sort=False):
       
-      for ind3, beam_new in group_temp[group_temp.SAP==ind1+1].groupby('BEAM'):
+      beam1_ind = beam1.Pulse.astype(np.int64)
+      beam1 = beam1.ix[:,['DM','dDM','Time','Duration','Sigma']].astype(np.float64)
+      
+      msk = Compare(beam0.DM.values,beam0.dDM.values,beam0.Time.values,beam0.Duration.values,beam0.Sigma.values,beam0.Pulse.values,\
+        beam1.DM.values,beam1.dDM.values,beam1.Time.values,beam1.Duration.values,beam1.Sigma.values,beam1.Pulse.values)
+      
+    for ind2, beam2 in puls[puls.SAP==2].groupby('BEAM',sort=False):
+      
+      C_Funct.Compare(beam0,beam2)
+      
+      
+  for ind1, beam1 in puls[puls.SAP==1].groupby('BEAM',sort=False):
+    
+    for ind2, beam2 in puls[puls.SAP==2].groupby('BEAM',sort=False):
+    
+      C_Funct.Compare(beam1,beam2)
+      
+
+  data.drop(data.index[data.Pulse.isin(puls.index[puls.Pulse==0])],inplace=True)
+  puls = puls[puls.Pulse>0]
+  #oppure data = data[data.Pulse.isin(pulses.index)]
+      
+  
+  #for ind1, sap_group in group_temp[group_temp.SAP.isin([0,1])].groupby('SAP'):
+  
+    #for ind2, beam_group in sap_group.groupby('BEAM'):
+      
+      #for ind3, beam_new in group_temp[group_temp.SAP==ind1+1].groupby('BEAM'):
         
-        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)
+        #beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)
         
-      for ind3, beam_new in group_temp[group_temp.SAP==ind1+2].groupby('BEAM'):
+      #for ind3, beam_new in group_temp[group_temp.SAP==ind1+2].groupby('BEAM'):
         
-        beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)    
+        #beam_group.apply(compare,args=(beam_new,grouped),axis=1) #,raw=True)    
         
-  data = data[data.Pulse]
+  #data = data[data.Pulse]
 
   return data
 
-
-def compare(row,beam,grouped):
-  
-  msk = beam[ (abs(beam.DM-row.DM)<beam.dDM+row.dDM) & (abs(beam.Time-row.Time)<beam.dTime+row.dTime) & (abs(beam.Sigma-row.Sigma)<2.) ]
-    
-  if len(msk)>0: 
-    grouped.drop(grouped[(grouped.SAP==row.SAP) & (grouped.BEAM==row.BEAM) & (grouped.index==row.index)],inplace=True)
-    grouped.drop(grouped[(grouped.SAP==beam.SAP.iloc[0]) & (grouped.BEAM==beam.BEAM.iloc[0]) & (grouped.index.isin(msk.index))],inplace=True)
-    
-  
-  #  for ind2, event in sap_group.iterrows():
-  
-  
-
-
-
-#AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)
-
-#
-
-#  return data
-
-#usare groupby:
-#In [5]: def get_letter_type(letter):
-#   ...:     if letter.lower() in 'aeiou':
-#   ...:         return 'vowel'
-#   ...:     else:
-#   ...:         return 'consonant'
-
-#In [12]: df.groupby('A', group_keys=False).apply(lambda x: x.ix[x.B.idxmax()])

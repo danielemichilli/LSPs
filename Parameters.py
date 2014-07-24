@@ -1,6 +1,15 @@
+#############################
+#
+# Parameters
+#
+# Written by Daniele Michilli
+#
+#############################
+
+
 DM_MIN = 3.
 SIGMA_MIN = 6.
-DOWNFACT_MAX = 90
+DURATION_MAX = 90*0.00196608
 
 
 F_MIN = 119.43  #MHz
@@ -8,3 +17,6 @@ F_MAX = F_MIN + 31.64  #MHz
 
 ERR_FLOAT = 0.001
 STEPS_GROUP = 2
+
+SIGMA_TOLL = 4
+SIGMA_TOLL_IC = 2
