@@ -6,27 +6,32 @@
 #
 #############################
 
+#Installation: sudo python setup.py build_ext --inplace
+
 cimport cython
+from Parameters import *
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 
 #---------------------------------
 # Gives a pulse-code to each event
 #---------------------------------
-def Get_Group(double[::1] DM not None,
-          double[::1] Sigma not None,
-          double[::1] Time not None,
-          double[::1] Duration not None,
-          long[::1] Pulse not None):
+def Get_Group(float[::1] DM not None,
+          float[::1] Sigma not None,
+          float[::1] Time not None,
+          float[::1] Duration not None,
+          int[::1] Pulse not None):
   
   cdef:
     unsigned int i, j, k, j_min, j_max, empty, SNR_max
-    unsigned int n_steps = 4
+    unsigned int n_steps = STEPS_GROUP
+    unsigned int durat = DURAT_GROUP
     unsigned int code = 0
     unsigned int dim = len(DM)
-    double step, step_min, step_max, dDM, DM_min
-    double DM_new = -1.
-    double float_err = 0.0001
+    float step, step_min, step_max, dDM, DM_min
+    float DM_new = -1.
+    float float_err = 0.0001
 
 
   
@@ -78,7 +83,14 @@ def Get_Group(double[::1] DM not None,
       
       for j in range(j_min,j_max):
         
-        if abs(Time[i]-Time[j]) < Duration[i]+Duration[j]:
+        if abs(Time[i]-Time[j]) < durat*(Duration[i]+Duration[j]):
+          
+          if Pulse[j] == -1: continue
+          
+          if Pulse[j] > 0: 
+            
+            Pulse[j] = -1
+            continue
           
           if empty == 0:
             
@@ -101,4 +113,85 @@ def Get_Group(double[::1] DM not None,
               
               Pulse[j] = -1
     
+  return
+  
+  
+  
+#--------------------------------------
+# Compare Coherent and Incoherent beams
+#--------------------------------------
+def Compare_IB(float[::1] DM_c_l not None,
+               float[::1] dDM_l not None,
+               float[::1] Time_c_l not None,
+               float[::1] dTime_l not None,
+               float[::1] Sigma_l not None,
+               signed char[::1] Pulse_l not None,
+               float[::1] DM_c_r not None,
+               float[::1] dDM_r not None,
+               float[::1] Time_c_r not None,
+               float[::1] dTime_r not None,
+               float[::1] Sigma_r not None,
+               signed char[::1] Pulse_r not None):
+
+  cdef:
+    unsigned int i, j
+    unsigned int dim_l = len(DM_c_l)
+    unsigned int dim_r = len(DM_c_r)
+    unsigned int TollSigma = SIGMA_TOLL_IB
+
+
+  for i in range(0,dim_l):
+        
+    for j in range(0,dim_r):
+      
+      if abs(Time_c_l[i]-Time_c_r[j]) < dTime_l[i]+dTime_r[j]:
+        
+        if abs(DM_c_l[i]-DM_c_r[j]) < dDM_l[i]+dDM_r[j]:  #Condizione forte: pulses eliminati anche se c'e' overlapping minimo
+          
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+            Pulse_l[i] = 0
+            Pulse_r[j] = 0
+
+  return
+  
+  
+  
+  
+#---------------------------------
+# Compare different Coherent beams
+#---------------------------------
+def Compare_CB(float[::1] DM_c_l not None,
+               float[::1] dDM_l not None,
+               float[::1] Time_c_l not None,
+               float[::1] dTime_l not None,
+               float[::1] Sigma_l not None,
+               signed char[::1] Pulse_l not None,
+               float[::1] DM_c_r not None,
+               float[::1] dDM_r not None,
+               float[::1] Time_c_r not None,
+               float[::1] dTime_r not None,
+               float[::1] Sigma_r not None,
+               signed char[::1] Pulse_r not None):
+
+  cdef:
+    unsigned int i, j
+    unsigned int dim_l = len(DM_c_l)
+    unsigned int dim_r = len(DM_c_r)
+    unsigned int TollSigma = SIGMA_TOLL
+
+
+  for i in range(0,dim_l):
+        
+    for j in range(0,dim_r):
+    
+      if abs(Time_c_l[i]-Time_c_r[j]) < dTime_l[i]+dTime_r[j]:
+        
+        if abs(DM_c_l[i]-DM_c_r[j]) < dDM_l[i]+dDM_r[j]:  #Condizione forte: pulses eliminati anche se c'e' overlapping minimo
+          
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+            Pulse_l[i] = 0
+            Pulse_r[j] = 0
+
   return
