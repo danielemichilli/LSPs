@@ -40,7 +40,13 @@ def plot(idL,args):
   
   puls = puls[puls.Pulse>0]
   
+  puls = puls[puls.BEAM>12]
+  
   puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi)]
+  
+  if not puls.shape[0]:
+    print 'The DataBase is empty.'
+    return
   
   data = data[data.Pulse.isin(puls.index)]
 
@@ -53,37 +59,41 @@ def plot(idL,args):
     linewidths=data.Downfact*0.1
   else:
     linewidths=1
-  
-  if args.c: 
-    #col = data.SAP *10 + (data.BEAM-13) *10./62.
     
-    #col = puls.SAP *10 + (puls.BEAM-13) *10./62.
+  if args.c:
     
-    #col = puls.index.values.astype(float)
+    if np.size(args.beam) + np.size(args.sap) > 2:
+      col = data.SAP *10 + (data.BEAM-13) *10./62.
+      
+      #col = puls.SAP *10 + (puls.BEAM-13) *10./62.
+      
+      #col = puls.index.values.astype(float)
     
-    col = data.Pulse.values
+    else:
+      col = data.Pulse.values
   
   else:
     col='b'  
   
-  plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col, cmap=mpl.cm.rainbow)
+  plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col)#, cmap=mpl.cm.rainbow)
   
-  
-  plt.scatter(puls.Time, puls.DM, facecolors='none', s=50.)#, c=col)
-  
-  plt.errorbar(puls.Time, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, c=col) #ecolor=puls.index.values.astype(float), 
-    
-  
-  #plt.scatter(puls.Time, puls.DM, marker='+')
-  '''
-  if args.c:   #Testare che faccia tutto bene, sembra troppo robusto
+  if args.c & (np.size(args.beam) + np.size(args.sap) > 2):   #Testare che faccia tutto bene, sembra troppo robusto
     ticks = np.linspace(col.min(),col.max(),num=10)
     bar = plt.colorbar(ticks=ticks)
     bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
     bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
-  '''
+    
+    
+  plt.scatter(puls.Time, puls.DM, facecolors='none', s=50.)#, c=col)
+  
+  plt.errorbar(puls.Time, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, c=col) #ecolor=puls.index.values.astype(float), 
+    
+  
+  #plt.scatter(puls.Time, puls.DM, marker='+')
+
+
   
   #confrontare plot e scatter: velocita e bellezza
   #plt.plot(data['Time'], data['DM'], 'ko', mfc='none', ms=2)

@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 
 import C_Funct
+import RFIexcision
 
 from Parameters import *
 
@@ -51,6 +52,8 @@ def Table(data):
   # Create a table of the pulses
   #-----------------------------
   
+  data.Time = TimeAlign(data.Time,data.DM)
+  
   gb = data.groupby('Pulse',sort=False)  #provare se va piu veloce mettendo il comando in ogni riga
   
   #print data[data==9489].groupby('Pulse').Time.value_counts()
@@ -74,12 +77,15 @@ def Table(data):
   pulses['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
   pulses.Time_c=pulses.Time_c.astype(np.float32)
   
+  
+  #mettere in RFIexcision
   pulses['Sigma_DM_max'] = data.Sigma[gb.DM.idxmax()].values
   pulses['Sigma_DM_min'] = data.Sigma[gb.DM.idxmin()].values
   
   pulses['N_events'] = gb.DM.count()
   pulses.N_events=pulses.N_events.astype(np.int16)
   
-  pulses['var'] = gb.Time.apply(np.var)  #poco efficiente. Usare funzioni di pandas
+  
+  pulses = RFIexcision.Group(pulses,gb)
   
   return pulses

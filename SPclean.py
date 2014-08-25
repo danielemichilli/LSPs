@@ -124,18 +124,21 @@ def obs_events(idL):
   #LSPplot.RFI_channels(data)
   
   #Compares pulses in different beams
-  #RFIexcision.Compare_Beams(puls)
+  RFIexcision.Compare_Beams(puls[puls.BEAM>12])
   
   #puls = puls.ix[:,['SAP','BEAM','DM','Sigma','Time','Duration','Pulse']]
   
   #data.Time = Group.TimeAlign(data.Time,data.DM)
-  #puls.Time = Group.TimeAlign(puls.Time,pulse.DM)
-  #puls.Time_c = Group.TimeAlign(puls.Time_c,pulse.DM)
+  #puls.Time = Group.TimeAlign(puls.Time,puls.DM)
+  #puls.Time_c = Group.TimeAlign(puls.Time_c,puls.DM)
+  
+  
   
   #Stores the table into a DataBase
-  store = pd.HDFStore('SinlgePulses.hdf5','w')
-  store[idL] = data
-  store[idL+'_pulses'] = puls
-  store.close()
+  if not data.empty:
+    store = pd.HDFStore('SinlgePulses.hdf5','w')
+    store[idL] = data
+    store[idL+'_pulses'] = puls
+    store.close()
     
   return

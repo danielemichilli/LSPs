@@ -10,3 +10,8 @@ setup(
   cmdclass = {'build_ext': build_ext},
   ext_modules = ext_modules
 )
+
+
+
+
+#sudo python setup.py build_ext --inplace

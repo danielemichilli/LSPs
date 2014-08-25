@@ -25,8 +25,8 @@ def Event_Thresh(data):
   #Remove high durations
   #data = data[data.Duration<DURATION_MAX]
   
-  #count,div = np.histogram(data.Time,bins=3600)
-  #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<3.*np.median(count)])]  #forse metodi piu efficienti  #np.median(count[count>0])
+  #count,div = np.histogram(data.Time,bins=36000)
+  #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])]  #forse metodi piu efficienti
   
   return data
 
@@ -64,13 +64,11 @@ def Pulse_Thresh(grouped):
   grouped.Pulse[grouped.Sigma<6.5] = 0
   
   
-
-
   
   #data = data[data.Pulse>0]
   
   #data = data.groupby('Pulse',sort=False).filter(lambda x: len(x) > 3)
-    
+  
   #data.drop(data[data.Pulse.isin(grouped[grouped.dDM>3.].index)].index,inplace=True)
   #data.drop(data[data.Pulse.isin(grouped[grouped.dTime>3.*grouped.Duration].index)].index,inplace=True)
   
@@ -79,7 +77,7 @@ def Pulse_Thresh(grouped):
 
   #data = data[data.Pulse.isin(grouped[cond1 & cond2].index)]
   
-  #AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)
+  #AGGIUNGERE analisi dell'andamento del SNR (costante vs piccato)  #simmetria dei pulse
   
   return grouped
 
@@ -125,6 +123,15 @@ def Compare_IB(coh,incoh_temp,incoh):
 
 def Compare_Beams(puls):
   
+  k = 4.1488078e3  #s
+  delay = .5 * k * (F_MIN**-2 - F_MAX**-2)
+  
+  Time = puls.Time - puls.DM * delay
+  count,div = np.histogram(Time,bins=36000)  #36000?
+  puls.Pulse[((Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])] = 0  #forse metodi piu efficienti
+  Time = 0.
+  
+  
   sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   
   sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
@@ -149,4 +156,13 @@ def Compare_Beams(puls):
   puls.Pulse[puls.SAP==2]=sap2.Pulse
   
   return
+
+
+
+def Group(pulses,gb):
+  
+  pulses.Pulse[gb.Time.apply(np.var) > 0.00005] = 0
+  
+  return pulses
+
 
