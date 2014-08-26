@@ -24,8 +24,6 @@ def plot(idL,args):
   puls = store[idL+'_pulses']
   store.close()
   
-  #data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
-  
   #puls = puls[puls.BEAM<16]
   
   #puls=puls[puls.SAP==0]
@@ -42,14 +40,20 @@ def plot(idL,args):
   
   puls = puls[puls.BEAM>12]
   
-  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi)]
+  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi) & (puls['SAP'].isin(args.sap)) & (puls['BEAM'].isin(args.beam))]
   
   if not puls.shape[0]:
     print 'The DataBase is empty.'
     return
   
+  
+  #attenzione, per multibeam plotta data fuori da pulse
+  
+  data = data[data.BEAM>12]
+  data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
   data = data[data.Pulse.isin(puls.index)]
-
+  
+  
   if args.s: 
     sig=(data.Sigma/5.)**3
   else:
