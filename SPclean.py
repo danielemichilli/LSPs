@@ -79,8 +79,7 @@ def obs_events(idL):
     data_inc = openSB(idL,sap,12)
     if not data_inc.empty: 
       data_inc = RFIexcision.IB_Event_Thresh(data_inc) 
-      data_inc = Group.Pulses(data_inc)
-      puls_inc = Group.Table(data_inc)      
+      puls_inc = Group.Pulses(data_inc)  
       puls_inc = RFIexcision.IB_Pulse_Thresh(puls_inc)
       puls_inc_copy = puls_inc
         
@@ -89,11 +88,8 @@ def obs_events(idL):
       data_sb = openSB(idL,sap,beam)
       if not data_sb.empty:
         data_sb = RFIexcision.Event_Thresh(data_sb)
-        data_sb = Group.Pulses(data_sb)
-        puls_sb = Group.Table(data_sb)
-        
-        puls_sb = RFIexcision.Pulse_Thresh(puls_sb)
-        
+        puls_sb = Group.Pulses(data_sb)
+                
         data_sb.insert(0,'BEAM',beam)
         data_sb.insert(0,'SAP',sap)
         data_sb.SAP = data_sb.SAP.astype(np.uint8)
@@ -124,21 +120,20 @@ def obs_events(idL):
   #LSPplot.RFI_channels(data)
   
   #Compares pulses in different beams
-  RFIexcision.Compare_Beams(puls[puls.BEAM>12])
-  
+  puls = RFIexcision.Compare_Beams(puls[puls.BEAM>12])
+    
   #puls = puls.ix[:,['SAP','BEAM','DM','Sigma','Time','Duration','Pulse']]
   
   #data.Time = Group.TimeAlign(data.Time,data.DM)
   #puls.Time = Group.TimeAlign(puls.Time,puls.DM)
   #puls.Time_c = Group.TimeAlign(puls.Time_c,puls.DM)
   
-  
-  
+
   #Stores the table into a DataBase
   if not data.empty:
     store = pd.HDFStore('SinlgePulses.hdf5','w')
-    store[idL] = data
-    store[idL+'_pulses'] = puls
+    store.append(idL,data,data_columns=['Pulse'])
+    store.append(idL+'_pulses',puls,data_columns=['Pulse'])
     store.close()
     
   return

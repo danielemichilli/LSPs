@@ -19,39 +19,28 @@ def plot(idL,args):
   #Selection of values in the database
   #-----------------------------------
 
-  store = pd.HDFStore('SinlgePulses.hdf5','r')
-  data = store[idL]
-  puls = store[idL+'_pulses']
-  store.close()
+#  store = pd.HDFStore('SinlgePulses.hdf5','r')
+#  print store
+#  data = store[idL]
+#  puls = store[idL+'_pulses']
+#  store.close()
   
-  #puls = puls[puls.BEAM<16]
   
-  #puls=puls[puls.SAP==0]
-  
-  #data = data[data.BEAM<16]
-  
-  #data=data[data.SAP==0]
-  
-  #data.sort('BEAM')
-  
-  #data.groupby(['SAP','BEAM','Pulse'],sort=False).DM.count()>3
-  
-  puls = puls[puls.Pulse>0]
-  
-  puls = puls[puls.BEAM>12]
-  
-  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi) & (puls['SAP'].isin(args.sap)) & (puls['BEAM'].isin(args.beam))]
-  
+  puls = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['Pulse>0'])
+
   if not puls.shape[0]:
     print 'The DataBase is empty.'
     return
   
+  data = pd.read_hdf('SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
+  
+  puls = puls[puls.BEAM>12]
+  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi) & (puls['SAP'].isin(args.sap)) & (puls['BEAM'].isin(args.beam))]
   
   #attenzione, per multibeam plotta data fuori da pulse
   
   data = data[data.BEAM>12]
   data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
-  data = data[data.Pulse.isin(puls.index)]
   
   
   if args.s: 

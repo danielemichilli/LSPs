@@ -29,7 +29,7 @@ def TimeAlign(Time,DM):
   return Time
 
 
-def Pulses(data):  #AGGIUNGERE funzione per beam diversi
+def Pulses(data):
   #------------------------------
   # Assigns each event to a pulse
   #------------------------------
@@ -43,49 +43,29 @@ def Pulses(data):  #AGGIUNGERE funzione per beam diversi
   
   data = data[data.Pulse>0]
   
-  return data
-
-
-#UNIRE le due funzioni
-def Table(data):
   #-----------------------------
   # Create a table of the pulses
   #-----------------------------
   
   data.Time = TimeAlign(data.Time,data.DM)
   
-  gb = data.groupby('Pulse',sort=False)  #provare se va piu veloce mettendo il comando in ogni riga
+  gb = data.groupby('Pulse',sort=False)
   
-  #print data[data==9489].groupby('Pulse').Time.value_counts()
-  #print data[data==9489].groupby('Pulse').std()
-
-  pulses = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
-  pulses.index = pulses.Pulse
-  pulses = pulses.loc[:,['DM','Sigma','Time','Duration']]
-  pulses['Pulse']=1  #METTERE prima
-  pulses.Pulse=pulses.Pulse.astype(np.int8)
+  puls = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
+  puls.index = puls.Pulse
+  puls = puls.loc[:,['DM','Sigma','Time','Duration']]
+  puls['Pulse']=1
+  puls.Pulse=puls.Pulse.astype(np.int8)
   
-  pulses['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
-  pulses.dDM=pulses.dDM.astype(np.float32)
-  pulses['DM_min'] = gb.DM.min()
-  pulses['Sigma_min'] = gb.Sigma.min()
-  pulses['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
-  pulses.dTime=pulses.dTime.astype(np.float32)
+  puls['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
+  puls.dDM=puls.dDM.astype(np.float32)
+  puls['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
+  puls.dTime=puls.dTime.astype(np.float32)
+  puls['DM_c'] = (gb.DM.max() + gb.DM.min()) / 2.
+  puls.DM_c=puls.DM_c.astype(np.float32)
+  puls['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
+  puls.Time_c=puls.Time_c.astype(np.float32)
   
-  pulses['DM_c'] = (gb.DM.max() + gb.DM.min()) / 2.
-  pulses.DM_c=pulses.DM_c.astype(np.float32)
-  pulses['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
-  pulses.Time_c=pulses.Time_c.astype(np.float32)
+  puls = RFIexcision.Pulse_Thresh(puls,gb,data)
   
-  
-  #mettere in RFIexcision
-  pulses['Sigma_DM_max'] = data.Sigma[gb.DM.idxmax()].values
-  pulses['Sigma_DM_min'] = data.Sigma[gb.DM.idxmin()].values
-  
-  pulses['N_events'] = gb.DM.count()
-  pulses.N_events=pulses.N_events.astype(np.int16)
-  
-  
-  pulses = RFIexcision.Group(pulses,gb)
-  
-  return pulses
+  return puls
