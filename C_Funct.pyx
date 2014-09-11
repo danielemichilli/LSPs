@@ -116,82 +116,66 @@ def Get_Group(float[::1] DM not None,
   return
   
   
-  
-#--------------------------------------
-# Compare Coherent and Incoherent beams
-#--------------------------------------
-def Compare_IB(float[::1] DM_c_l not None,
-               float[::1] dDM_l not None,
-               float[::1] Time_c_l not None,
-               float[::1] dTime_l not None,
-               float[::1] Sigma_l not None,
-               signed char[::1] Pulse_l not None,
-               float[::1] DM_c_r not None,
-               float[::1] dDM_r not None,
-               float[::1] Time_c_r not None,
-               float[::1] dTime_r not None,
-               float[::1] Sigma_r not None,
-               signed char[::1] Pulse_r not None):
+#-------------------------
+# Compares different beams
+#-------------------------
+def Compare(float[::1] DM_c_l not None,
+            float[::1] dDM_l not None,
+            float[::1] Time_c_l not None,
+            float[::1] dTime_l not None,
+            float[::1] Sigma_l not None,
+            signed char[::1] Pulse_l not None,
+            float[::1] DM_c_r not None,
+            float[::1] dDM_r not None,
+            float[::1] Time_c_r not None,
+            float[::1] dTime_r not None,
+            float[::1] Sigma_r not None,
+            signed char[::1] Pulse_r not None,
+            int CB):
 
   cdef:
     unsigned int i, j
     unsigned int dim_l = len(DM_c_l)
     unsigned int dim_r = len(DM_c_r)
-    unsigned int TollSigma = SIGMA_TOLL_IB
-
+    int TollSigma
+    float DTime,Time,DM,DDM
+    
+  if CB==int(1): TollSigma = SIGMA_TOLL
+  else: TollSigma = SIGMA_TOLL_IB
 
   for i in range(0,dim_l):
         
     for j in range(0,dim_r):
       
-      if abs(Time_c_l[i]-Time_c_r[j]) < dTime_l[i]+dTime_r[j]:
+      Time = abs(Time_c_l[i]-Time_c_r[j])
+      DTime = dTime_l[i]+dTime_r[j]
+      
+      if Time < DTime :
+      
+        DM = abs(DM_c_l[i]-DM_c_r[j])
+        DDM = dDM_l[i]+dDM_r[j]
         
-        if abs(DM_c_l[i]-DM_c_r[j]) < dDM_l[i]+dDM_r[j]:  #Condizione forte: pulses eliminati anche se c'e' overlapping minimo
+        if DM < DDM :
           
           if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
             
-            Pulse_l[i] = 0
-            Pulse_r[j] = 0
-
-  return
-  
-  
-  
-  
-#---------------------------------
-# Compare different Coherent beams
-#---------------------------------
-def Compare_CB(float[::1] DM_c_l not None,
-               float[::1] dDM_l not None,
-               float[::1] Time_c_l not None,
-               float[::1] dTime_l not None,
-               float[::1] Sigma_l not None,
-               signed char[::1] Pulse_l not None,
-               float[::1] DM_c_r not None,
-               float[::1] dDM_r not None,
-               float[::1] Time_c_r not None,
-               float[::1] dTime_r not None,
-               float[::1] Sigma_r not None,
-               signed char[::1] Pulse_r not None):
-
-  cdef:
-    unsigned int i, j
-    unsigned int dim_l = len(DM_c_l)
-    unsigned int dim_r = len(DM_c_r)
-    unsigned int TollSigma = SIGMA_TOLL
-
-
-  for i in range(0,dim_l):
-        
-    for j in range(0,dim_r):
-    
-      if abs(Time_c_l[i]-Time_c_r[j]) < dTime_l[i]+dTime_r[j]:
-        
-        if abs(DM_c_l[i]-DM_c_r[j]) < dDM_l[i]+dDM_r[j]:  #Condizione forte: pulses eliminati anche se c'e' overlapping minimo
+            Pulse_l[i] += 2
+            Pulse_r[j] += 2
           
+        elif DM < 10.*DDM :
+        
           if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-            
-            Pulse_l[i] = 0
-            Pulse_r[j] = 0
-
+          
+            Pulse_l[i] += 1
+            Pulse_r[j] += 1
+      
+      elif Time < 6. * DTime :
+      
+        if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
+        
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+          
+            Pulse_l[i] += 1
+            Pulse_r[j] += 1
+      
   return

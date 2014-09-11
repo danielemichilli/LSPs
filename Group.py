@@ -19,17 +19,20 @@ def TimeAlign(Time,DM):
   #----------------------
   # Aligns pulses in time
   #----------------------
+  
+  #print Time[DM<=40.]
 
   k = 4.1488078e3  #s
-  delay = .5 * k * (F_MIN**-2 - F_MAX**-2)
+  delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
   
-  Time = Time + DM * delay
-  Time = Time.astype(np.float32)
+  
+  Time  += DM * delay
+  #Time[DM<=40.] += np.float32(.5) * DM * delay  #DA DUE PULSARS, CONTROLLARE!!!!!!!!!!
   
   return Time
 
 
-def Pulses(data):
+def Pulses(data,sap,beam):
   #------------------------------
   # Assigns each event to a pulse
   #------------------------------
@@ -40,21 +43,22 @@ def Pulses(data):
   data_copy = data.ix[:,['DM','Sigma','Time','Duration']]
 
   C_Funct.Get_Group(data_copy.DM.values,data_copy.Sigma.values,data_copy.Time.values,data_copy.Duration.values,data.Pulse.values)
-  
+    
   data = data[data.Pulse>0]
   
+  data.Pulse = (data.Pulse*10+sap)*100+beam  #pulse code deve essere unico: non ho trovato un modo migliore per selezionare eventi quando beam diversi hanno stesso codice
+
+
   #-----------------------------
   # Create a table of the pulses
   #-----------------------------
-  
-  data.Time = TimeAlign(data.Time,data.DM)
   
   gb = data.groupby('Pulse',sort=False)
   
   puls = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
   puls.index = puls.Pulse
   puls = puls.loc[:,['DM','Sigma','Time','Duration']]
-  puls['Pulse']=1
+  puls['Pulse']=0
   puls.Pulse=puls.Pulse.astype(np.int8)
   
   puls['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
@@ -66,6 +70,14 @@ def Pulses(data):
   puls['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
   puls.Time_c=puls.Time_c.astype(np.float32)
   
-  puls = RFIexcision.Pulse_Thresh(puls,gb,data)
+  if beam == 12: puls = RFIexcision.IB_Pulse_Thresh(puls,gb,data)
+  else: puls = RFIexcision.Pulse_Thresh(puls,gb,data)
   
-  return puls
+  data.Time = TimeAlign(data.Time,data.DM)
+  puls.Time = TimeAlign(puls.Time,puls.DM)
+  puls.Time_c = TimeAlign(puls.Time_c,puls.DM_c)
+  
+  if beam == 12: puls = RFIexcision.IB_Align_Pulse_Thresh(puls,gb,data)
+  else: puls = RFIexcision.Align_Pulse_Thresh(puls,gb,data)
+  
+  return data, puls

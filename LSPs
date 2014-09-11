@@ -28,6 +28,7 @@ def parser():
   parser.add_argument("-s", help="Plot marks with size depending on sigma (slower).", action='store_true')
   parser.add_argument("-l", help="Plot marks with line width depending on down factor (slower).", action='store_true')
   parser.add_argument("-c", help="Plot marks with colour depending on beam number (slower).", action='store_true')
+  parser.add_argument("-rfi", type=int, nargs=1, default=1, help="Set the maximum rfi level to show (0 to exclude RFI).")
   parser.add_argument("-dmlo", type=float, nargs=1, default=[0.0], help="Set the lower DM to show.")
   parser.add_argument("-dmhi", type=float, nargs=1, default=[500.0], help="Set the higher DM to show.")
   parser.add_argument("-tmlo", type=float, nargs=1, default=[0.0], help="Set the lower time to show.")
@@ -60,13 +61,10 @@ def main():
     else: print "\nDataBase doesn't exists"
     if 1: #raw_input("Would you create a new DataBase? It may requires many minutes. [y] n\n") == 'y':
       time0 = time.clock()  
-      SPclean.obs_events(idL)  
-
+      SPclean.obs_events(idL)
+      print 'Time spent: ', time.clock() - time0, ' s'
 
 if __name__ == '__main__':
-  
-  t0 = time.clock()
-  
   main()
   
-  print 'Time: ', time.clock() - t0
+  

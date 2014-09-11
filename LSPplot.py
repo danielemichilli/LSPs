@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib as mpl
 import numpy as np
 
-
+from Parameters import *
 
 def plot(idL,args):
 
@@ -26,22 +26,32 @@ def plot(idL,args):
 #  store.close()
   
   
-  puls = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['Pulse>0'])
-
-  if not puls.shape[0]:
-    print 'The DataBase is empty.'
-    return
+  puls = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['Pulse==0'])
+  puls_rfi = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
   
-  data = pd.read_hdf('SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
+  
+  
+  #k = 4.1488078e3  #s
+  #delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
+  #puls.Time = puls.Time - puls.DM * delay
+  #puls_rfi.Time = puls_rfi.Time + puls_rfi.DM * delay
+  
+  
+  
+  
+  #puls=puls[puls.Sigma>6.5]
+
+  #if not puls.shape[0]:
+    #print 'The DataBase is empty.'
+    #return
   
   puls = puls[puls.BEAM>12]
   puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi) & (puls['SAP'].isin(args.sap)) & (puls['BEAM'].isin(args.beam))]
   
-  #attenzione, per multibeam plotta data fuori da pulse
+  puls_rfi = puls_rfi[puls_rfi.BEAM>12]
+  puls_rfi = puls_rfi[(puls_rfi['DM']>args.dmlo) & (puls_rfi['DM']<args.dmhi) & (puls_rfi['Time']>args.tmlo) & (puls_rfi['Time']<args.tmhi) & (puls_rfi['SAP'].isin(args.sap)) & (puls_rfi['BEAM'].isin(args.beam))]
   
-  data = data[data.BEAM>12]
-  data = data[(data['DM']>args.dmlo) & (data['DM']<args.dmhi) & (data['Time']>args.tmlo) & (data['Time']<args.tmhi) & (data['SAP'].isin(args.sap)) & (data['BEAM'].isin(args.beam))]
-  
+  data = pd.read_hdf('SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
   
   if args.s: 
     sig=(data.Sigma/5.)**3
@@ -56,9 +66,9 @@ def plot(idL,args):
   if args.c:
     
     if np.size(args.beam) + np.size(args.sap) > 2:
-      col = data.SAP *10 + (data.BEAM-13) *10./62.
+      #col = data.SAP *10 + (data.BEAM-13) *10./62.
       
-      #col = puls.SAP *10 + (puls.BEAM-13) *10./62.
+      col = puls.SAP *10 + (puls.BEAM-13) *10./62.
       
       #col = puls.index.values.astype(float)
     
@@ -66,34 +76,49 @@ def plot(idL,args):
       col = data.Pulse.values
   
   else:
-    col='b'  
+    col=u'r' 
+    
+    
+  fig = plt.figure()
+
   
-  plt.scatter(data.Time, data.DM, facecolors='none', s=sig, c=col)#, cmap=mpl.cm.rainbow)
+  ax1 = plt.subplot2grid((1,5),(0,0),colspan=3)
+  ax2 = plt.subplot2grid((1,5),(0,3),sharey=ax1)
+  ax3 = plt.subplot2grid((1,5),(0,4),sharey=ax1)
+
+    
+  ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k')
+
+  ax1.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, ecolor=col)
   
-  if args.c & (np.size(args.beam) + np.size(args.sap) > 2):   #Testare che faccia tutto bene, sembra troppo robusto
+  ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=20., c=u'k',marker='+')
+
+  ax1.scatter(puls.Time, puls.DM, facecolors=col, s=150.)
+
+  if args.c & (np.size(args.beam) + np.size(args.sap) > 2) & (puls.shape[0]):   #Testare che faccia tutto bene, sembra troppo robusto
     ticks = np.linspace(col.min(),col.max(),num=10)
     bar = plt.colorbar(ticks=ticks)
     bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
     bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
-    
-    
-  plt.scatter(puls.Time, puls.DM, facecolors='none', s=50.)#, c=col)
-  
-  plt.errorbar(puls.Time, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, c=col) #ecolor=puls.index.values.astype(float), 
-    
-  
-  #plt.scatter(puls.Time, puls.DM, marker='+')
 
 
+  ax1.set_xlabel('Time (s)')
+  ax1.set_ylabel('DM (pc/cm3)')
+  ax1.axis([args.tmlo[0],args.tmhi[0],args.dmlo[0],args.dmhi[0]])
   
-  #confrontare plot e scatter: velocita e bellezza
-  #plt.plot(data['Time'], data['DM'], 'ko', mfc='none', ms=2)
+  ax2.hist(puls.DM.tolist(),bins=1000,orientation=u'horizontal')
+  ax2.set_xlabel('Counts')
 
-  plt.xlabel('Time (s)')
-  plt.ylabel('DM (pc/cm3)')
-  plt.axis([args.tmlo[0],args.tmhi[0],args.dmlo[0],args.dmhi[0]])
+  ax3.scatter(puls.Sigma,puls.DM)
+  ax3.set_xlabel('Sigma')
+  
+  fig.subplots_adjust(wspace=0)   
+  for ax in [ax2, ax3]:
+    plt.setp(ax.get_yticklabels(), visible=False)
+    # The y-ticks will overlap with "hspace=0", so we'll hide the bottom tick
+    #ax.set_xticks(ax.get_xticks()[1:])  
 
   plt.show()
   

@@ -21,3 +21,5 @@ DURAT_GROUP = 1
 
 SIGMA_TOLL = 4
 SIGMA_TOLL_IB = 2
+
+RFI_percent = 4
