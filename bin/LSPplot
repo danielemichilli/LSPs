@@ -1,0 +1,58 @@
+#!/usr/bin/python
+
+'''
+
+LOTAAS Single Pulse searcher
+
+Written by Daniele Michilli
+
+'''
+
+import os
+import time
+import argparse
+
+import LSPplot
+
+
+def parser():
+  #---------------------
+  # Command-line options
+  #---------------------
+
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program read the database in the current directory created through DBmaker.py")
+  parser.add_argument("-s", help="Plot marks with size depending on sigma (slower).", action='store_true')
+  parser.add_argument("-l", help="Plot marks with line width depending on down factor (slower).", action='store_true')
+  parser.add_argument("-c", help="Plot marks with colour depending on beam number (slower).", action='store_true')
+  parser.add_argument("-rfi", type=int, nargs=1, default=1, help="Set the maximum rfi level to show (0 to exclude RFI).")
+  parser.add_argument("-dmlo", type=float, nargs=1, default=[0.0], help="Set the lower DM to show.")
+  parser.add_argument("-dmhi", type=float, nargs=1, default=[500.0], help="Set the higher DM to show.")
+  parser.add_argument("-tmlo", type=float, nargs=1, default=[0.0], help="Set the lower time to show.")
+  parser.add_argument("-tmhi", type=float, nargs=1, default=[3600.0], help="Set the higher time to show.")
+  parser.add_argument("-sap", type=int, nargs='+', default=range(0,3), help="Set the SAP number.")
+  parser.add_argument("-beam", type=int, nargs='+', default=range(13,74), help="Set the BEAM number.")
+  args = parser.parse_args()
+
+  return args
+
+
+
+
+def main():
+  #--------------------------------------------------------------------
+  # If the DataBase already exists open it, otherwise creates a new one
+  #--------------------------------------------------------------------
+  
+  args = parser()
+  idL = os.path.basename(os.getcwd())
+  
+
+  if (os.path.isfile('SinlgePulses.hdf5')):
+    print "The DataBase will be plotted."
+    LSPplot.plot(idL,args)
+    
+  else:
+    print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"
+    
+if __name__ == '__main__':
+  main()

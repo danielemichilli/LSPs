@@ -1,6 +1,9 @@
 #############################
 #
-# Group
+# Grouping Functions
+#
+# Contains the functions to
+# operate on the pulses.
 #
 # Written by Daniele Michilli
 #
@@ -16,15 +19,16 @@ from Parameters import *
 
 
 def TimeAlign(Time,DM):
-  #----------------------
-  # Aligns pulses in time
-  #----------------------
+  #-------------------------------------------------
+  # Corrects for the time misalignment of the pulses
+  #-------------------------------------------------
   
   #print Time[DM<=40.]
-
+  
+  # Quantifies the misalignment for a broad-band pulse
+  # Only the extreme frequencies are taken into account
   k = 4.1488078e3  #s
   delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
-  
   
   Time  += DM * delay
   #Time[DM<=40.] += np.float32(.5) * DM * delay  #DA DUE PULSARS, CONTROLLARE!!!!!!!!!!
@@ -33,9 +37,13 @@ def TimeAlign(Time,DM):
 
 
 def Pulses(data,sap,beam):
-  #------------------------------
-  # Assigns each event to a pulse
-  #------------------------------
+  #---------------------------------------------------------
+  # Assigns each event to a pulse and remove isolated events
+  #---------------------------------------------------------
+  
+  #data = data[(data.Time>2874)&(data.Time<2875)&(data.DM>41.5)&(data.DM<44.5)]
+  #data = data[(data.Time>2001)&(data.Time<2002)&(data.DM>140)&(data.DM<142)]
+
   
   data.sort(['DM'],inplace=True)
   data['Pulse'] = 0
@@ -43,15 +51,14 @@ def Pulses(data,sap,beam):
   data_copy = data.ix[:,['DM','Sigma','Time','Duration']]
 
   C_Funct.Get_Group(data_copy.DM.values,data_copy.Sigma.values,data_copy.Time.values,data_copy.Duration.values,data.Pulse.values)
-    
+  
   data = data[data.Pulse>0]
   
   data.Pulse = (data.Pulse*10+sap)*100+beam  #pulse code deve essere unico: non ho trovato un modo migliore per selezionare eventi quando beam diversi hanno stesso codice
 
-
-  #-----------------------------
-  # Create a table of the pulses
-  #-----------------------------
+  #------------------------------------------------------
+  # Create a table with the characteristics of the pulses
+  #------------------------------------------------------
   
   gb = data.groupby('Pulse',sort=False)
   
@@ -69,6 +76,10 @@ def Pulses(data,sap,beam):
   puls.DM_c=puls.DM_c.astype(np.float32)
   puls['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
   puls.Time_c=puls.Time_c.astype(np.float32)
+  
+  puls = puls[gb.DM.count() > 5]
+  
+  # Reduce the RFI and corrects for the time misalignment
   
   if beam == 12: puls = RFIexcision.IB_Pulse_Thresh(puls,gb,data)
   else: puls = RFIexcision.Pulse_Thresh(puls,gb,data)

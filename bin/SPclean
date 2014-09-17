@@ -1,0 +1,56 @@
+#!/usr/bin/python
+
+'''
+
+LOTAAS Single Pulse searcher
+
+Written by Daniele Michilli
+
+'''
+
+import os
+import time
+import argparse
+
+import SPclean
+
+def parser():
+  #---------------------
+  # Command-line options
+  #---------------------
+
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program read the database in the current directory created through DBmaker.py")
+  parser.add_argument("-w", help="Force the creation of a DataBase also if another is already present.", action='store_true')
+  args = parser.parse_args()
+
+  return args
+
+
+def main():
+  #--------------------------------------------------------------------
+  # If the DataBase already exists open it, otherwise creates a new one
+  #--------------------------------------------------------------------
+  
+  args = parser()
+  idL = os.path.basename(os.getcwd())
+  
+  #If the DataBase exists and the -w option is abstent plots it
+  if ~ os.path.isfile('SinlgePulses.hdf5'):
+    print "The DataBase will be created.\n"
+      time0 = time.clock()  
+      SPclean.obs_events(idL)
+      print 'The DataBase has been created.\nTime spent: ', time.clock() - time0, ' s'
+      
+  #Otherwise create a new DataBase
+  elif args.w: 
+    print "\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!"
+    if 1: #raw_input("A DataBase is already present.\nDo you want to overwrite it? [y] n\n") == 'y':
+      time0 = time.clock()  
+      SPclean.obs_events(idL)
+      print 'The DataBase has been created.\nTime spent: ', time.clock() - time0, ' s'
+
+if __name__ == '__main__':
+  main()
+  
+  
+ 
