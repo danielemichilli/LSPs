@@ -11,6 +11,7 @@ Written by Daniele Michilli
 import os
 import time
 import argparse
+import pandas as pd
 
 import LSPplot
 
@@ -36,6 +37,29 @@ def parser():
   return args
 
 
+def read_DB(idL,args):
+  puls = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['Pulse==0'])
+  puls_rfi = pd.read_hdf('SinlgePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
+  
+  #-----------------------------------
+  #Selection of values in the database
+  #-----------------------------------
+  puls = puls[(puls['DM']>args.dmlo) & (puls['DM']<args.dmhi) & (puls['Time']>args.tmlo) & (puls['Time']<args.tmhi) & (puls['SAP'].isin(args.sap)) & (puls['BEAM'].isin(args.beam))]
+  puls_rfi = puls_rfi[(puls_rfi['DM']>args.dmlo) & (puls_rfi['DM']<args.dmhi) & (puls_rfi['Time']>args.tmlo) & (puls_rfi['Time']<args.tmhi) & (puls_rfi['SAP'].isin(args.sap)) & (puls_rfi['BEAM'].isin(args.beam))]
+  
+  if not puls.empty: 
+    data = pd.read_hdf('SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
+    top_candidates = puls.iloc[:10]
+  
+  meta_data = pd.read_hdf('SinlgePulses.hdf5','meta_data')
+  print meta_data['SAP'].astype(int)
+  meta_data = meta_data[(meta_data['SAP'].astype(int).isin(args.sap)) & (meta_data['BEAM'].astype(int).isin(args.beam))]
+  
+  
+  
+  
+  return puls,puls_rfi,data,meta_data,top_candidates
+
 
 
 def main():
@@ -49,10 +73,18 @@ def main():
 
   if (os.path.isfile('SinlgePulses.hdf5')):
     print "The DataBase will be plotted."
-    LSPplot.plot(idL,args)
+    
+    puls,puls_rfi,data,meta_data,top_candidates = read_DB(idL,args)
+    
+    meta_data=meta_data.iloc[0]  #per i test
+    
+    LSPplot.plot(idL,puls,puls_rfi,data,meta_data,top_candidates)
+    
     
   else:
     print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"
+    
+    
     
 if __name__ == '__main__':
   main()

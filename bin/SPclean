@@ -11,6 +11,7 @@ Written by Daniele Michilli
 import os
 import time
 import argparse
+import logging
 
 import SPclean
 
@@ -19,11 +20,14 @@ def parser():
   # Command-line options
   #---------------------
 
-  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program read the database in the current directory created through DBmaker.py")
-  parser.add_argument("-w", help="Force the creation of a DataBase also if another is already present.", action='store_true')
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
+  parser.add_argument('-pl','--pipeline',help='Automate the procedure',action="store_const",const=logging.WARNING,default=logging.INFO)
+  parser.add_argument("-w", help="Force the creation of a DataBase also if another is already present.",action='store_true')
   args = parser.parse_args()
-
-  return args
+  
+  logging.basicConfig(format='%(message)s',level=args.pipeline)
+  
+  return args,logging
 
 
 def main():
@@ -31,26 +35,29 @@ def main():
   # If the DataBase already exists open it, otherwise creates a new one
   #--------------------------------------------------------------------
   
-  args = parser()
+  args,logging = parser()
   idL = os.path.basename(os.getcwd())
-  
+    
   #If the DataBase exists and the -w option is abstent plots it
-  if ~ os.path.isfile('SinlgePulses.hdf5'):
-    print "The DataBase will be created.\n"
-      time0 = time.clock()  
-      SPclean.obs_events(idL)
-      print 'The DataBase has been created.\nTime spent: ', time.clock() - time0, ' s'
+  if not os.path.isfile('SinlgePulses.hdf5'):
+    logging.info("The DataBase will be created.\n")
+    time0 = time.clock()  
+    SPclean.obs_events(idL,logging)
+    logging.info('The DataBase has been created.\nTime spent: ', time.clock() - time0, ' s')
       
   #Otherwise create a new DataBase
   elif args.w: 
-    print "\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!"
-    if 1: #raw_input("A DataBase is already present.\nDo you want to overwrite it? [y] n\n") == 'y':
+    logging.info("\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!")
+    
+    if logging.getLogger().getEffectiveLevel()>logging.INFO:
+      SPclean.obs_events(idL,logging)
+    
+    elif raw_input("A DataBase is already present.\nDo you want to overwrite it? [y/n]\n") == 'y':
       time0 = time.clock()  
-      SPclean.obs_events(idL)
+      SPclean.obs_events(idL,logging)
       print 'The DataBase has been created.\nTime spent: ', time.clock() - time0, ' s'
+      
+  else: logging.info("The DataBase already exists!\nUse the command LSPplot to plot it or the -w option to overwrite it.")
 
 if __name__ == '__main__':
   main()
-  
-  
- 
