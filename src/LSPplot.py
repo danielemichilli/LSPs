@@ -11,35 +11,24 @@ import pandas as pd
 import matplotlib as mpl
 import numpy as np
 import tarfile
+import os
 
 from Parameters import *
 
-def plot(idL,puls,puls_rfi,data,meta_data,top_candidates,size=False,color=False,store=False):
-
+def plot(idL,puls,puls_rfi,meta_data,top_candidates,color=True,store=False):
   
-  if size: 
-    sig=(data.Sigma/5.)**4
-  else:
-    sig=8
+  store='SAP'+str(0)+'_BEAM'+str(14)
+  #store='SAP'+str(1)+'_BEAM'+str(71)
+    
+  col = puls.Sigma
+  if color: 
+    cmap = plt.get_cmap('gist_heat_r')
+    fill = u'b'
+  else: 
+    cmap = plt.get_cmap('Greys')
+    fill = u'k'
 
-  if color:
-    
-    if data.SAP.unique().shape[0] + data.BEAM.unique().shape[0] > 2:
-      #col = data.SAP *10 + (data.BEAM-13) *10./62.
-      
-      col = puls.SAP *10 + (puls.BEAM-13) *10./62.
-      
-      #col = puls.index.values.astype(float)
-    
-    else:
-      col = puls.index.values
-
-  else:
-    col=u'r' 
-    
-    
   fig = plt.figure()
-
   
   ax1 = plt.subplot2grid((3,4),(1,0),colspan=4,rowspan=2)
   ax2 = plt.subplot2grid((3,4),(0,1))
@@ -47,129 +36,133 @@ def plot(idL,puls,puls_rfi,data,meta_data,top_candidates,size=False,color=False,
   ax4 = plt.subplot2grid((3,4),(0,0))
   ax5 = plt.subplot2grid((3,4),(0,3))
 
+  fig.tight_layout()
     
-  ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=20., c=u'k',marker='+')
+  ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=5., c=u'k',marker='+',linewidths=[0.4,])
   
   if not puls.empty: 
+    ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
+    ax1.scatter(top_candidates.Time,top_candidates.DM,s=100.,linewidths=[0.,],c=fill,marker='*')
+    ax1.set_yscale('log')
+        
+    mpl.rc('font', size=5)
+    for i in range(0,top_candidates.shape[0]):
+      ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.1),horizontalalignment='center',verticalalignment='bottom')
 
-    ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k')
-
-    ax1.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, ecolor='k')#ecolor=col)
-  
-    ax1.scatter(puls.Time, puls.DM, facecolors=col, s=150.)
-
-    if color & (puls.shape[0]):   #Testare che faccia tutto bene, sembra troppo robusto
-      ticks = np.linspace(col.min(),col.max(),num=10)
-      bar = plt.colorbar(ticks=ticks)
-      bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
-      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-      bar.update_ticks
-      bar.ax.xaxis.set_ticks_position('top')
-
-    ax2.hist(puls.DM.tolist(),bins=1000,histtype='stepfilled',color='k')
+    ax2.hist(puls.DM.tolist(),bins=100,histtype='stepfilled',color='k')
     ax2.set_xlabel('DM (pc/cm3)')
     ax2.set_ylabel('Counts')
 
-    ax3.scatter(puls.Sigma,puls.DM,c='k')
+    ax3.scatter(puls.Sigma,puls.DM,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
+    ax3.scatter(top_candidates.Sigma,top_candidates.DM,s=15.,linewidths=[0.,],c='b',marker='*')
     ax3.set_xlabel('SNR')
     ax3.set_ylabel('DM (pc/cm3)')
     ax3.axis([puls.Sigma.min(),puls.Sigma.max()+1.,0,550])
+    mpl.rc('font', size=3.5)
+    for i in range(0,top_candidates.shape[0]):
+      ax3.annotate(i,xy=(top_candidates.Sigma.iloc[i],top_candidates.DM.iloc[i]+10),horizontalalignment='center',verticalalignment='bottom')
     
-    ax4.hist(puls.Sigma.tolist(),bins=1000,histtype='stepfilled',color='k')
+    ax4.hist(puls.Sigma.tolist(),bins=100,histtype='step',color='k')
     ax4.set_xlabel('SNR')
     ax4.set_ylabel('Counts')
+    ax4.set_yscale('log')
     
-    print meta_data
-    
-    ax5.axis([0,10,0,6])
-    ax5.annotate('File: '+str(meta_data[0]), xy=(1,5))
-    ax5.annotate('Telescope: '+meta_data[1], xy=(1,4))
-    ax5.annotate('RA: '+meta_data[2], xy=(1,3))
-    ax5.annotate('DEC: '+meta_data[3], xy=(1,2))
-    ax5.annotate('Epoch (MJD): '+meta_data[4], xy=(1,1))
+    mpl.rc('font', size=5)
+    ax5.axis([0,10,0,7])
+    ax5.annotate('File: '+meta_data.File.iloc[0], xy=(1,6))
+    ax5.annotate('Telescope: '+meta_data.Telescope.iloc[0], xy=(1,5))
+    ax5.annotate('Instrument: '+meta_data.Instrument.iloc[0], xy=(1,4))
+    ax5.annotate('RA: '+meta_data.RA.iloc[0], xy=(1,3))
+    ax5.annotate('DEC: '+meta_data.DEC.iloc[0], xy=(1,2))
+    ax5.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(1,1))
     ax5.axis('off')
 
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,0,550])
+  ax1.axis([0,3600,5,550])
   
-  #fig.subplots_adjust(wspace=0)   
-  #for ax in [ax2, ax3]:
-    #plt.setp(ax.get_yticklabels(), visible=False)
-
   if store:
-    store = 1    
-    
+    mpl.rc('font',size=5)
+    plt.savefig('sp/'+store+'/'+idL+'_'+store+".png",format='png',bbox_inches='tight',dpi=200)
+  
   else: plt.show()
   
   return
   
 
 
-def store(idL,puls,puls_rfi,data,size=False,color=False):
+
+
+def sp(idL,top_candidates,data,meta_data,size=True,store=False):
+  
+  store='SAP'+str(0)+'_BEAM'+str(14)
+  #store='SAP'+str(1)+'_BEAM'+str(71)
+  
+  fig = plt.figure()
+  
+  for i in range(0,top_candidates.shape[0]):
+  
+    puls = top_candidates.iloc[i]
+    events = data[data.Pulse==puls.name]
+    
+    if size: sig=(events.Sigma/5.)**4
+    else: sig=8
+  
+    ax = plt.subplot2grid((2,5),(i/5,i%5))
+    ax.scatter(events.Time, events.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
+    ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, ecolor='r')
+    #ax.set_title = "Pulse "+str(i)+" (DM "+str(puls.DM)+")"
+    #ax.set_xlabel('Time (s)')
+    #ax.set_ylabel('DM (pc/cm3)')
+    
+    fig.tight_layout()
+    
+  #fig.text(0.5, 0.04, 'Time (s)', ha='center', va='center')
+  #fig.text(0.06, 0.5, 'DM (pc/cm3)', ha='center', va='center', rotation='vertical')
 
   
-  if size: 
-    sig=(data.Sigma/5.)**4
-  else:
-    sig=8
+    
+  if store:
+    mpl.rc('font',size=5)
+    plt.savefig('sp/'+store+'/'+"top_pulses.png",format='png',bbox_inches='tight',dpi=200)
+  
+  else: plt.show()
+  
+  return
 
+
+def top_candidates(idL,puls,color=True,store=False): #top_candidates di tutti i beams
+
+  #store='SAP'+str(0)+'_BEAM'+str(14)
+  store='SAP'+str(1)+'_BEAM'+str(71)
+      
   if color:
-    
-    if data.SAP.unique().shape[0] + data.BEAM.unique().shape[0] > 2:
-      #col = data.SAP *10 + (data.BEAM-13) *10./62.
-      
-      col = puls.SAP *10 + (puls.BEAM-13) *10./62.
-      
-      #col = puls.index.values.astype(float)
-    
-    else:
-      col = puls.index.values
-
+    col = puls.SAP *10 + (puls.BEAM-13) /6.
   else:
     col=u'r' 
     
+  plt.scatter(puls.Time,puls.DM,s=100.,linewidths=[0.,],c=col)  #cmap=cmap
+  plt.xlabel('Time (s)')
+  plt.ylabel('DM (pc/cm3)')
+  plt.axis([0,3600,5,550])
+  
+  if color:   #Testare che faccia tutto bene, sembra troppo robusto
+    ticks = np.linspace(col.min(),col.max(),num=10)
+    bar = plt.colorbar(ticks=ticks)
+    bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
+    bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+    bar.update_ticks
+    bar.ax.xaxis.set_ticks_position('top')
     
-  fig = plt.figure()
+  if store:
+    mpl.rc('font',size=5)
+    plt.savefig('sp/'+store+'/'+"top_candidates.png",format='png',bbox_inches='tight',dpi=200)
   
-  ax1 = plt.subplot2grid((2,4),(1,0),colspan=3)
-  ax2 = plt.subplot2grid((2,4),(0,1))
-  ax3 = plt.subplot2grid((2,4),(0,2))
-  ax4 = plt.subplot2grid((2,4),(0,0))
+  else: plt.show()
+      
     
-  ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=20., c=u'k',marker='+')
-  
-  if not puls.empty: 
-
-    ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k')
-
-    ax1.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, ecolor='k')#ecolor=col)
-  
-    ax1.scatter(puls.Time, puls.DM, facecolors=col, s=150.)
-
-    if color & (puls.shape[0]):   #Testare che faccia tutto bene, sembra troppo robusto
-      ticks = np.linspace(col.min(),col.max(),num=10)
-      bar = plt.colorbar(ticks=ticks)
-      bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10/10.*62.+13) for t in ticks])
-      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-      bar.update_ticks
-      bar.ax.xaxis.set_ticks_position('top')
-
-    ax2.hist(puls.DM.tolist(),bins=1000,histtype='stepfilled',color='k')
-    ax2.set_xlabel('DM (pc/cm3)')
-    ax2.set_ylabel('Counts')
-
-    ax3.scatter(puls.Sigma,puls.DM,c='k')
-    ax3.set_xlabel('SNR')
-    ax3.set_ylabel('DM (pc/cm3)')
-    ax3.axis([puls.Sigma.min(),puls.Sigma.max()+1.,0,550])
     
-    ax4.hist(puls.Sigma.tolist(),bins=1000,histtype='stepfilled',color='k')
-    ax4.set_xlabel('SNR')
-    ax4.set_ylabel('Counts')
-
-  ax1.set_xlabel('Time (s)')
-  ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,0,550])
-  
-  
+    
+def beams(): #total counts di ogni beam
+  b
+      

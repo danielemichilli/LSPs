@@ -52,11 +52,7 @@ def read_DB(idL,args):
     top_candidates = puls.iloc[:10]
   
   meta_data = pd.read_hdf('SinlgePulses.hdf5','meta_data')
-  print meta_data['SAP'].astype(int)
   meta_data = meta_data[(meta_data['SAP'].astype(int).isin(args.sap)) & (meta_data['BEAM'].astype(int).isin(args.beam))]
-  
-  
-  
   
   return puls,puls_rfi,data,meta_data,top_candidates
 
@@ -74,13 +70,17 @@ def main():
   if (os.path.isfile('SinlgePulses.hdf5')):
     print "The DataBase will be plotted."
     
+    dim = len(args.sap)+len(args.beam)-1
+    
     puls,puls_rfi,data,meta_data,top_candidates = read_DB(idL,args)
     
-    meta_data=meta_data.iloc[0]  #per i test
-    
-    LSPplot.plot(idL,puls,puls_rfi,data,meta_data,top_candidates)
-    
-    
+    if dim<=1:
+      LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates)
+      LSPplot.sp(idL,top_candidates,data,meta_data)
+    else:
+      LSPplot.top_candidates(idL,top_candidates)
+      #LSPplot.beams()
+  
   else:
     print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"
     
