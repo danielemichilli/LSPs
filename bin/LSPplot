@@ -73,7 +73,7 @@ def main():
     dim = len(args.sap)+len(args.beam)-1
     
     puls,puls_rfi,data,meta_data,top_candidates = read_DB(idL,args)
-    
+        
     if dim<=1:
       LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates)
       LSPplot.sp(idL,top_candidates,data,meta_data)
