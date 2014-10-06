@@ -7,6 +7,7 @@
 ########################################
 
 import numpy as np
+import pandas as pd
 
 import C_Funct
 from Parameters import *
@@ -56,7 +57,7 @@ def Pulse_Thresh(puls,gb,data):
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  puls.Pulse[puls.dDM > 1.] += 3
+  #puls.Pulse[puls.dDM > 1.] += 3
   
   Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
   Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
@@ -89,7 +90,7 @@ def Pulse_Thresh(puls,gb,data):
   
   
   f = data[data.Pulse.isin(puls[puls.Pulse<RFI_percent].index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
-  puls.Pulse[(puls.Pulse<5) & ((f<-33.6)|(f>-8.55))] += 1
+  puls.Pulse[(puls.Pulse<RFI_percent) & ((f<-33.6)|(f>-8.55))] += 1
 
 
   return puls
@@ -170,7 +171,7 @@ def Compare_Beams(puls):
   sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   
   
-  print 'Comprarison is starting'
+  print 'Comparison is starting'
   
         
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
@@ -195,3 +196,82 @@ def Compare_Beams(puls):
     
   return puls
 
+
+
+
+def best_pulses(puls,data):
+  
+  print puls.shape[0]
+  
+  gb = data.groupby('Pulse',sort=False)
+  
+  best = puls[gb.Time.apply(np.var) < 0.000107]
+  data = data[data.Pulse.isin(best.index)]
+  
+  k = 4.1488078e3  #s
+  delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
+  best.Time  -= best.DM * delay
+  data.Time  -= data.DM * delay
+  
+  gb = best.groupby(best.index,sort=False)
+  N_events = gb.DM.count()
+
+  best0 = best[(best.DM<=40.5) & (best.dDM/(N_events-1)/0.01 < 0.667)]
+  best1 = best[(best.DM>40.5) & (best.DM<=141.7) & (best.dDM/(N_events-1)/0.05 < 0.667)]
+  best2 = best[(best.DM>141.7) & (best.dDM/(N_events-1)/0.1 < 0.667)]
+  
+  best = pd.concat([best0,best1,best2])
+  data = data[data.Pulse.isin(best.index)]
+  
+  
+  best0=0
+  best1=0
+  best2=0
+  
+  gb = best.groupby(best.index,sort=False)
+  N_events = gb.DM.count()
+  
+  best = best[N_events/best.Sigma < 17.8]
+  data = data[data.Pulse.isin(best.index)]
+
+  gb = best.groupby(best.index,sort=False)
+
+  best = best[abs(best.DM-best.DM_c)/best.dDM < 0.714] #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
+  data = data[data.Pulse.isin(best.index)]
+
+  gb = best.groupby(best.index,sort=False)
+  Sigma_min = gb.Sigma.min()
+
+  best = best[best.Sigma/Sigma_min > 1.06]  #*(N_elements-5)/10.
+  data = data[data.Pulse.isin(best.index)]
+
+  gb = best.groupby(best.index,sort=False)
+  Sigma_min = gb.Sigma.min()
+
+  best = best[best.Sigma/Sigma_min**4 > 0.00797]
+  data = data[data.Pulse.isin(best.index)]
+
+  gb = best.groupby(best.index,sort=False)
+  Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
+  Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
+  
+  best = best[abs(Sigma_DM_max-Sigma_DM_min) < 1.02]
+  data = data[data.Pulse.isin(best.index)]
+
+  gb = best.groupby(best.index,sort=False)
+  Time_DM_max = data.Time[gb.DM.idxmax()].values
+  Time_DM_min = data.Time[gb.DM.idxmin()].values
+
+  best = best[best.dDM/best.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max) > 11.3]  
+  data = data[data.Pulse.isin(best.index)]
+
+  if not best.empty:
+    f = data.loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
+    best = best[(f>-33.6) & (f<-8.55)]
+  
+  best.Time  += best.DM * delay
+  
+  print best.shape[0]
+
+  return best.groupby(['SAP','BEAM'],sort=False).head(10)
+  

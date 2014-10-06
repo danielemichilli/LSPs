@@ -6,27 +6,32 @@
 #
 #############################
 
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
-import matplotlib as mpl
 import numpy as np
 import tarfile
 import os
 
 from Parameters import *
 
-def plot(idL,puls,puls_rfi,meta_data,top_candidates,color=True,store=False):
+def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
   
-  store='SAP'+str(0)+'_BEAM'+str(14)
+  store='SAP'+str(1)+'_BEAM'+str(24)
   #store='SAP'+str(1)+'_BEAM'+str(71)
     
   col = puls.Sigma
   if color: 
     cmap = plt.get_cmap('gist_heat_r')
     fill = u'b'
+    square = u'g'
   else: 
     cmap = plt.get_cmap('Greys')
     fill = u'k'
+    square = u'k'
+    
+  sig = (top_candidates.Sigma/4.5)**5
 
   fig = plt.figure()
   
@@ -40,14 +45,18 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,color=True,store=False):
     
   ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=5., c=u'k',marker='+',linewidths=[0.4,])
   
-  if not puls.empty: 
+ 
+  if not puls.empty:
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-    ax1.scatter(top_candidates.Time,top_candidates.DM,s=100.,linewidths=[0.,],c=fill,marker='*')
+    
+    ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
+    ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig,linewidths=[1.,],c=square,marker='s')
+    
     ax1.set_yscale('log')
         
     mpl.rc('font', size=5)
     for i in range(0,top_candidates.shape[0]):
-      ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.1),horizontalalignment='center',verticalalignment='bottom')
+      ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
 
     ax2.hist(puls.DM.tolist(),bins=100,histtype='stepfilled',color='k')
     ax2.set_xlabel('DM (pc/cm3)')
@@ -85,17 +94,16 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,color=True,store=False):
     mpl.rc('font',size=5)
     plt.savefig('sp/'+store+'/'+idL+'_'+store+".png",format='png',bbox_inches='tight',dpi=200)
   
-  else: plt.show()
+  else: 
+    plt.show()
   
   return
   
 
 
-
-
 def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   
-  store='SAP'+str(0)+'_BEAM'+str(14)
+  #store='SAP'+str(0)+'_BEAM'+str(14)
   #store='SAP'+str(1)+'_BEAM'+str(71)
   
   fig = plt.figure()
@@ -131,20 +139,23 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   return
 
 
-def top_candidates(idL,puls,color=True,store=False): #top_candidates di tutti i beams
-
-  #store='SAP'+str(0)+'_BEAM'+str(14)
-  store='SAP'+str(1)+'_BEAM'+str(71)
-      
-  if color:
-    col = puls.SAP *10 + (puls.BEAM-13) /6.
-  else:
-    col=u'r' 
+def top_candidates(idL,puls,color=True,size=True,store=False): #top_candidates di tutti i beams
+  
+  store=True
+  
+  
+  if color: col = puls.SAP *10 + (puls.BEAM-13) /6.
+  else: col=u'r' 
+  
+  if size: sig=(puls.Sigma/6.)**4
+  else: sig=100.
     
-  plt.scatter(puls.Time,puls.DM,s=100.,linewidths=[0.,],c=col)  #cmap=cmap
+  plt.scatter(puls.Time,puls.DM,s=sig,linewidths=[0.,],c=col)  #cmap=cmap
   plt.xlabel('Time (s)')
   plt.ylabel('DM (pc/cm3)')
   plt.axis([0,3600,5,550])
+  plt.yscale('log')
+  plt.title(idL+" - Best Candidates")
   
   if color:   #Testare che faccia tutto bene, sembra troppo robusto
     ticks = np.linspace(col.min(),col.max(),num=10)
@@ -156,7 +167,7 @@ def top_candidates(idL,puls,color=True,store=False): #top_candidates di tutti i 
     
   if store:
     mpl.rc('font',size=5)
-    plt.savefig('sp/'+store+'/'+"top_candidates.png",format='png',bbox_inches='tight',dpi=200)
+    plt.savefig('sp/top_candidates.png',format='png',bbox_inches='tight',dpi=200)
   
   else: plt.show()
       

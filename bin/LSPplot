@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 '''
 
@@ -49,7 +49,7 @@ def read_DB(idL,args):
   
   if not puls.empty: 
     data = pd.read_hdf('SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
-    top_candidates = puls.iloc[:10]
+    top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)#puls.iloc[:10]
   
   meta_data = pd.read_hdf('SinlgePulses.hdf5','meta_data')
   meta_data = meta_data[(meta_data['SAP'].astype(int).isin(args.sap)) & (meta_data['BEAM'].astype(int).isin(args.beam))]
@@ -84,6 +84,7 @@ def main():
   else:
     print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"
     
+  return
     
     
 if __name__ == '__main__':

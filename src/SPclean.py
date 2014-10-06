@@ -135,12 +135,17 @@ def obs_events(idL,logging):
   #Compares pulses in different beams
   puls = RFIexcision.Compare_Beams(puls[puls.BEAM>12])
   meta_data = meta_data.astype(str)
+  
+  puls.sort(['SAP','BEAM','Pulse','Sigma'],ascending=[True,True,True,False],inplace=True)
+  
+  best_puls = RFIexcision.best_pulses(puls[puls.Pulse==0],data[data.Pulse.isin(puls.index[puls.Pulse==0])])
 
-  output(idL,puls,data,meta_data)
+
+  output(idL,puls,best_puls,data,meta_data)
 
   #Stores the table into a DataBase
   if not data.empty:
-    store = pd.HDFStore('SinlgePulses.hdf5','w')
+    store = pd.HDFStore('sp/SinlgePulses.hdf5','w')
     store.append(idL,data,data_columns=['Pulse'])
     store.append(idL+'_pulses',puls,data_columns=['Pulse'])
     store.append('meta_data',meta_data)
@@ -149,13 +154,11 @@ def obs_events(idL,logging):
   return
 
 
-def output(idL,puls,data,meta_data):
+def output(idL,puls,best_puls,data,meta_data):
   if not data.empty:
     if os.path.exists('sp'): shutil.rmtree('sp')
     os.makedirs('sp')
-    
-    puls.sort(['SAP','BEAM','Pulse','Sigma'],ascending=[True,True,True,False],inplace=True)
-    
+        
     for sap in range(0,3):
       for beam in range(12,74):
         puls_plot = puls[(puls.SAP==sap)&(puls.BEAM==beam)]
@@ -167,6 +170,7 @@ def output(idL,puls,data,meta_data):
           rfi = puls_plot[puls_plot.Pulse==Pulse_min+1]
           data_plot = data[data.Pulse.isin(astro.index)]
           meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
-          LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],store=name)
+          best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
+          LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store=name)
         
   return
