@@ -11,6 +11,7 @@ import numpy as np
 import tarfile
 import os
 import shutil
+import logging
 
 import RFIexcision
 import Group
@@ -37,7 +38,7 @@ def openSB(idL,sap,beam):
     data.Sampling = data.Sampling*data.Downfact/2.
     data.rename(columns={'Sampling': 'Duration'},inplace=True)
     data.Duration = data.Duration.astype(np.float32)
-    inf = pd.read_csv(inf_file, sep="=", dtype=str,error_bad_lines=False,header=None,skipinitialspace=True)
+    inf = pd.read_csv(inf_file, sep="=", dtype=str,error_bad_lines=False,warn_bad_lines=False,header=None,skipinitialspace=True)
     
     #Select the interesting columns
     data = data.ix[:,['DM','Sigma','Time','Duration']]
@@ -59,7 +60,7 @@ def openSB(idL,sap,beam):
 
 
 
-def obs_events(idL,logging):
+def obs_events(idL):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
@@ -83,7 +84,7 @@ def obs_events(idL,logging):
   #Adds each clean beam to the table
   for sap in range(0,3):
     
-    print 'SAP: ',sap
+    logging.info('SAP: %s',sap)
   
     #Cleans and groups incoherent beams
     data_inc,inf = openSB(idL,sap,12)
@@ -172,5 +173,8 @@ def output(idL,puls,best_puls,data,meta_data):
           meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
           best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
           LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store=name)
-        
+          LSPplot.sp(idL,astro.iloc[:10],data,meta_data_plot,store=name+"/top_candidates.png")
+          LSPplot.sp(idL,best_puls_plot,data,meta_data_plot,store=name+"/best_pulses.png")
+    LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True)        
+
   return

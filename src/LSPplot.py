@@ -18,7 +18,7 @@ from Parameters import *
 
 def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
   
-  store='SAP'+str(1)+'_BEAM'+str(24)
+  #store='SAP'+str(1)+'_BEAM'+str(24)
   #store='SAP'+str(1)+'_BEAM'+str(71)
     
   col = puls.Sigma
@@ -31,7 +31,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     fill = u'k'
     square = u'k'
     
-  sig = (top_candidates.Sigma/4.5)**5
+  sig = (top_candidates.Sigma/6.5)**5
 
   fig = plt.figure()
   
@@ -50,7 +50,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     
     ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
-    ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig,linewidths=[1.,],c=square,marker='s')
+    ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig/4.,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
     
     ax1.set_yscale('log')
         
@@ -127,30 +127,30 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
     
   #fig.text(0.5, 0.04, 'Time (s)', ha='center', va='center')
   #fig.text(0.06, 0.5, 'DM (pc/cm3)', ha='center', va='center', rotation='vertical')
-
-  
     
   if store:
-    mpl.rc('font',size=5)
-    plt.savefig('sp/'+store+'/'+"top_pulses.png",format='png',bbox_inches='tight',dpi=200)
+    if not top_candidates.empty:
+      mpl.rc('font',size=5)
+      plt.savefig('sp/'+store,format='png',bbox_inches='tight',dpi=200)
   
   else: plt.show()
   
   return
 
 
-def top_candidates(idL,puls,color=True,size=True,store=False): #top_candidates di tutti i beams
+def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
   
-  store=True
+  #store=True
   
   
-  if color: col = puls.SAP *10 + (puls.BEAM-13) /6.
+  if color: col = top_candidates.SAP *10 + (top_candidates.BEAM-13) /6.
   else: col=u'r' 
   
-  if size: sig=(puls.Sigma/6.)**4
+  if size: sig=(top_candidates.Sigma/6.)**4
   else: sig=100.
     
-  plt.scatter(puls.Time,puls.DM,s=sig,linewidths=[0.,],c=col)  #cmap=cmap
+  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col)  #cmap=cmap
+  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[0.,],c=col)
   plt.xlabel('Time (s)')
   plt.ylabel('DM (pc/cm3)')
   plt.axis([0,3600,5,550])
