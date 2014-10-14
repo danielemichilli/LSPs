@@ -5,6 +5,9 @@
 
 
 
+METTERE LINEA BIANCA IN OUTPUT top candidates E best pulses QUANDO CAMBIA BEAM!!!!
+
+
 3: informazioni da scrivere
 
 file 1: top candidates

@@ -8,7 +8,7 @@
 
 
 DM_MIN = 5.
-SIGMA_MIN = 5.
+SIGMA_MIN = 8.
 DURATION_MAX = 0.024576
 
 

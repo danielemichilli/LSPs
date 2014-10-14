@@ -10,12 +10,30 @@ import pandas as pd
 import numpy as np
 import tarfile
 import os
-import shutil
 import logging
 
 import RFIexcision
 import Group
 import LSPplot
+
+
+def initialize():
+  #Creates the tables in memory
+  meta_data = pd.DataFrame(columns=['SAP','BEAM','File','Telescope','Instrument','RA','DEC','Epoch'])
+  data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse'])
+  puls = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c'])
+  
+  data = data.astype(np.float32)
+  data.SAP = data.SAP.astype(np.uint8)
+  data.BEAM = data.BEAM.astype(np.uint8)
+  data.Pulse = data.Pulse.astype(np.int32)
+  
+  puls = puls.astype(np.float32)
+  puls.SAP = puls.SAP.astype(np.uint8)
+  puls.BEAM = puls.BEAM.astype(np.uint8)
+  puls.Pulse = puls.Pulse.astype(np.int8)
+  
+  return data,puls,meta_data
 
 
 def openSB(idL,sap,beam):
@@ -64,22 +82,8 @@ def obs_events(idL):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
- 
-  #Creates the tables
-  meta_data = pd.DataFrame(columns=['SAP','BEAM','File','Telescope','Instrument','RA','DEC','Epoch'])
-  data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse'])
-  puls = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c'])
   
-  data = data.astype(np.float32)
-  data.SAP = data.SAP.astype(np.uint8)
-  data.BEAM = data.BEAM.astype(np.uint8)
-  data.Pulse = data.Pulse.astype(np.int32)
-  
-  puls = puls.astype(np.float32)
-  puls.SAP = puls.SAP.astype(np.uint8)
-  puls.BEAM = puls.BEAM.astype(np.uint8)
-  puls.Pulse = puls.Pulse.astype(np.int8)
-  
+  data,puls,meta_data = initialize()
   
   #Adds each clean beam to the table
   for sap in range(0,3):
@@ -88,7 +92,7 @@ def obs_events(idL):
   
     #Cleans and groups incoherent beams
     data_inc,inf = openSB(idL,sap,12)
-    if data_inc.empty: logging.info("SAP "+str(sap)+" - BEAM 12 doesn't exist!")
+    if data_inc.empty: logging.warning("SAP "+str(sap)+" - BEAM 12 doesn't exist!")
     else:
       data_inc = RFIexcision.IB_Event_Thresh(data_inc) 
       data_inc, puls_inc = Group.Pulses(data_inc,sap,12)
@@ -100,7 +104,7 @@ def obs_events(idL):
     #Cleans and groups coherent beams
     for beam in range(13,74):
       data_sb,inf = openSB(idL,sap,beam)
-      if data_sb.empty: logging.info("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
+      if data_sb.empty: logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
       else:
         data_sb = RFIexcision.Event_Thresh(data_sb)
         data_sb, puls_sb = Group.Pulses(data_sb,sap,beam)
@@ -142,8 +146,6 @@ def obs_events(idL):
   best_puls = RFIexcision.best_pulses(puls[puls.Pulse==0],data[data.Pulse.isin(puls.index[puls.Pulse==0])])
 
 
-  output(idL,puls,best_puls,data,meta_data)
-
   #Stores the table into a DataBase
   if not data.empty:
     store = pd.HDFStore('sp/SinlgePulses.hdf5','w')
@@ -151,15 +153,15 @@ def obs_events(idL):
     store.append(idL+'_pulses',puls,data_columns=['Pulse'])
     store.append('meta_data',meta_data)
     store.close()
+    
+  output(idL,puls,best_puls,data,meta_data)
       
   return
 
 
 def output(idL,puls,best_puls,data,meta_data):
+
   if not data.empty:
-    if os.path.exists('sp'): shutil.rmtree('sp')
-    os.makedirs('sp')
-        
     for sap in range(0,3):
       for beam in range(12,74):
         puls_plot = puls[(puls.SAP==sap)&(puls.BEAM==beam)]
@@ -175,6 +177,29 @@ def output(idL,puls,best_puls,data,meta_data):
           LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store=name)
           LSPplot.sp(idL,astro.iloc[:10],data,meta_data_plot,store=name+"/top_candidates.png")
           LSPplot.sp(idL,best_puls_plot,data,meta_data_plot,store=name+"/best_pulses.png")
-    LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True)        
+    LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True) 
+    
+    
+    best_puls['code'] = best_puls.index
+    
+    a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+    b = [val for sublist in a for val in sublist]
+    best_puls.index=b
+    best_puls.Duration *= 1000
+    best_puls['void'] = ''
+    
+    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
+
+    
+    top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
+    top_candidates['code'] = top_candidates.index
+    
+    a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+    b = [val for sublist in a for val in sublist]
+    top_candidates.index=b
+    top_candidates.Duration *= 1000
+    top_candidates['void'] = ''
+    
+    top_candidates.to_csv('sp/top_candidates.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
 
   return

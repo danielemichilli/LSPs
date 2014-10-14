@@ -11,10 +11,12 @@ Written by Daniele Michilli
 import os
 import time
 import argparse
-import logging
 import warnings
 import numpy as np
 import pandas as pd
+import logging
+import sys
+import shutil
 
 import SPclean
 
@@ -24,14 +26,58 @@ def parser():
   #---------------------
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
-  parser.add_argument('-pl','--pipeline',help='Automate the procedure',action="store_const",const=logging.ERROR,default=logging.INFO)
-  parser.add_argument("-w", help="Force the creation of a DataBase also if another is already present.",action='store_true')
+  parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
+  parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
+  parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
-
-  logging.basicConfig(format='%(message)s',level=args.pipeline)
-
+  
+  
+  ch = logging.StreamHandler()
+  
+  if args.debug: 
+    logformat = '[%(asctime)s] {%(pathname)s:%(lineno)d} - %(message)s'
+    formatter = logging.Formatter(fmt=logformat)
+    ch.setLevel(logging.ERROR)
+  else: 
+    formatter = logging.Formatter('%(message)s')
+    ch.setLevel(args.pipeline)
+  ch.setFormatter(formatter)
+  logging.getLogger('').addHandler(ch)
+  
   return args
 
+
+
+def create_DB(idL,args):
+  
+  if os.path.exists('sp'): shutil.rmtree('sp')
+  os.makedirs('sp')
+  
+
+  TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+  logformat = '[%(asctime)s] - %(message)s'
+  formatter = logging.Formatter(fmt=logformat, datefmt=TIME_FORMAT) 
+  fh = logging.FileHandler('sp/processing.log')
+  fh.setLevel(logging.WARNING)
+  fh.setFormatter(formatter)
+  logging.getLogger('').addHandler(fh)
+    
+  logging.warning("The DataBase is being created.\n")
+  
+  try:
+    time0 = time.clock()
+    SPclean.obs_events(idL)
+    logging.warning("\n")
+    logging.warning("The DataBase has been created.")
+    logging.warning("Time spent: %.2f s"%(time.clock() - time0))
+        
+  except:
+    e = sys.exc_info()
+    logging.error("")
+    logging.error("ATTENTION! Processing Error: %s - %s\n"%(e[0],e[1]))
+     
+  return
+    
 
 def main():
   #--------------------------------------------------------------------
@@ -39,32 +85,36 @@ def main():
   #--------------------------------------------------------------------
 
   args = parser()
-  warnings.simplefilter('ignore', np.RankWarning)
-  #warnings.simplefilter('ignore', pd.SettingWithCopyWarning)
-  pd.options.mode.chained_assignment = None
+  if not args.debug: warnings.filterwarnings("ignore")
+  
+  #warnings.simplefilter('ignore', np.RankWarning)
+  #pd.options.mode.chained_assignment = None
   
   idL = os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isfile('SinlgePulses.hdf5'):
-    logging.info("The DataBase will be created.\n")
-    time0 = time.clock()
-    SPclean.obs_events(idL)
-    logging.info("The DataBase has been created.\nTime spent: %s s", time.clock() - time0)
-
+  if not os.path.isfile('sp/SinlgePulses.hdf5'):
+    create_DB(idL,args)
+    
   #Otherwise create a new DataBase
   elif args.w:
     logging.info("\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!")
 
-    if logging.getLogger().getEffectiveLevel()>logging.INFO:
-      SPclean.obs_events(idL)
+    if args.pipeline>logging.INFO:
+      create_DB(idL,args)
 
-    elif raw_input("A DataBase is already present.\nDo you want to overwrite it? [y/n]\n") == 'y':
-      time0 = time.clock()
-      SPclean.obs_events(idL)
-      print 'The DataBase has been created.\nTime spent: {} s'.format(time.clock() - time0)
+    elif raw_input("A DataBase is already present.\nDo you want to overwrite it? [y/n] ") == 'y':
+      create_DB(idL,args)
 
-  else: logging.info("The DataBase already exists!\nUse the command LSPplot to plot it or the -w option to overwrite it.")
+  else:
+    logging.info("The DataBase already exists!\nUse the command LSPplot to plot it or the -w option to overwrite it.")
+
+
 
 if __name__ == '__main__':
-  main()
+  try:
+    main()
+  except:
+    e = sys.exc_info()
+    logging.error("")
+    logging.error("ATTENTION! Processing Error: %s - %s\n"%(e[0],e[1]))
