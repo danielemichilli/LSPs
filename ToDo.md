@@ -7,6 +7,8 @@
 
 METTERE LINEA BIANCA IN OUTPUT top candidates E best pulses QUANDO CAMBIA BEAM!!!!
 
+ERRORE IN BEST PULSES!! 
+
 
 3: informazioni da scrivere
 

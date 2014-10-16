@@ -54,7 +54,7 @@ def create_DB(idL,args):
   os.makedirs('sp')
   
 
-  TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+  TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'
   formatter = logging.Formatter(fmt=logformat, datefmt=TIME_FORMAT) 
   fh = logging.FileHandler('sp/processing.log')
@@ -67,14 +67,13 @@ def create_DB(idL,args):
   try:
     time0 = time.clock()
     SPclean.obs_events(idL)
-    logging.warning("\n")
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.clock() - time0))
         
   except:
     e = sys.exc_info()
-    logging.error("")
-    logging.error("ATTENTION! Processing Error: %s - %s\n"%(e[0],e[1]))
+    logging.error('')
+    logging.error("ATTENTION! Processing Error: %s - %s"%(e[0],e[1]))
      
   return
     
@@ -86,9 +85,6 @@ def main():
 
   args = parser()
   if not args.debug: warnings.filterwarnings("ignore")
-  
-  #warnings.simplefilter('ignore', np.RankWarning)
-  #pd.options.mode.chained_assignment = None
   
   idL = os.path.basename(os.getcwd())
 
@@ -116,5 +112,5 @@ if __name__ == '__main__':
     main()
   except:
     e = sys.exc_info()
-    logging.error("")
-    logging.error("ATTENTION! Processing Error: %s - %s\n"%(e[0],e[1]))
+    logging.error('')
+    logging.error("ATTENTION! Processing Error: %s - %s"%(e[0],e[1]))

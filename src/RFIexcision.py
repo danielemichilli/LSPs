@@ -201,12 +201,13 @@ def Compare_Beams(puls):
 
 
 def best_pulses(puls,data):
-  best = puls
-
   
+  best = puls[puls.Duration<0.0221184]
+  data = data[data.Pulse.isin(best.index)]
   gb = data.groupby('Pulse',sort=False)
   
-  #best = puls[gb.Time.apply(np.var) < 7.97e-5]
+  
+  best = best[gb.Time.apply(np.var) < 7.97e-5]
   data = data[data.Pulse.isin(best.index)]
   
   k = 4.1488078e3  #s

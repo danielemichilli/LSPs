@@ -7,7 +7,7 @@
 #############################
 
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -18,9 +18,6 @@ from Parameters import *
 
 def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
   
-  #store='SAP'+str(1)+'_BEAM'+str(24)
-  #store='SAP'+str(1)+'_BEAM'+str(71)
-    
   col = puls.Sigma
   if color: 
     cmap = plt.get_cmap('gist_heat_r')
@@ -49,8 +46,8 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   if not puls.empty:
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     
-    ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
-    ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig/4.,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
+    if not top_candidates.empty: ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
+    if not best_pulse.empty: ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig/4.,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
     
     ax1.set_yscale('log')
         
@@ -91,6 +88,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   ax1.axis([0,3600,5,550])
   
   if store:
+    plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('sp/'+store+'/'+idL+'_'+store+".png",format='png',bbox_inches='tight',dpi=200)
   
@@ -102,9 +100,6 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
 
 
 def sp(idL,top_candidates,data,meta_data,size=True,store=False):
-  
-  #store='SAP'+str(0)+'_BEAM'+str(14)
-  #store='SAP'+str(1)+'_BEAM'+str(71)
   
   fig = plt.figure()
   
@@ -129,6 +124,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   #fig.text(0.06, 0.5, 'DM (pc/cm3)', ha='center', va='center', rotation='vertical')
     
   if store:
+    plt.switch_backend('Agg')
     if not top_candidates.empty:
       mpl.rc('font',size=5)
       plt.savefig('sp/'+store,format='png',bbox_inches='tight',dpi=200)
@@ -139,9 +135,6 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
 
 
 def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
-  
-  #store=True
-  
   
   if color: col = top_candidates.SAP *10 + (top_candidates.BEAM-13) /6.
   else: col=u'r' 
@@ -166,10 +159,12 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
     bar.ax.xaxis.set_ticks_position('top')
     
   if store:
+    plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('sp/top_candidates.png',format='png',bbox_inches='tight',dpi=200)
   
-  else: plt.show()
+  else: 
+    plt.show()
       
     
     

@@ -7,9 +7,9 @@
 #############################
 
 
-DM_MIN = 5.
-SIGMA_MIN = 8.
-DURATION_MAX = 0.024576
+DM_MIN = 5.  #pc/cm3
+SIGMA_MIN = 8. 
+DURATION_MAX = 0.049152  #s
 
 
 F_MIN = 119.43  #MHz

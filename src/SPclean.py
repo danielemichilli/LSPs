@@ -53,9 +53,15 @@ def openSB(idL,sap,beam):
     #Create the table
     data = pd.read_csv(pulses, delim_whitespace=True, dtype=np.float32)
     data.columns = ['DM','Sigma','Time','Sample','Downfact','Sampling','a','b','c']
-    data.Sampling = data.Sampling*data.Downfact/2.
+    
+    #print data.Downfact.min()
+    
+    data.Sampling = data.Sampling*data.Downfact #/2.
     data.rename(columns={'Sampling': 'Duration'},inplace=True)
     data.Duration = data.Duration.astype(np.float32)
+    
+    
+    
     inf = pd.read_csv(inf_file, sep="=", dtype=str,error_bad_lines=False,warn_bad_lines=False,header=None,skipinitialspace=True)
     
     #Select the interesting columns
@@ -145,17 +151,18 @@ def obs_events(idL):
   
   best_puls = RFIexcision.best_pulses(puls[puls.Pulse==0],data[data.Pulse.isin(puls.index[puls.Pulse==0])])
 
-
+  
   #Stores the table into a DataBase
   if not data.empty:
     store = pd.HDFStore('sp/SinlgePulses.hdf5','w')
     store.append(idL,data,data_columns=['Pulse'])
     store.append(idL+'_pulses',puls,data_columns=['Pulse'])
     store.append('meta_data',meta_data)
+    if not best_puls.empty: store.append('best_pulses',best_puls)
     store.close()
     
   output(idL,puls,best_puls,data,meta_data)
-      
+        
   return
 
 
@@ -180,15 +187,15 @@ def output(idL,puls,best_puls,data,meta_data):
     LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True) 
     
     
-    best_puls['code'] = best_puls.index
+    #best_puls['code'] = best_puls.index
     
-    a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
-    b = [val for sublist in a for val in sublist]
-    best_puls.index=b
-    best_puls.Duration *= 1000
-    best_puls['void'] = ''
+    #a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+    #b = [val for sublist in a for val in sublist]
+    #best_puls.index=b
+    #best_puls.Duration *= 1000
+    #best_puls['void'] = ''
     
-    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
+    #best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
 
     
     top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
