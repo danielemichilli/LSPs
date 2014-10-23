@@ -26,7 +26,7 @@ def Event_Thresh(data):
   data = data[data.Sigma>SIGMA_MIN]
 
   #Remove high durations
-  data = data[data.Duration<DURATION_MAX]
+  data = data[data.Duration<DURATION_MAX]  #BETTER to divide in 3 steps, accordingly to dDMs
   
   #count,div = np.histogram(data.Time,bins=36000)
   #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])]  #forse metodi piu efficienti
@@ -157,11 +157,12 @@ def Compare_IB(coh,incoh):
 
 
 def Compare_Beams(puls):
-
-  count,div = np.histogram(puls.Time,bins=36000)
+  
+  #STUDIARE VALORI E SE METTERE puls.Pulse==0
+  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=36000)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
   
-  count,div = np.histogram(puls.Time,bins=3600)
+  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
   
 
@@ -202,7 +203,7 @@ def Compare_Beams(puls):
 
 def best_pulses(puls,data):
   
-  best = puls[puls.Duration<0.0221184]
+  best = puls  #[puls.Duration<0.0221184]  No duration filter for FRB!!
   data = data[data.Pulse.isin(best.index)]
   gb = data.groupby('Pulse',sort=False)
   
