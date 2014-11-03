@@ -173,7 +173,17 @@ for [puls,rfi_puls] in [[pulsA,rfiA],[pulsB,rfiB],[pulsC,rfiC]]:
     selected75_rfi = selected75_rfi[selected75_rfi.parameter <= p75]
     selected95_rfi = selected95_rfi[selected95_rfi.parameter <= p95]
     selected99_rfi = selected99_rfi[selected99_rfi.parameter <= p99]
-
+    
+    #abs_len60 = len(puls.parameter <= p60) / float(num) *100.
+    #abs_len75 = len(puls.parameter <= p75) / float(num) *100.
+    #abs_len95 = len(puls.parameter <= p95) / float(num) *100.
+    #abs_len99 = len(puls.parameter <= p99) / float(num) *100.
+    
+    #abs_len60_rfi = len(rfi_puls.parameter <= p60) / float(num_rfi) *100.
+    #abs_len75_rfi = len(rfi_puls.parameter <= p75) / float(num_rfi) *100.
+    #abs_len95_rfi = len(rfi_puls.parameter <= p95) / float(num_rfi) *100.
+    #abs_len99_rfi = len(rfi_puls.parameter <= p99) / float(num_rfi) *100.
+        
   else:
     selected60 = selected60[selected60.parameter >= p60]
     selected75 = selected75[selected75.parameter >= p75]
@@ -185,6 +195,16 @@ for [puls,rfi_puls] in [[pulsA,rfiA],[pulsB,rfiB],[pulsC,rfiC]]:
     selected95_rfi = selected95_rfi[selected95_rfi.parameter >= p95]
     selected99_rfi = selected99_rfi[selected99_rfi.parameter >= p99]
 
+    #abs_len60 = len(puls.parameter >= p60) / float(num) *100.
+    #abs_len75 = len(puls.parameter >= p75) / float(num) *100.
+    #abs_len95 = len(puls.parameter >= p95) / float(num) *100.
+    #abs_len99 = len(puls.parameter >= p99) / float(num) *100.
+    
+    #abs_len60_rfi = len(rfi_puls.parameter >= p60) / float(num_rfi) *100.
+    #abs_len75_rfi = len(rfi_puls.parameter >= p75) / float(num_rfi) *100.
+    #abs_len95_rfi = len(rfi_puls.parameter >= p95) / float(num_rfi) *100.
+    #abs_len99_rfi = len(rfi_puls.parameter >= p99) / float(num_rfi) *100.
+        
   removed60 = ( 1 - (selected60.shape[0]+0.0000001) / float(len60+0.0000001) ) * 100
   removed75 = ( 1 - (selected75.shape[0]+0.0000001) / float(len75+0.0000001) ) * 100
   removed95 = ( 1 - (selected95.shape[0]+0.0000001) / float(len95+0.0000001) ) * 100

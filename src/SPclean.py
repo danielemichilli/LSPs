@@ -53,15 +53,10 @@ def openSB(idL,sap,beam):
     #Create the table
     data = pd.read_csv(pulses, delim_whitespace=True, dtype=np.float32)
     data.columns = ['DM','Sigma','Time','Sample','Downfact','Sampling','a','b','c']
-    
-    #print data.Downfact.min()
-    
+        
     data.Sampling = data.Sampling*data.Downfact #/2.
     data.rename(columns={'Sampling': 'Duration'},inplace=True)
     data.Duration = data.Duration.astype(np.float32)
-    
-    
-    
     inf = pd.read_csv(inf_file, sep="=", dtype=str,error_bad_lines=False,warn_bad_lines=False,header=None,skipinitialspace=True)
     
     #Select the interesting columns
@@ -71,7 +66,6 @@ def openSB(idL,sap,beam):
     inf = pd.DataFrame(inf).T
     inf.columns=['File','Telescope','Instrument','RA','DEC','Epoch']
 
-    
     pulses.close()
     pulses_tar.close()
     
@@ -93,9 +87,8 @@ def obs_events(idL):
   
   #Adds each clean beam to the table
   for sap in range(0,3):
-    
     logging.info('SAP: %s',sap)
-  
+    
     #Cleans and groups incoherent beams
     data_inc,inf = openSB(idL,sap,12)
     if data_inc.empty: logging.warning("SAP "+str(sap)+" - BEAM 12 doesn't exist!")
@@ -108,7 +101,7 @@ def obs_events(idL):
       meta_data = meta_data.append(inf,ignore_index=False)
         
     #Cleans and groups coherent beams
-    for beam in range(13,74):
+    for beam in range(13,74):  #13,74
       data_sb,inf = openSB(idL,sap,beam)
       if data_sb.empty: logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
       else:
@@ -187,26 +180,21 @@ def output(idL,puls,best_puls,data,meta_data):
     LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True) 
     
     
-    #best_puls['code'] = best_puls.index
-    
-    #a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
-    #b = [val for sublist in a for val in sublist]
-    #best_puls.index=b
-    #best_puls.Duration *= 1000
-    #best_puls['void'] = ''
-    
-    #best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
-
+    best_puls['code'] = best_puls.index
+    a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+    b = [val for sublist in a for val in sublist]
+    best_puls.index=b
+    best_puls.Duration *= 1000
+    best_puls['void'] = ''
+    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
     
     top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
     top_candidates['code'] = top_candidates.index
-    
     a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
     b = [val for sublist in a for val in sublist]
     top_candidates.index=b
     top_candidates.Duration *= 1000
     top_candidates['void'] = ''
-    
     top_candidates.to_csv('sp/top_candidates.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
 
   return

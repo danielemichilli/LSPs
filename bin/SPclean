@@ -17,6 +17,7 @@ import pandas as pd
 import logging
 import sys
 import shutil
+import traceback
 
 import SPclean
 
@@ -34,13 +35,8 @@ def parser():
   
   ch = logging.StreamHandler()
   
-  if args.debug: 
-    logformat = '[%(asctime)s] {%(pathname)s:%(lineno)d} - %(message)s'
-    formatter = logging.Formatter(fmt=logformat)
-    ch.setLevel(logging.ERROR)
-  else: 
-    formatter = logging.Formatter('%(message)s')
-    ch.setLevel(args.pipeline)
+  formatter = logging.Formatter('%(message)s')
+  ch.setLevel(args.pipeline)
   ch.setFormatter(formatter)
   logging.getLogger('').addHandler(ch)
   
@@ -70,11 +66,10 @@ def create_DB(idL,args):
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.clock() - time0))
         
-  except:
-    e = sys.exc_info()
-    logging.error('')
-    logging.error("ATTENTION! Processing Error: %s - %s"%(e[0],e[1]))
-     
+  except Exception as e:
+    logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
+
+    
   return
     
 
@@ -110,7 +105,5 @@ def main():
 if __name__ == '__main__':
   try:
     main()
-  except:
-    e = sys.exc_info()
-    logging.error('')
-    logging.error("ATTENTION! Processing Error: %s - %s"%(e[0],e[1]))
+  except Exception as e:
+    logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
