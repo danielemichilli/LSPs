@@ -7,7 +7,7 @@
 #############################
 
 import matplotlib as mpl
-#mpl.use('Agg')
+mpl.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -88,7 +88,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   ax1.axis([0,3600,5,550])
   
   if store:
-    plt.switch_backend('Agg')
+    #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('sp/'+store+'/'+idL+'_'+store+".png",format='png',bbox_inches='tight',dpi=200)
   
@@ -113,7 +113,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   
     ax = plt.subplot2grid((2,5),(i/5,i%5))
     ax.scatter(events.Time, events.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
-    ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt=None, ecolor='r')
+    ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt='none', ecolor='r')
     #ax.set_title = "Pulse "+str(i)+" (DM "+str(puls.DM)+")"
     #ax.set_xlabel('Time (s)')
     #ax.set_ylabel('DM (pc/cm3)')
@@ -124,7 +124,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   #fig.text(0.06, 0.5, 'DM (pc/cm3)', ha='center', va='center', rotation='vertical')
     
   if store:
-    plt.switch_backend('Agg')
+    #plt.switch_backend('Agg')
     if not top_candidates.empty:
       mpl.rc('font',size=5)
       plt.savefig('sp/'+store,format='png',bbox_inches='tight',dpi=200)
@@ -159,7 +159,7 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
     bar.ax.xaxis.set_ticks_position('top')
     
   if store:
-    plt.switch_backend('Agg')
+    #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('sp/top_candidates.png',format='png',bbox_inches='tight',dpi=200)
   

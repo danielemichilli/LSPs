@@ -60,36 +60,37 @@ def Pulse_Thresh(puls,gb,data):
   
   #puls.Pulse[puls.dDM > 1.] += 3
   
-  #Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
-  #Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
-  #Time_DM_max = data.Time[gb.DM.idxmax()].values
-  #Time_DM_min = data.Time[gb.DM.idxmin()].values
-  #DM_min = gb.DM.min()
-  #Sigma_min = gb.Sigma.min()
-  #N_events = gb.DM.count()
+  Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
+  Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
+  Time_DM_max = data.Time[gb.DM.idxmax()].values
+  Time_DM_min = data.Time[gb.DM.idxmin()].values
+  DM_min = gb.DM.min()
+  Sigma_min = gb.Sigma.min()
+  N_events = gb.DM.count()
   
-  #puls.Pulse[N_events < 5] = 10
+  puls.Pulse[N_events < 5] = 10
   
-  #min_chunk = [5,9,13]
-  #max_chunk = min_chunk
-  #max_chunk[0] = np.inf
-  #max_chunk=np.roll(np.add(max_chunk,-1),-1)
-  
-  #puls_astro = puls[(puls.Pulse < RFI_percent)]
-  
-  #for i in range(len(min_chunk)):
-    #puls_chunk = puls_astro[(N_events >= min_chunk[i])&(N_events <= max_chunk[i])]
+  min_chunk = [5,9,13]
+  max_chunk = list(min_chunk)
+  max_chunk[0] = np.inf
+  max_chunk=np.roll(np.add(max_chunk,-1),-1)
     
-    #puls.Pulse[puls_chunk.Duration > FILTERS[0][i]] += 1
-    #puls.Pulse[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(N_events-1)/0.01 > FILTERS[1][i])] += 1
-    #puls.Pulse[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(N_events-1)/0.05 > FILTERS[1][i])] += 1
-    #puls.Pulse[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(N_events-1)/0.1 > FILTERS[1][i])] += 1
-    #puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
-    #puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
-    #puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
-    #puls.Pulse[abs(Sigma_DM_max-Sigma_DM_min) > FILTERS[5][i]] += 1
-    #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
-    #puls.Pulse[(f>FILTERS[6][i])|(f<FILTERS[7][i])] += 1
+  puls_astro = puls[puls.Pulse < RFI_percent]
+  
+  for i in range(len(min_chunk)):
+    puls_chunk = puls_astro[(N_events >= min_chunk[i])&(N_events <= max_chunk[i])].reindex_like(puls)
+
+    
+    puls.Pulse[puls_chunk.Duration > FILTERS[0][i]] += 1
+    puls.Pulse[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(N_events-1)/0.01 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(N_events-1)/0.05 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(N_events-1)/0.1 > FILTERS[1][i])] += 1
+    puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
+    puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
+    puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
+    puls.Pulse[abs(Sigma_DM_max-Sigma_DM_min) > FILTERS[5][i]] += 1
+    f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
+    puls.Pulse[(f>FILTERS[6][i])|(f<FILTERS[7][i])] += 1
     
   
   #puls.Pulse[puls.Duration > 0.0221184] += 3 #BETTER to divide in 3 steps, accordingly to dDMs
@@ -125,8 +126,19 @@ def Align_Pulse_Thresh(puls,gb,data):
   #-----------------------------------------------------
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
+  N_events = gb.DM.count()
+
+  min_chunk = [5,9,13]
+  max_chunk = min_chunk
+  max_chunk[0] = np.inf
+  max_chunk=np.roll(np.add(max_chunk,-1),-1)
   
-  puls.Pulse[(puls.Pulse<RFI_percent) & (gb.Time.apply(np.var) > FILTERS[8][i])] += 1
+  puls_astro = puls[(puls.Pulse < RFI_percent)]
+  
+  for i in range(len(min_chunk)):
+    puls_chunk = puls_astro[(N_events >= min_chunk[i])&(N_events <= max_chunk[i])]
+    
+    puls.Pulse[gb.Time.apply(np.var) > FILTERS[8][i]] += 1
   
   #studiare se meglio std o senza /N o con altre opzioni
   
@@ -216,6 +228,8 @@ def best_pulses(puls,data):
   k = 4.1488078e3  #s
   delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
   
+  gb = data.groupby('Pulse',sort=False)  #MIGLIORARE! Forse e' il caso di mettere N_elements nella tabella puls
+  N_events = gb.DM.count()
   best = pd.DataFrame()
   
   min_chunk = [5,9,13]
@@ -226,37 +240,38 @@ def best_pulses(puls,data):
   puls_astro = puls[(puls.Pulse < RFI_percent)]
   
   
-  #for i in range(len(min_chunk)):
-    #puls_chunk = puls_astro[(N_events >= min_chunk[i])&(N_events <= max_chunk[i])]
+  for i in range(len(min_chunk)):
+    puls_chunk = puls_astro[(N_events >= min_chunk[i])&(N_events <= max_chunk[i])]
     
-    #data_selected = data[data.Pulse.isin(puls_chunk.index)]
-    #gb = data_selected.groupby('Pulse',sort=False)
-    #puls_chunk = puls_chunk[gb.Time.apply(np.var) <= FILTERS_BEST[8][i]]
+    data_selected = data[data.Pulse.isin(puls_chunk.index)]
+    gb = data_selected.groupby('Pulse',sort=False)
+    puls_chunk = puls_chunk[gb.Time.apply(np.var) <= FILTERS_BEST[7][i]]
 
-    #puls_chunk.Time -= puls_chunk.DM * delay
-    #data_selected = data[data.Pulse.isin(puls_chunk.index)]
-    #gb = data_selected.groupby('Pulse',sort=False)
-    #Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
-    #Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
-    #Time_DM_max = data.Time[gb.DM.idxmax()].values
-    #Time_DM_min = data.Time[gb.DM.idxmin()].values
-    #DM_min = gb.DM.min()
-    #Sigma_min = gb.Sigma.min()
-    #N_events = gb.DM.count()
+    puls_chunk.Time -= puls_chunk.DM * delay
+    data_selected = data[data.Pulse.isin(puls_chunk.index)]
+    gb = data_selected.groupby('Pulse',sort=False)
+    Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
+    Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
+    Time_DM_max = data.Time[gb.DM.idxmax()].values
+    Time_DM_min = data.Time[gb.DM.idxmin()].values
+    DM_min = gb.DM.min()
+    Sigma_min = gb.Sigma.min()
+    N_events = gb.DM.count()
     
-    #puls_chunk0 = puls_chunk[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(N_events-1)/0.01 <= FILTERS_BEST[1][i])]
-    #puls_chunk1 = puls_chunk[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(N_events-1)/0.05 <= FILTERS_BEST[1][i])]
-    #puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(N_events-1)/0.1 <= FILTERS_BEST[1][i])]
-    #puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
+    puls_chunk0 = puls_chunk[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(N_events-1)/0.01 <= FILTERS_BEST[0][i])]
+    puls_chunk1 = puls_chunk[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(N_events-1)/0.05 <= FILTERS_BEST[0][i])]
+    puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(N_events-1)/0.1 <= FILTERS_BEST[0][i])]
+    puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
         
-    #puls_chunk = puls_chunk[abs(puls.DM-puls.DM_c)/puls.dDM <= FILTERS_BEST[2][i]]
-    #puls_chunk = puls_chunk[puls.Sigma/Sigma_min >= FILTERS_BEST[3][i]]
-    #puls_chunk = puls_chunk[puls.Sigma/Sigma_min**4 >= FILTERS_BEST[4][i]]
-    #puls_chunk = puls_chunk[abs(Sigma_DM_max-Sigma_DM_min) <= FILTERS_BEST[5][i]]
-    #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
-    #puls_chunk = puls_chunk[(f<=FILTERS_BEST[6][i])&(f>=FILTERS_BEST[7][i])]
+    puls_chunk = puls_chunk[abs(puls.DM-puls.DM_c)/puls.dDM <= FILTERS_BEST[1][i]]
+    puls_chunk = puls_chunk[puls.Sigma/Sigma_min >= FILTERS_BEST[2][i]]
+    puls_chunk = puls_chunk[puls.Sigma/Sigma_min**4 >= FILTERS_BEST[3][i]]
+    puls_chunk = puls_chunk[abs(Sigma_DM_max-Sigma_DM_min) <= FILTERS_BEST[4][i]]
+    if not puls_chunk.empty:
+      f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
+      puls_chunk = puls_chunk[(f<=FILTERS_BEST[5][i])&(f>=FILTERS_BEST[6][i])]
     
-    #best = best.append(puls_chunk)
+    best = best.append(puls_chunk)
   
   best.Time  += best.DM * delay
   best.sort('Sigma',ascending=False,inplace=True)

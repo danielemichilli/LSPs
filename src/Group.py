@@ -64,6 +64,7 @@ def Pulses(data,sap,beam):
   
   puls = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
   puls.index = puls.Pulse
+  puls.index.name = None
   puls = puls.loc[:,['DM','Sigma','Time','Duration']]
   puls['Pulse']=0
   puls.Pulse=puls.Pulse.astype(np.int8)

@@ -181,9 +181,10 @@ def output(idL,puls,best_puls,data,meta_data):
     
     
     best_puls['code'] = best_puls.index
-    a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
-    b = [val for sublist in a for val in sublist]
-    best_puls.index=b
+    if not best_puls.empty:
+      a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+      b = [val for sublist in a for val in sublist]
+      best_puls.index=b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
     best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')

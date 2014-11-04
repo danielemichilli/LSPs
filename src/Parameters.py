@@ -8,7 +8,7 @@
 
 
 DM_MIN = 5.  #pc/cm3
-SIGMA_MIN = 8. 
+SIGMA_MIN = 5. 
 #DURATION_MAX = 0.049152  #s
 
 
@@ -25,7 +25,7 @@ SIGMA_TOLL_IB = 2
 RFI_percent = 4
 
 FILTERS = [
-  [0.0344,0.0344,0.0737],  #duration
+  [0.0344,0.0344,0.0344],  #duration
   [0.9,0.773,0.675],  #dDM/(N_events-1)/step
   [1,1,1],  #abs(puls.DM-puls.DM_c)/puls.dDM
   [1.03,1.05,1.08],  #puls.Sigma/Sigma_min
