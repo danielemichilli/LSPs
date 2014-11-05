@@ -21,7 +21,7 @@ def initialize():
   #Creates the tables in memory
   meta_data = pd.DataFrame(columns=['SAP','BEAM','File','Telescope','Instrument','RA','DEC','Epoch'])
   data = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse'])
-  puls = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c'])
+  puls = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c','N_events'])
   
   data = data.astype(np.float32)
   data.SAP = data.SAP.astype(np.uint8)
@@ -32,6 +32,7 @@ def initialize():
   puls.SAP = puls.SAP.astype(np.uint8)
   puls.BEAM = puls.BEAM.astype(np.uint8)
   puls.Pulse = puls.Pulse.astype(np.int8)
+  puls.N_events = puls.N_events.astype(np.int16)
   
   return data,puls,meta_data
 
@@ -177,6 +178,7 @@ def output(idL,puls,best_puls,data,meta_data):
           LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store=name)
           LSPplot.sp(idL,astro.iloc[:10],data,meta_data_plot,store=name+"/top_candidates.png")
           LSPplot.sp(idL,best_puls_plot,data,meta_data_plot,store=name+"/best_pulses.png")
+          
     LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True) 
     
     
@@ -187,7 +189,7 @@ def output(idL,puls,best_puls,data,meta_data):
       best_puls.index=b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
-    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
+    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
     
     top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
     top_candidates['code'] = top_candidates.index
@@ -196,6 +198,6 @@ def output(idL,puls,best_puls,data,meta_data):
     top_candidates.index=b
     top_candidates.Duration *= 1000
     top_candidates['void'] = ''
-    top_candidates.to_csv('sp/top_candidates.inf',sep='\t',float_format='%.2f',columns=['code','void','SAP','BEAM','Sigma','DM','void','Time','void','Duration'],header=['code','','SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','',''],index_label='rank',encoding='utf-8')
+    top_candidates.to_csv('sp/top_candidates.inf',sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
 
   return

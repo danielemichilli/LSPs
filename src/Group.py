@@ -77,6 +77,8 @@ def Pulses(data,sap,beam):
   puls.DM_c=puls.DM_c.astype(np.float32)
   puls['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.
   puls.Time_c=puls.Time_c.astype(np.float32)
+  puls['N_events'] = gb.DM.count()
+  puls.N_events=puls.N_events.astype(np.int16)
   
   # Reduce the RFI and corrects for the time misalignment
   

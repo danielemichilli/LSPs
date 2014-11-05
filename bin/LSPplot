@@ -125,7 +125,6 @@ def main():
     else:
       if top_candidates.empty: print "\nNo pulses found!"
       else: LSPplot.obs_top_candidates(idL,top_candidates,best_pulses)
-      #LSPplot.beams()
   
   else:
     print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"

@@ -7,7 +7,7 @@
 #############################
 
 import matplotlib as mpl
-mpl.use('Qt4Agg')
+#mpl.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -47,7 +47,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     
     if not top_candidates.empty: ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
-    if not best_pulse.empty: ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig/4.,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
+    if not best_pulse.empty: ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
     
     ax1.set_yscale('log')
         
@@ -95,6 +95,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   else: 
     plt.show()
   
+  plt.close('all')
   return
   
 
@@ -131,6 +132,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   
   else: plt.show()
   
+  plt.close('all')
   return
 
 
@@ -143,14 +145,10 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
   else: sig=100.
     
   plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col)  #cmap=cmap
-  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[0.,],c=col)
-  plt.xlabel('Time (s)')
-  plt.ylabel('DM (pc/cm3)')
-  plt.axis([0,3600,5,550])
-  plt.yscale('log')
-  plt.title(idL+" - Best Candidates")
   
-  if color:   #Testare che faccia tutto bene, sembra troppo robusto
+  dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
+  
+  if color & (dim>1):   #Testare che faccia tutto bene, sembra troppo robusto
     ticks = np.linspace(col.min(),col.max(),num=10)
     bar = plt.colorbar(ticks=ticks)
     bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
@@ -158,6 +156,15 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
     
+    
+  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',c=col)
+  plt.xlabel('Time (s)')
+  plt.ylabel('DM (pc/cm3)')
+  plt.axis([0,3600,5,550])
+  plt.yscale('log')
+  plt.title(idL+" - Best Candidates")
+  
+
   if store:
     #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
@@ -165,10 +172,8 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
   
   else: 
     plt.show()
-      
+  
+  plt.close('all')
+  return
     
-    
-    
-def beams(): #total counts di ogni beam
-  b
       
