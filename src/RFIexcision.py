@@ -265,8 +265,8 @@ def best_pulses(puls,data):
     if not puls_chunk.empty:
       f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
       puls_chunk = puls_chunk[(f<=FILTERS_BEST[5][i])]
-      puls_chunk = puls_chunk[(f>=FILTERS_BEST[6][i])]
-   
+      #puls_chunk = puls_chunk[(f>=FILTERS_BEST[6][i])]
+ 
     best = best.append(puls_chunk)
   
   best.Time  += best.DM * delay

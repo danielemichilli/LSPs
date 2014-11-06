@@ -55,18 +55,22 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     for i in range(0,top_candidates.shape[0]):
       ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
 
-    ax2.hist(puls.DM.tolist(),bins=100,histtype='stepfilled',color='k')
+    ax2.hist(puls.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+    ax2.set_xscale('log')
     ax2.set_xlabel('DM (pc/cm3)')
     ax2.set_ylabel('Counts')
+    ax2.set_xlim(5,550)
 
-    ax3.scatter(puls.Sigma,puls.DM,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-    ax3.scatter(top_candidates.Sigma,top_candidates.DM,s=15.,linewidths=[0.,],c='b',marker='*')
-    ax3.set_xlabel('SNR')
-    ax3.set_ylabel('DM (pc/cm3)')
-    ax3.axis([puls.Sigma.min(),puls.Sigma.max()+1.,0,550])
+    ax3.scatter(puls.DM,puls.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
+    ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
+    ax3.scatter(best_pulse.DM,best_pulse.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
+    ax3.set_xscale('log')
+    ax3.set_ylabel('SNR')
+    ax3.set_xlabel('DM (pc/cm3)')
+    ax3.axis([5,550,puls.Sigma.min(),puls.Sigma.max()+3.])
     mpl.rc('font', size=3.5)
     for i in range(0,top_candidates.shape[0]):
-      ax3.annotate(i,xy=(top_candidates.Sigma.iloc[i],top_candidates.DM.iloc[i]+10),horizontalalignment='center',verticalalignment='bottom')
+      ax3.annotate(i,xy=(top_candidates.DM.iloc[i]*1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
     
     ax4.hist(puls.Sigma.tolist(),bins=100,histtype='step',color='k')
     ax4.set_xlabel('SNR')
@@ -75,12 +79,12 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     
     mpl.rc('font', size=5)
     ax5.axis([0,10,0,7])
-    ax5.annotate('File: '+meta_data.File.iloc[0], xy=(1,6))
-    ax5.annotate('Telescope: '+meta_data.Telescope.iloc[0], xy=(1,5))
-    ax5.annotate('Instrument: '+meta_data.Instrument.iloc[0], xy=(1,4))
-    ax5.annotate('RA: '+meta_data.RA.iloc[0], xy=(1,3))
-    ax5.annotate('DEC: '+meta_data.DEC.iloc[0], xy=(1,2))
-    ax5.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(1,1))
+    ax5.annotate('File: '+meta_data.File.iloc[0], xy=(0,6))
+    ax5.annotate('Telescope: '+meta_data.Telescope.iloc[0], xy=(0,5))
+    ax5.annotate('Instrument: '+meta_data.Instrument.iloc[0], xy=(0,4))
+    ax5.annotate('RA: '+meta_data.RA.iloc[0], xy=(0,3))
+    ax5.annotate('DEC: '+meta_data.DEC.iloc[0], xy=(0,2))
+    ax5.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,1))
     ax5.axis('off')
 
   ax1.set_xlabel('Time (s)')
