@@ -54,13 +54,19 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     mpl.rc('font', size=5)
     for i in range(0,top_candidates.shape[0]):
       ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
-
-    ax2.hist(puls.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
-    ax2.set_xscale('log')
-    ax2.set_xlabel('DM (pc/cm3)')
-    ax2.set_ylabel('Counts')
-    ax2.set_xlim(5,550)
-
+    
+    if len(puls.DM.unique())>1:
+      ax2.hist(puls.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+      ax2.set_xscale('log')
+      ax2.set_xlabel('DM (pc/cm3)')
+      ax2.set_ylabel('Counts')
+      ax2.set_xlim(5,550)
+    
+      ax4.hist(puls.Sigma.tolist(),bins=100,histtype='step',color='k')
+      ax4.set_xlabel('SNR')
+      ax4.set_ylabel('Counts')
+      ax4.set_yscale('log')
+    
     ax3.scatter(puls.DM,puls.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
     ax3.scatter(best_pulse.DM,best_pulse.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
@@ -71,11 +77,6 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
     mpl.rc('font', size=3.5)
     for i in range(0,top_candidates.shape[0]):
       ax3.annotate(i,xy=(top_candidates.DM.iloc[i]*1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
-    
-    ax4.hist(puls.Sigma.tolist(),bins=100,histtype='step',color='k')
-    ax4.set_xlabel('SNR')
-    ax4.set_ylabel('Counts')
-    ax4.set_yscale('log')
     
     mpl.rc('font', size=5)
     ax5.axis([0,10,0,7])

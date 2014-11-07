@@ -42,8 +42,12 @@ def openSB(idL,sap,beam):
   # Creates a table for one .singlepulse file
   #------------------------------------------
   
-  name = idL+'_SAP'+str(sap)+'_BEAM'+str(beam)
-  pulses_file = name+'_singlepulse.tgz'  #per i test
+  sap = str(sap)
+  beam= str(beam)
+  
+  name = idL+'_SAP'+sap+'_BEAM'+beam
+  path = '' #'SAP'+sap+'/'+name+'/BEAM'+beam+'_sift/sp/' #'' per i test
+  pulses_file = path+name+'_singlepulse.tgz'
 
   try:
     #Open the file

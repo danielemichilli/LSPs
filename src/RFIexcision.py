@@ -181,6 +181,9 @@ def Compare_Beams(puls):
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
   
   count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
+  
+  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
   
 
