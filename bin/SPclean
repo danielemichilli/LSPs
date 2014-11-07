@@ -27,14 +27,13 @@ def parser():
   #---------------------
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
+  parser.add_argument('idL', nargs=1, help='Observation ID')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
   
-  
   ch = logging.StreamHandler()
-  
   formatter = logging.Formatter('%(message)s')
   ch.setLevel(args.pipeline)
   ch.setFormatter(formatter)
@@ -81,7 +80,7 @@ def main():
   args = parser()
   if not args.debug: warnings.filterwarnings("ignore")
   
-  idL = os.path.basename(os.getcwd())
+  idL = args.idL #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
   if not os.path.isfile('sp/SinlgePulses.hdf5'):
