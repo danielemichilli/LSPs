@@ -37,18 +37,18 @@ def initialize():
   return data,puls,meta_data
 
 
-def openSB(idL,sap,beam):
+def openSB(folder,idL,sap,beam):
   #------------------------------------------
   # Creates a table for one .singlepulse file
   #------------------------------------------
   
-  sap = str(sap)
-  beam= str(beam)
+  #sap = str(sap)
+  #beam= str(beam)
   
-  name = idL+'_SAP'+sap+'_BEAM'+beam
+  name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
   path = '' #'SAP'+sap+'/'+name+'/BEAM'+beam+'_sift/sp/' #'' per i test
-  pulses_file = path+name+'_singlepulse.tgz'
-
+  pulses_file = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
+  
   try:
     #Open the file
     pulses_tar = tarfile.open(pulses_file)
@@ -83,7 +83,7 @@ def openSB(idL,sap,beam):
 
 
 
-def obs_events(idL):
+def obs_events(folder,idL):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
@@ -95,7 +95,7 @@ def obs_events(idL):
     logging.info('SAP: %s',sap)
     
     #Cleans and groups incoherent beams
-    data_inc,inf = openSB(idL,sap,12)
+    data_inc,inf = openSB(folder,idL,sap,12)
     if data_inc.empty: logging.warning("SAP "+str(sap)+" - BEAM 12 doesn't exist!")
     else:
       data_inc = RFIexcision.IB_Event_Thresh(data_inc) 
@@ -107,7 +107,7 @@ def obs_events(idL):
         
     #Cleans and groups coherent beams
     for beam in range(13,74):  #13,74
-      data_sb,inf = openSB(idL,sap,beam)
+      data_sb,inf = openSB(folder,idL,sap,beam)
       if data_sb.empty: logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
       else:
         data_sb = RFIexcision.Event_Thresh(data_sb)
@@ -152,38 +152,37 @@ def obs_events(idL):
   
   #Stores the table into a DataBase
   if not data.empty:
-    store = pd.HDFStore('sp/SinlgePulses.hdf5','w')
+    store = pd.HDFStore('{}{}/sp/SinlgePulses.hdf5'.format(folder,idL),'w')
     store.append(idL,data,data_columns=['Pulse'])
     store.append(idL+'_pulses',puls,data_columns=['Pulse'])
     store.append('meta_data',meta_data)
     if not best_puls.empty: store.append('best_pulses',best_puls)
     store.close()
     
-  output(idL,puls,best_puls,data,meta_data)
+  output(folder,idL,puls,best_puls,data,meta_data)
         
   return
 
 
-def output(idL,puls,best_puls,data,meta_data):
+def output(folder,idL,puls,best_puls,data,meta_data):
 
   if not data.empty:
     for sap in range(0,3):
       for beam in range(12,74):
         puls_plot = puls[(puls.SAP==sap)&(puls.BEAM==beam)]
         if not puls_plot.empty:
-          name = 'SAP'+str(sap)+'_BEAM'+str(beam)
-          os.makedirs('sp/'+name)
+          name = 'SAP{}_BEAM{}'.format(sap,beam)
+          os.makedirs('{}{}/sp/'.format(folder,idL)+name)
           Pulse_min = puls_plot.Pulse.unique().min()
           astro = puls_plot[puls_plot.Pulse==Pulse_min]
           rfi = puls_plot[puls_plot.Pulse==Pulse_min+1]
           data_plot = data[data.Pulse.isin(astro.index)]
           meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
           best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
-          LSPplot.plot(idL,astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store=name)
-          LSPplot.sp(idL,astro.iloc[:10],data,meta_data_plot,store=name+"/top_candidates.png")
-          LSPplot.sp(idL,best_puls_plot,data,meta_data_plot,store=name+"/best_pulses.png")
-          
-    LSPplot.obs_top_candidates(idL,puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store=True) 
+          LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
+          LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
+          LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
+    LSPplot.obs_top_candidates(puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
     
     
     best_puls['code'] = best_puls.index
@@ -193,7 +192,7 @@ def output(idL,puls,best_puls,data,meta_data):
       best_puls.index=b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
-    best_puls.to_csv('sp/best_pulses.inf',sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
+    best_puls.to_csv('{}{}/sp/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
     
     top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
     top_candidates['code'] = top_candidates.index
@@ -202,6 +201,6 @@ def output(idL,puls,best_puls,data,meta_data):
     top_candidates.index=b
     top_candidates.Duration *= 1000
     top_candidates['void'] = ''
-    top_candidates.to_csv('sp/top_candidates.inf',sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
+    top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','',''],index_label='rank',encoding='utf-8')
 
   return

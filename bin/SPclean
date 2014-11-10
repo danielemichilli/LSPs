@@ -19,7 +19,30 @@ import sys
 import shutil
 import traceback
 
+import subprocess
+
 import SPclean
+
+#def update_version_py():
+  #if not os.path.isdir(".git"):
+    #print "This does not appear to be a Git repository."
+    #return
+  #try:
+    #p = subprocess.Popen(["git", "describe","--tags", "--dirty", "--always"],stdout=subprocess.PIPE)
+  #except EnvironmentError:
+    #print "Unable to import the program version from git"
+  #return
+  #stdout = p.communicate()[0]
+  #if p.returncode != 0:
+    #print "Unable to import the program version from git"
+    #return
+  #assert stdout.startswith("python-ecdsa-")
+  #ver = stdout[len("python-ecdsa-"):].strip()
+  #f = open("ecdsa/_version.py", "w")
+  #f.write(VERSION_PY % ver)
+  #f.close()
+  #print "set ecdsa/_version.py to '%s'" % ver
+
 
 def parser():
   #---------------------
@@ -28,6 +51,7 @@ def parser():
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
   parser.add_argument('idL', nargs=1, help='Observation ID')
+  parser.add_argument('folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
@@ -43,16 +67,15 @@ def parser():
 
 
 
-def create_DB(idL,args):
+def create_DB(folder,idL,args):
   
-  if os.path.exists('sp'): shutil.rmtree('sp')
-  os.makedirs('sp')
+  if os.path.exists('{}{}/sp'.format(folder,idL)): shutil.rmtree('{}{}/sp'.format(folder,idL))
+  os.makedirs('{}{}/sp'.format(folder,idL))
   
-
   TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'
   formatter = logging.Formatter(fmt=logformat, datefmt=TIME_FORMAT) 
-  fh = logging.FileHandler('sp/processing.log')
+  fh = logging.FileHandler('{}{}/sp/processing.log'.format(folder,idL))
   fh.setLevel(logging.WARNING)
   fh.setFormatter(formatter)
   logging.getLogger('').addHandler(fh)
@@ -61,10 +84,10 @@ def create_DB(idL,args):
   
   try:
     time0 = time.clock()
-    SPclean.obs_events(idL)
+    SPclean.obs_events(folder,idL)
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.clock() - time0))
-        
+    
   except Exception as e:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
 
@@ -76,25 +99,25 @@ def main():
   #--------------------------------------------------------------------
   # If the DataBase already exists open it, otherwise creates a new one
   #--------------------------------------------------------------------
-
   args = parser()
   if not args.debug: warnings.filterwarnings("ignore")
   
-  idL = args.idL #os.path.basename(os.getcwd())
+  folder = args.folder[0]
+  idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isfile('sp/SinlgePulses.hdf5'):
-    create_DB(idL,args)
+  if not os.path.isfile('{}{}/sp/SinlgePulses.hdf5'.format(folder,idL)):
+    create_DB(folder,idL,args)
     
   #Otherwise create a new DataBase
   elif args.w:
     logging.info("\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!")
 
     if args.pipeline>logging.INFO:
-      create_DB(idL,args)
+      create_DB(folder,idL,args)
 
     elif raw_input("A DataBase is already present.\nDo you want to overwrite it? [y/n] ") == 'y':
-      create_DB(idL,args)
+      create_DB(folder,idL,args)
 
   else:
     logging.info("The DataBase already exists!\nUse the command LSPplot to plot it or the -w option to overwrite it.")

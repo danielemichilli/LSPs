@@ -16,7 +16,7 @@ import os
 
 from Parameters import *
 
-def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
+def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
   
   col = puls.Sigma
   if color: 
@@ -95,7 +95,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   if store:
     #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
-    plt.savefig('sp/'+store+'/'+idL+'_'+store+".png",format='png',bbox_inches='tight',dpi=200)
+    plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
   else: 
     plt.show()
@@ -105,7 +105,7 @@ def plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=
   
 
 
-def sp(idL,top_candidates,data,meta_data,size=True,store=False):
+def sp(top_candidates,data,meta_data,size=True,store=False):
   
   fig = plt.figure()
   
@@ -133,7 +133,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
     #plt.switch_backend('Agg')
     if not top_candidates.empty:
       mpl.rc('font',size=5)
-      plt.savefig('sp/'+store,format='png',bbox_inches='tight',dpi=200)
+      plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
   else: plt.show()
   
@@ -141,7 +141,7 @@ def sp(idL,top_candidates,data,meta_data,size=True,store=False):
   return
 
 
-def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
+def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
   
   if color: col = top_candidates.SAP *10 + (top_candidates.BEAM-13) /6.
   else: col=u'r' 
@@ -167,13 +167,13 @@ def obs_top_candidates(idL,top_candidates,best_pulses,color=True,size=True,store
   plt.ylabel('DM (pc/cm3)')
   plt.axis([0,3600,5,550])
   plt.yscale('log')
-  plt.title(idL+" - Best Candidates")
+  plt.title("Best Candidates")
   
 
   if store:
     #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
-    plt.savefig('sp/top_candidates.png',format='png',bbox_inches='tight',dpi=200)
+    plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
   else: 
     plt.show()
