@@ -40,7 +40,7 @@ def parser():
 
 
 def read_DB(idL,args):
-  puls = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['Pulse>=0'])
+  puls = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['Pulse==0'])  #perche' era Pulse>=0 ??
   puls_rfi = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
   meta_data = pd.read_hdf('sp/SinlgePulses.hdf5','meta_data')
   top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
