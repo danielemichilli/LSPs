@@ -151,12 +151,14 @@ def Compare(float[::1] DM_c_l not None,
             int CB):
 
   cdef:
-    unsigned int i, j
+    unsigned int i, j, RFI
     unsigned int dim_l = len(DM_c_l)
     unsigned int dim_r = len(DM_c_r)
+    unsigned int j_min = 0
     int TollSigma
     int rfi_limit = RFI_percent
-    float DTime,Time,DM,DDM
+    float DTime, Time, DM, DDM, sign
+    float Duration_Max = FILTERS[0][2]
   
   # Uses different tollerances on sigma for coherent and incoherent beams
   if CB==int(1): TollSigma = SIGMA_TOLL
@@ -166,76 +168,56 @@ def Compare(float[::1] DM_c_l not None,
   # Assign different codes under certain conditions 
   for i in range(0,dim_l):
     
-    if Pulse_l[i] >= rfi_limit:
-      
-      for j in range(0,dim_r):
-        
-        if Pulse_r[j] >= rfi_limit: continue
-        
-        Time = abs(Time_c_l[i]-Time_c_r[j])
-        DTime = dTime_l[i]+dTime_r[j]
-        
-        if Time < DTime :
-        
-          DM = abs(DM_c_l[i]-DM_c_r[j])
-          DDM = dDM_l[i]+dDM_r[j]
-          
-          if DM < DDM :
-            
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-              
-              Pulse_l[i] += 2
-              Pulse_r[j] += 2
-            
-          elif DM < 10.*DDM :
-          
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-            
-              Pulse_l[i] += 1
-              Pulse_r[j] += 1
-        
-        elif Time < 6. * DTime :
-        
-          if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
-          
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-            
-              Pulse_l[i] += 1
-              Pulse_r[j] += 1
-              
-    else:
+    RFI = 0
+    if Pulse_l[i] >= rfi_limit: RFI = 1 
     
-      for j in range(0,dim_r):
-                
-        Time = abs(Time_c_l[i]-Time_c_r[j])
-        DTime = dTime_l[i]+dTime_r[j]
+    j_flag = j_min
+    
+    for j in range(j_min, dim_r):
+      
+      if Pulse_r[j] >= rfi_limit: 
         
-        if Time < DTime :
+        if RFI > 0:
         
-          DM = abs(DM_c_l[i]-DM_c_r[j])
-          DDM = dDM_l[i]+dDM_r[j]
+          continue
+      
+      Time = abs(Time_c_l[i]-Time_c_r[j])
+      DTime = dTime_l[i]+dTime_r[j]
+      
+      sign = Time_c_l[i]-Time_c_r[j]
+      
+      if Time < DTime :
+      
+        if j_flag == j_min: j_min = j
+        
+        DM = abs(DM_c_l[i]-DM_c_r[j])
+        DDM = dDM_l[i]+dDM_r[j]
+        
+        if DM < DDM :
           
-          if DM < DDM :
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
             
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-              
-              Pulse_l[i] += 2
-              Pulse_r[j] += 2
-            
-          elif DM < 10.*DDM :
+            Pulse_l[i] += 2
+            Pulse_r[j] += 2
           
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-            
-              Pulse_l[i] += 1
-              Pulse_r[j] += 1
+        elif DM < 10.*DDM :
         
-        elif Time < 6. * DTime :
-        
-          if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
           
-            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            Pulse_l[i] += 1
+            Pulse_r[j] += 1
+      
+      elif Time < 6. * DTime :
+      
+        if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
+        
+          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+          
+            Pulse_l[i] += 1
+            Pulse_r[j] += 1
             
-              Pulse_l[i] += 1
-              Pulse_r[j] += 1
+      elif sign < 0.: 
+       
+        break
       
   return

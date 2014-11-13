@@ -178,26 +178,30 @@ def Compare_Beams(puls):
   
   #STUDIARE VALORI E SE METTERE puls.Pulse==0
   count,div = np.histogram(puls.Time[puls.Pulse==0],bins=36000)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
   count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
   count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
   sig_lim = 8.
 
-  sap0 = puls[(puls.SAP==0)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0['Time_low'] = sap0.Time_c-sap0.dTime
+  sap0.sort('Time_low',inplace=True)
   
-  sap1 = puls[(puls.SAP==1)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1['Time_low'] = sap1.Time_c-sap1.dTime
+  sap1.sort('Time_low',inplace=True)
   
-  sap2 = puls[(puls.SAP==2)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  
+  sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap2['Time_low'] = sap2.Time_c-sap2.dTime
+  sap2.sort('Time_low',inplace=True)
   
   logging.info('Comparison is starting')
   
-        
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
                   sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
   
@@ -212,11 +216,11 @@ def Compare_Beams(puls):
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
  
-  puls.Pulse.loc[(puls.SAP==0)&(puls.Sigma<sig_lim)]=sap0.Pulse
+  puls.Pulse.loc[puls.SAP==0]=sap0.Pulse
   
-  puls.Pulse.loc[(puls.SAP==1)&(puls.Sigma<sig_lim)]=sap1.Pulse
+  puls.Pulse.loc[puls.SAP==1]=sap1.Pulse
   
-  puls.Pulse.loc[(puls.SAP==2)&(puls.Sigma<sig_lim)]=sap2.Pulse
+  puls.Pulse.loc[puls.SAP==2]=sap2.Pulse
     
   return puls
 
