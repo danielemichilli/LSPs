@@ -67,7 +67,7 @@ def Pulse_Thresh(puls,gb,data):
   DM_min = gb.DM.min()
   Sigma_min = gb.Sigma.min()
   
-  #puls.Pulse[puls.N_events < 5] = 10
+  puls.Pulse[puls.N_events < 5] = 10
   
   min_chunk = [5,9,13]
   max_chunk = list(min_chunk)
@@ -186,12 +186,13 @@ def Compare_Beams(puls):
   count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
   
+  sig_lim = 8.
 
-  sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0 = puls[(puls.SAP==0)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   
-  sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1 = puls[(puls.SAP==1)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   
-  sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap2 = puls[(puls.SAP==2)&(puls.Sigma<sig_lim)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   
   
   logging.info('Comparison is starting')
@@ -210,12 +211,12 @@ def Compare_Beams(puls):
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
+ 
+  puls.Pulse.loc[(puls.SAP==0)&(puls.Sigma<sig_lim)]=sap0.Pulse
   
-  puls.Pulse[puls.SAP==0]=sap0.Pulse
+  puls.Pulse.loc[(puls.SAP==1)&(puls.Sigma<sig_lim)]=sap1.Pulse
   
-  puls.Pulse[puls.SAP==1]=sap1.Pulse
-  
-  puls.Pulse[puls.SAP==2]=sap2.Pulse
+  puls.Pulse.loc[(puls.SAP==2)&(puls.Sigma<sig_lim)]=sap2.Pulse
     
   return puls
 

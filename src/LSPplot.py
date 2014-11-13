@@ -143,13 +143,17 @@ def sp(top_candidates,data,meta_data,size=True,store=False):
 
 def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
   
-  if color: col = top_candidates.SAP *10 + (top_candidates.BEAM-13) /6.
-  else: col=u'r' 
+  if color: 
+    col_top = top_candidates.SAP *10 + (top_candidates.BEAM-13) /6.
+    col_best = best_pulses.SAP *10 + (best_pulses.BEAM-13) /6.
+  else: 
+    col_top = u'r' 
+    col_best = u'r'
   
   if size: sig=(top_candidates.Sigma/6.)**4
   else: sig=100.
     
-  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col)  #cmap=cmap
+  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col_top)  #cmap=cmap
   
   dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
   
@@ -162,7 +166,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     bar.ax.xaxis.set_ticks_position('top')
     
     
-  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',c=col)
+  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
   plt.xlabel('Time (s)')
   plt.ylabel('DM (pc/cm3)')
   plt.axis([0,3600,5,550])

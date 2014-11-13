@@ -8,7 +8,7 @@
 
 
 DM_MIN = 5.  #pc/cm3
-SIGMA_MIN = 5. 
+SIGMA_MIN = 4.
 #DURATION_MAX = 0.049152  #s
 
 
@@ -22,7 +22,7 @@ DURAT_GROUP = 1
 SIGMA_TOLL = 4
 SIGMA_TOLL_IB = 2
 
-RFI_percent = 4
+RFI_percent = 3
 
 FILTERS = [
   [0.0344,0.0344,0.0344],  #duration

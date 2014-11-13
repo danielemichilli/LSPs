@@ -173,9 +173,9 @@ def output(folder,idL,puls,best_puls,data,meta_data):
         if not puls_plot.empty:
           name = 'SAP{}_BEAM{}'.format(sap,beam)
           os.makedirs('{}{}/sp/'.format(folder,idL)+name)
-          Pulse_min = puls_plot.Pulse.unique().min()
-          astro = puls_plot[puls_plot.Pulse==Pulse_min]
-          rfi = puls_plot[puls_plot.Pulse==Pulse_min+1]
+          #Pulse_min = puls_plot.Pulse.unique().min()
+          astro = puls_plot[puls_plot.Pulse==0]
+          rfi = puls_plot[puls_plot.Pulse==1]
           data_plot = data[data.Pulse.isin(astro.index)]
           meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
           best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]

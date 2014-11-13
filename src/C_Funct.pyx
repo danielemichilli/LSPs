@@ -155,6 +155,7 @@ def Compare(float[::1] DM_c_l not None,
     unsigned int dim_l = len(DM_c_l)
     unsigned int dim_r = len(DM_c_r)
     int TollSigma
+    int rfi_limit = RFI_percent
     float DTime,Time,DM,DDM
   
   # Uses different tollerances on sigma for coherent and incoherent beams
@@ -164,38 +165,77 @@ def Compare(float[::1] DM_c_l not None,
   # Compare each pulse of the first group with each of the second
   # Assign different codes under certain conditions 
   for i in range(0,dim_l):
+    
+    if Pulse_l[i] >= rfi_limit:
+      
+      for j in range(0,dim_r):
         
-    for j in range(0,dim_r):
-      
-      Time = abs(Time_c_l[i]-Time_c_r[j])
-      DTime = dTime_l[i]+dTime_r[j]
-      
-      if Time < DTime :
-      
-        DM = abs(DM_c_l[i]-DM_c_r[j])
-        DDM = dDM_l[i]+dDM_r[j]
+        if Pulse_r[j] >= rfi_limit: continue
         
-        if DM < DDM :
+        Time = abs(Time_c_l[i]-Time_c_r[j])
+        DTime = dTime_l[i]+dTime_r[j]
+        
+        if Time < DTime :
+        
+          DM = abs(DM_c_l[i]-DM_c_r[j])
+          DDM = dDM_l[i]+dDM_r[j]
           
-          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+          if DM < DDM :
             
-            Pulse_l[i] += 2
-            Pulse_r[j] += 2
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+              
+              Pulse_l[i] += 2
+              Pulse_r[j] += 2
+            
+          elif DM < 10.*DDM :
           
-        elif DM < 10.*DDM :
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+              Pulse_l[i] += 1
+              Pulse_r[j] += 1
         
-          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-          
-            Pulse_l[i] += 1
-            Pulse_r[j] += 1
-      
-      elif Time < 6. * DTime :
-      
-        if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
+        elif Time < 6. * DTime :
         
-          if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+          if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
           
-            Pulse_l[i] += 1
-            Pulse_r[j] += 1
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+              Pulse_l[i] += 1
+              Pulse_r[j] += 1
+              
+    else:
+    
+      for j in range(0,dim_r):
+                
+        Time = abs(Time_c_l[i]-Time_c_r[j])
+        DTime = dTime_l[i]+dTime_r[j]
+        
+        if Time < DTime :
+        
+          DM = abs(DM_c_l[i]-DM_c_r[j])
+          DDM = dDM_l[i]+dDM_r[j]
+          
+          if DM < DDM :
+            
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+              
+              Pulse_l[i] += 2
+              Pulse_r[j] += 2
+            
+          elif DM < 10.*DDM :
+          
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+              Pulse_l[i] += 1
+              Pulse_r[j] += 1
+        
+        elif Time < 6. * DTime :
+        
+          if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
+          
+            if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
+            
+              Pulse_l[i] += 1
+              Pulse_r[j] += 1
       
   return
