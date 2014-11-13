@@ -182,8 +182,7 @@ def output(folder,idL,puls,best_puls,data,meta_data):
           LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
           LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
           LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
-    LSPplot.obs_top_candidates(puls.groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
-    
+    LSPplot.obs_top_candidates(puls[puls.Pulse==0].groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
     
     best_puls['code'] = best_puls.index
     if not best_puls.empty:

@@ -217,7 +217,7 @@ def Compare(float[::1] DM_c_l not None,
             Pulse_r[j] += 1
             
       elif sign < 0.: 
-       
+        
         break
       
   return

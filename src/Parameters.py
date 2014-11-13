@@ -8,7 +8,7 @@
 
 
 DM_MIN = 5.  #pc/cm3
-SIGMA_MIN = 8.
+SIGMA_MIN = 5.
 #DURATION_MAX = 0.049152  #s
 
 
