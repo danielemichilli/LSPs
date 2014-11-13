@@ -16,7 +16,7 @@ import os
 
 from Parameters import *
 
-def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False):
+def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False,data=pd.DataFrame()):
   
   col = puls.Sigma
   if color: 
@@ -44,6 +44,10 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
   
  
   if not puls.empty:
+    if not data.empty: 
+      sig=(data.Sigma/4.)**4
+      ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])
+      
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     
     if not top_candidates.empty: ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')

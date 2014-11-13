@@ -162,7 +162,8 @@ def main():
       
     if dim<=1:
       puls_rfi,data,meta_data,top_candidates,best_pulses = read_DB(puls)
-      LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulses,data=)
+      if args.events: LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulses,data=data)
+      else: LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulses)
       LSPplot.sp(idL,top_candidates,data,meta_data)
     else:
       top_candidates,best_pulses = read_best(pulse)
