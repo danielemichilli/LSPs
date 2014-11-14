@@ -13,6 +13,8 @@ import logging
 import C_Funct
 from Parameters import *
 
+import time
+
 
 def Event_Thresh(data):
   #-----------------------------------------------------
@@ -201,7 +203,7 @@ def Compare_Beams(puls):
   sap2.sort('Time_low',inplace=True)
   
   logging.info('Comparison is starting')
-  
+  time0 = time.clock()
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
                   sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
   
@@ -215,7 +217,7 @@ def Compare_Beams(puls):
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
- 
+  print "Time spent: %.2f s"%(time.clock() - time0)
   puls.Pulse.loc[puls.SAP==0]=sap0.Pulse
   
   puls.Pulse.loc[puls.SAP==1]=sap1.Pulse

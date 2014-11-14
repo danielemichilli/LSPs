@@ -46,7 +46,7 @@ def openSB(folder,idL,sap,beam):
   #beam= str(beam)
   
   name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
-  path = '' #'SAP'+sap+'/'+name+'/BEAM'+beam+'_sift/sp/' #'' per i test
+  path = '' #'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam) #'' per i test
   pulses_file = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
   
   try:
