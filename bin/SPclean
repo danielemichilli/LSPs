@@ -18,10 +18,11 @@ import logging
 import sys
 import shutil
 import traceback
-
 import subprocess
+import StringIO
 
 import SPclean
+import Parameters
 
 #def update_version_py():
   #if not os.path.isdir(".git"):
@@ -79,7 +80,19 @@ def create_DB(folder,idL,args):
   fh.setLevel(logging.WARNING)
   fh.setFormatter(formatter)
   logging.getLogger('').addHandler(fh)
-    
+  
+  fileName, fileExtension = os.path.splitext(Parameters.__file__)  
+  f = open('{}.py'.format(fileName), 'r')
+  param_out = StringIO.StringIO()
+  for line in f.readlines():
+        if not line.startswith(('#','\n')):
+            param_out.write(line)
+  f.close()
+  git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
+  vers = subprocess.check_output(['git', '--git-dir', git_folder, 'rev-parse', '--short', 'HEAD']).strip()
+  logging.warning("LSPs version: %s\n\n"%(vers))
+  logging.warning("Parameters used:\n%s\n\n"%(param_out))
+  
   logging.warning("The DataBase is being created.\n")
   
   try:

@@ -25,13 +25,18 @@ def Event_Thresh(data):
   data = data[data.DM>DM_MIN]
   
   #Remove low sigma
-  data = data[data.Sigma>SIGMA_MIN]
+  #data = data[data.Sigma>SIGMA_MIN]
 
   #Remove high durations
   #data = data[data.Duration<DURATION_MAX]  #better to do that in filters
   
   #count,div = np.histogram(data.Time,bins=36000)
   #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])]  #forse metodi piu efficienti
+    
+    
+  data=data[data.Sigma<5.5]
+  data=data[data.Time<300.]
+  data=data[(data.DM>43.)&(data.DM<44.)] 
   
   return data
 
@@ -69,7 +74,7 @@ def Pulse_Thresh(puls,gb,data):
   DM_min = gb.DM.min()
   Sigma_min = gb.Sigma.min()
   
-  puls.Pulse[puls.N_events < 5] = 10
+  puls.Pulse.loc[puls.N_events < 5] = 10
   
   min_chunk = [5,9,13]
   max_chunk = list(min_chunk)
@@ -179,14 +184,14 @@ def Compare_IB(coh,incoh):
 def Compare_Beams(puls):
   
   #STUDIARE VALORI E SE METTERE puls.Pulse==0
-  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=36000)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
+  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=36000)
+  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
-  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
+  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
+  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
-  count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
+  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
+  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
   sig_lim = 8.
 
@@ -204,20 +209,20 @@ def Compare_Beams(puls):
   
   logging.info('Comparison is starting')
   time0 = time.clock()
-  C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
-                  sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
+  C_Funct.Compare(sap0.index.values,sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
+                  sap1.index.values,sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
   
   logging.info('1/3 completed')
   
-  C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
-                  sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
+  C_Funct.Compare(sap0.index.values,sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
+                  sap2.index.values,sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
   logging.info('2/3 completed')
   
-  C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
-                  sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
+  C_Funct.Compare(sap1.index.values,sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
+                  sap2.index.values,sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
-  print "Time spent: %.2f s"%(time.clock() - time0)
+  print "Time comparison: %.2f s"%(time.clock() - time0)
   puls.Pulse.loc[puls.SAP==0]=sap0.Pulse
   
   puls.Pulse.loc[puls.SAP==1]=sap1.Pulse

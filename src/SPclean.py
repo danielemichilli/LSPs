@@ -46,7 +46,7 @@ def openSB(folder,idL,sap,beam):
   #beam= str(beam)
   
   name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
-  path = '' #'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam) #'' per i test
+  path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam) #'' per i test
   pulses_file = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
   
   try:
@@ -167,21 +167,21 @@ def obs_events(folder,idL):
 def output(folder,idL,puls,best_puls,data,meta_data):
 
   if not data.empty:
-    for sap in range(0,3):
-      for beam in range(12,74):
-        puls_plot = puls[(puls.SAP==sap)&(puls.BEAM==beam)]
-        if not puls_plot.empty:
-          name = 'SAP{}_BEAM{}'.format(sap,beam)
-          os.makedirs('{}{}/sp/'.format(folder,idL)+name)
-          #Pulse_min = puls_plot.Pulse.unique().min()
-          astro = puls_plot[puls_plot.Pulse==0]
-          rfi = puls_plot[puls_plot.Pulse==1]
-          data_plot = data[data.Pulse.isin(astro.index)]
-          meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
-          best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
-          LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
-          LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
-          LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
+    #for sap in range(0,3):
+      #for beam in range(12,74):
+        #puls_plot = puls[(puls.SAP==sap)&(puls.BEAM==beam)]
+        #if not puls_plot.empty:
+          #name = 'SAP{}_BEAM{}'.format(sap,beam)
+          #os.makedirs('{}{}/sp/'.format(folder,idL)+name)
+          ##Pulse_min = puls_plot.Pulse.unique().min()
+          #astro = puls_plot[puls_plot.Pulse==0]
+          #rfi = puls_plot[puls_plot.Pulse==1]
+          #data_plot = data[data.Pulse.isin(astro.index)]
+          #meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
+          #best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
+          #LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
+          #LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
+          #LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
     LSPplot.obs_top_candidates(puls[puls.Pulse==0].groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
     
     best_puls['code'] = best_puls.index
