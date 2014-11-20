@@ -90,8 +90,8 @@ def create_DB(folder,idL,args):
   f.close()
   git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
   vers = subprocess.check_output(['git', '--git-dir', git_folder, 'rev-parse', '--short', 'HEAD']).strip()
-  logging.warning("LSPs version: %s\n\n"%(vers))
-  logging.warning("Parameters used:\n%s\n\n"%(param_out))
+  logging.warning("LSPs version: %s\n"%(vers))
+  logging.warning("Parameters used:\n\n%s\n\n"%(param_out.getvalue()))
   
   logging.warning("The DataBase is being created.\n")
   

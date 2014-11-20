@@ -34,9 +34,7 @@ def Event_Thresh(data):
   #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])]  #forse metodi piu efficienti
     
     
-  data=data[data.Sigma<5.5]
-  data=data[data.Time<300.]
-  data=data[(data.DM>43.)&(data.DM<44.)] 
+  data=data[(data.Time>3000.)&(data.Time<3010.)]
   
   return data
 
@@ -193,17 +191,17 @@ def Compare_Beams(puls):
   #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
-  sig_lim = 8.
+  #sig_lim = 8.
 
-  sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
   
-  sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1 = puls[(puls.SAP==1)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap1['Time_low'] = sap1.Time_c-sap1.dTime
   sap1.sort('Time_low',inplace=True)
   
-  sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap2 = puls[(puls.SAP==2)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap2['Time_low'] = sap2.Time_c-sap2.dTime
   sap2.sort('Time_low',inplace=True)
   
@@ -223,11 +221,11 @@ def Compare_Beams(puls):
                   sap2.index.values,sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
   print "Time comparison: %.2f s"%(time.clock() - time0)
-  puls.Pulse.loc[puls.SAP==0]=sap0.Pulse
+  puls.Pulse.loc[(puls.SAP==0)&(puls.Pulse<=RFI_percent)]=sap0.Pulse
   
-  puls.Pulse.loc[puls.SAP==1]=sap1.Pulse
+  puls.Pulse.loc[(puls.SAP==1)&(puls.Pulse<=RFI_percent)]=sap1.Pulse
   
-  puls.Pulse.loc[puls.SAP==2]=sap2.Pulse
+  puls.Pulse.loc[(puls.SAP==2)&(puls.Pulse<=RFI_percent)]=sap2.Pulse
     
   return puls
 
