@@ -136,14 +136,12 @@ def Get_Group(float[::1] DM not None,
 #-------------------------
 # Compares different beams    #mettere duration invece di dT
 #-------------------------
-def Compare(long[::1] code1 not None,
-            float[::1] DM_c_l not None,
+def Compare(float[::1] DM_c_l not None,
             float[::1] dDM_l not None,
             float[::1] Time_c_l not None,
             float[::1] dTime_l not None,
             float[::1] Sigma_l not None,
             signed char[::1] Pulse_l not None,
-            long[::1] code2 not None,
             float[::1] DM_c_r not None,
             float[::1] dDM_r not None,
             float[::1] Time_c_r not None,
@@ -188,38 +186,20 @@ def Compare(long[::1] code1 not None,
       
       sign = Time_c_l[i]-Time_c_r[j]
       
-      if Time < DTime :
+      if Time < 4.*DTime :
       
         if j_flag == j_min: j_min = j
         
         DM = abs(DM_c_l[i]-DM_c_r[j])
         DDM = dDM_l[i]+dDM_r[j]
         
-        if DM < DDM :
+        if DM < 2.*DDM :
           
           if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-            
-            print code1[i], code2[j]
-            
+                        
             Pulse_l[i] += 1
             Pulse_r[j] += 1
           
-        #elif DM < 10.*DDM :
-        
-          #if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-          
-            #Pulse_l[i] += 1
-            #Pulse_r[j] += 1
-      
-      #elif Time < 6. * DTime :
-      
-        #if abs(DM_c_l[i]-DM_c_r[j]) < 10.*(dDM_l[i]+dDM_r[j]) :
-        
-          #if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
-          
-            #Pulse_l[i] += 1
-            #Pulse_r[j] += 1
-            
       elif sign < 0.: 
         
         break
