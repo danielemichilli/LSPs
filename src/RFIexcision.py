@@ -23,34 +23,7 @@ def Event_Thresh(data):
 
   #Remove low DM
   data = data[data.DM>DM_MIN]
-  
-  #Remove low sigma
-  #data = data[data.Sigma>SIGMA_MIN]
-
-  #Remove high durations
-  #data = data[data.Duration<DURATION_MAX]  #better to do that in filters
-  
-  #count,div = np.histogram(data.Time,bins=36000)
-  #data = data[((data.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count<=3.*np.median(count)])]  #forse metodi piu efficienti
-    
-  return data
-
-
-
-def IB_Event_Thresh(data):
-  #--------------------------------------------------------
-  # Applies thresholds to the events in an incoherent beams
-  #--------------------------------------------------------
-
-  #Remove low DM
-  data = data[data.DM>DM_MIN]
-  
-  ##Remove low sigma
-  #data = data[data.Sigma>SIGMA_MIN]
-
-  ##Remove high durations
-  #data = data[data.Duration<DURATION_MAX]
-  
+      
   return data
 
 
@@ -60,13 +33,14 @@ def Pulse_Thresh(puls,gb,data):
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  #puls.Pulse[puls.dDM > 1.] += 3
-  
-  Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
-  Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
-  Time_DM_max = data.Time[gb.DM.idxmax()].values
-  Time_DM_min = data.Time[gb.DM.idxmin()].values
-  DM_min = gb.DM.min()
+  data_idxmax = data.loc[gb.DM.idxmax()]
+  data_idxmax.index = data_idxmax.Pulse
+  data_idxmin = data.loc[gb.DM.idxmin()]
+  data_idxmin.index = data_idxmin.Pulse  
+  Sigma_DM_max = data_idxmax.Sigma
+  Sigma_DM_min = data_idxmin.Sigma
+  Time_DM_max = data_idxmax.Time
+  Time_DM_min = data_idxmin.Time
   Sigma_min = gb.Sigma.min()
   
   puls.Pulse.loc[puls.N_events < 5] = 10
@@ -93,6 +67,10 @@ def Pulse_Thresh(puls,gb,data):
     #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
     #puls.Pulse[(f>FILTERS[6][i])|(f<FILTERS[7][i])] += 1
     
+    #puls.dDM/(puls.dTime+0.0000000001)*(Time_DM_min-Time_DM_max)/(abs(Time_DM_min-Time_DM_max)+0.0000000001)
+    
+    #STUDIARE nuovamente questi parametri!
+    
   
   #puls.Pulse[puls.Duration > 0.0221184] += 3 #BETTER to divide in 3 steps, accordingly to dDMs
   #puls.Pulse[(puls.Pulse<RFI_percent) & (puls.DM<=40.5) & (puls.dDM/(N_events-1)/0.01 > 0.667)] += 1
@@ -115,9 +93,35 @@ def IB_Pulse_Thresh(puls,gb,data):
   # Applies thresholds to the pulses in an incoherent beams
   #--------------------------------------------------------
 
-  puls.Pulse[puls.N_events<4] = 10
-
+  data_idxmax = data.loc[gb.DM.idxmax()]
+  data_idxmax.index = data_idxmax.Pulse
+  data_idxmin = data.loc[gb.DM.idxmin()]
+  data_idxmin.index = data_idxmin.Pulse  
+  Sigma_DM_max = data_idxmax.Sigma
+  Sigma_DM_min = data_idxmin.Sigma
+  Time_DM_max = data_idxmax.Time
+  Time_DM_min = data_idxmin.Time
+  Sigma_min = gb.Sigma.min()
   
+  puls.Pulse[puls.N_events<4] = 10
+  
+  min_chunk = [4,9]
+  max_chunk = list(min_chunk)
+  max_chunk[0] = np.inf
+  max_chunk=np.roll(np.add(max_chunk,-1),-1)
+  
+  puls_astro = puls[puls.Pulse < RFI_percent]
+  
+  for i in range(len(min_chunk)):
+    puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])].reindex_like(puls)
+    
+    puls.Pulse[puls_chunk.Duration > FILTERS[0][i]] += 1
+    puls.Pulse[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(puls.N_events-1)/0.01 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(puls.N_events-1)/0.05 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls.N_events-1)/0.1 > FILTERS[1][i])] += 1
+    puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
+    puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
+
   return puls
 
 
@@ -140,13 +144,11 @@ def Align_Pulse_Thresh(puls,gb,data):
   #studiare se meglio std o senza /N o con altre opzioni
   
   
-  count,div = np.histogram(puls.Time,bins=3600)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 10  #forse metodi piu efficienti
-  
   count,div = np.histogram(puls.Time,bins=360)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 10  #forse metodi piu efficienti
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
   
-
+  count,div = np.histogram(puls.Time,bins=3600)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
   
   return puls
 
@@ -156,24 +158,45 @@ def IB_Align_Pulse_Thresh(puls,gb,data):
   #--------------------------------------------------------
   # Applies thresholds to the pulses in an incoherent beams
   #--------------------------------------------------------
-
- 
+  #min_chunk = [5,9]
+  #max_chunk = min_chunk
+  #max_chunk[0] = np.inf
+  #max_chunk=np.roll(np.add(max_chunk,-1),-1)
+  
+  #puls_astro = puls[(puls.Pulse < RFI_percent)]
+  
+  #for i in range(len(min_chunk)):
+    #puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])]
+    #puls.Pulse[gb.Time.apply(np.var) > FILTERS[6][i]] += 1
+  
+  #studiare se meglio std o senza /N o con altre opzioni
+  
+  count,div = np.histogram(puls.Time,bins=360)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
+  
+  count,div = np.histogram(puls.Time,bins=3600)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
   return puls
 
 
 
 def Compare_IB(coh,incoh):
   
-  CB = coh.ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  IB = incoh.ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  CB = coh[coh.Pulse<=RFI_percent].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  CB['Time_low'] = CB.Time_c-CB.dTime
+  CB.sort('Time_low',inplace=True)
+  
+  IB = incoh[incoh.Pulse<=RFI_percent].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  IB['Time_low'] = IB.Time_c-IB.dTime
+  IB.sort('Time_low',inplace=True)
   
   C_Funct.Compare(CB.DM_c.values,CB.dDM.values,CB.Time_c.values,CB.dTime.values,CB.Sigma.values,CB.Pulse.values,\
                   IB.DM_c.values,IB.dDM.values,IB.Time_c.values,IB.dTime.values,IB.Sigma.values,IB.Pulse.values,np.int8(0))  
   
-  coh.Pulse=CB.Pulse
-  incoh.Pulse=IB.Pulse
+  coh.Pulse.loc[coh.Pulse<=RFI_percent] = CB.Pulse
+  incoh.Pulse.loc[incoh.Pulse<=RFI_percent] = IB.Pulse
   
-  return
+  return coh, incoh
 
 
 def Compare_Beams(puls):
@@ -188,8 +211,6 @@ def Compare_Beams(puls):
   #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
-  #sig_lim = 8.
-
   sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
@@ -203,7 +224,7 @@ def Compare_Beams(puls):
   sap2.sort('Time_low',inplace=True)
   
   logging.info('Comparison is starting')
-  time0 = time.clock()
+
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
                   sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
   
@@ -217,7 +238,6 @@ def Compare_Beams(puls):
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
-  print "Time comparison: %.2f s"%(time.clock() - time0)
   puls.Pulse.loc[(puls.SAP==0)&(puls.Pulse<=RFI_percent)]=sap0.Pulse
   
   puls.Pulse.loc[(puls.SAP==1)&(puls.Pulse<=RFI_percent)]=sap1.Pulse
@@ -234,7 +254,11 @@ def best_pulses(puls,data):
   delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
   
   puls_astro = puls[(puls.Pulse == 0)]
-  gb = data[data.Pulse.isin(puls_astro.index)].groupby('Pulse',sort=False)  #MIGLIORARE! Forse e' il caso di mettere N_elements nella tabella puls
+  data_astro = data[data.Pulse.isin(puls_astro.index)]
+
+  puls_astro.Time -= puls_astro.DM * delay
+  data_astro.Time -= data_astro.DM * delay
+  
   best = pd.DataFrame()
   
   min_chunk = [5,9,13]
@@ -250,39 +274,66 @@ def best_pulses(puls,data):
   #Sigma_DM_min.index = Sigma_DM_min.Pulse
   #Sigma_DM_min = Sigma_DM_min.Sigma
   
+  puls_astro_inc = puls_astro[puls_astro.BEAM==12]
+  puls_astro = puls_astro[puls_astro.BEAM>12]
+  
   for i in range(len(min_chunk)):
     puls_chunk = puls_astro[(puls_astro.N_events >= min_chunk[i])&(puls_astro.N_events <= max_chunk[i])]
-    gb = data[data.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)
+    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)
     if not puls_chunk.empty: puls_chunk = puls_chunk[gb.Time.apply(np.var) <= FILTERS_BEST[7][i]]
-    puls_chunk.Time -= puls_chunk.DM * delay
     if not puls_chunk.empty: 
       puls_chunk0 = puls_chunk[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.01 <= FILTERS_BEST[0][i])]
       puls_chunk1 = puls_chunk[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.05 <= FILTERS_BEST[0][i])]
       puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.1 <= FILTERS_BEST[0][i])]
       puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
     if not puls_chunk.empty: puls_chunk = puls_chunk[abs(puls_chunk.DM-puls_chunk.DM_c)/puls_chunk.dDM <= FILTERS_BEST[1][i]]
-    gb = data[data.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
+    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
     Sigma_min = gb.Sigma.min()
     if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min >= FILTERS_BEST[2][i]]
-    gb = data[data.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
+    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
     Sigma_min = gb.Sigma.min()
     if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min**4 >= FILTERS_BEST[3][i]]
-    gb = data[data.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)
-    Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values  
-    Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
+    #gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)
+    #Sigma_DM_max = data_astro.Sigma[gb.DM.idxmax()]  
+    #Sigma_DM_min = data_astro.Sigma[gb.DM.idxmin()]
     #if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.index.isin(Sigma_DM_max[abs(Sigma_DM_max-Sigma_DM_min) <= FILTERS_BEST[4][i]].index)]
     #if not puls_chunk.empty: puls_chunk = puls_chunk[abs(Sigma_DM_max-Sigma_DM_min) <= FILTERS_BEST[4][i]]
     #if not puls_chunk.empty:
-      #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
+      #f = data_astro[data_astro.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
       #puls_chunk = puls_chunk[(f<=FILTERS_BEST[5][i])]
       #puls_chunk = puls_chunk[(f>=FILTERS_BEST[6][i])]
  
     best = best.append(puls_chunk)
   
-  best.Time  += best.DM * delay
+  
   best.sort('Sigma',ascending=False,inplace=True)
   
-  return best.groupby(['SAP','BEAM'],sort=False).head(10)
+  top = best.groupby(['SAP','BEAM'],sort=False).head(10)
+  best = 0
+  
+  gb_top = top.groupby(['SAP','BEAM'],sort=False).Sigma
+  max_top = gb_top.max()
+  min_top_ind = gb_top.idxmin()
+  count_top = gb_top.count()
+  gb_top = 0
+  
+  gb_puls = puls[puls.Pulse<=RFI_percent].groupby(['SAP','BEAM'],sort=False).Sigma
+  strongest = gb_puls.max().reindex_like(max_top)
+  strongest_id = gb_puls.idxmax().reindex_like(max_top)
+  gb_puls = 0
+  
+  
+  top.drop(min_top_ind[(max_top<strongest)&(count_top>=10)&(min_top_ind.index[0][1]>12)],inplace=True)
+  top.drop(min_top_ind[(max_top<strongest)&(count_top>=30)&(min_top_ind.index[0][1]==12)],inplace=True)
+  top = top.append(puls.loc[strongest_id[strongest>max_top]])
+
+  top.Time  += top.DM * delay
+  top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
+  
+  return top
+
+
+
     
     
   ''' OLD!!!

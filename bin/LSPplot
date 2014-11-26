@@ -69,11 +69,15 @@ def read_puls(idL,args):
   return puls
 
 
-def read_DB(puls):
+def read_DB(idL,args,puls):
   puls_rfi = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
   meta_data = pd.read_hdf('sp/SinlgePulses.hdf5','meta_data')
   top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
-  
+  try:
+    best_pulses = pd.read_hdf('sp/SinlgePulses.hdf5','best_pulses')
+  except KeyError:
+    best_pulses = pd.DataFrame()
+    
   #-----------------------------------
   #Selection of values in the database
   #-----------------------------------
@@ -81,65 +85,73 @@ def read_DB(puls):
   if args.dmlo: 
     puls_rfi = puls_rfi[puls_rfi['DM']>args.dmlo]
     top_candidates = top_candidates[top_candidates['DM']>args.dmlo]
+    best_pulses = best_pulses[best_pulses['DM']>args.dmlo]
   if args.dmhi: 
     puls_rfi = puls_rfi[puls_rfi['DM']<args.dmhi]    
     top_candidates = top_candidates[top_candidates['DM']<args.dmhi]    
+    best_pulses = best_pulses[best_pulses['DM']<args.dmhi]    
   if args.tmlo: 
     puls_rfi = puls_rfi[puls_rfi['Time']>args.tmlo]
     top_candidates = top_candidates[top_candidates['Time']>args.tmlo]
+    best_pulses = best_pulses[best_pulses['Time']>args.tmlo]
   if args.tmhi: 
     puls_rfi = puls_rfi[puls_rfi['Time']<args.tmhi]
     top_candidates = top_candidates[top_candidates['Time']<args.tmhi]
+    best_pulses = best_pulses[best_pulses['Time']<args.tmhi]
   if args.sap: 
     puls_rfi = puls_rfi[puls_rfi['SAP'].isin(args.sap)]
     top_candidates = top_candidates[top_candidates['SAP'].isin(args.sap)]
     meta_data = meta_data[meta_data['SAP'].astype(int).isin(args.sap)]
+    best_pulses = best_pulses[best_pulses['SAP'].isin(args.sap)]
   if args.beam: 
     puls_rfi = puls_rfi[puls_rfi['BEAM'].isin(args.beam)]
     top_candidates = top_candidates[top_candidates['BEAM'].isin(args.beam)]
     meta_data = meta_data[meta_data['BEAM'].astype(int).isin(args.beam)]
+    best_pulses = best_pulses[best_pulses['BEAM'].isin(args.beam)]
   if args.pulse: 
     puls_rfi = puls_rfi[puls_rfi.index.isin(args.pulse)]
     top_candidates = top_candidates[top_candidates.index.isin(args.pulse)]
+    best_pulses = best_pulses[best_pulses.index.isin(args.pulse)]
    
   data = pd.read_hdf('sp/SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
   
+  return puls_rfi,data,meta_data,top_candidates,best_pulses
+
+
+
+def read_best(idL,args,puls):
+  top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
   try:
     best_pulses = pd.read_hdf('sp/SinlgePulses.hdf5','best_pulses')
   except KeyError:
     best_pulses = pd.DataFrame()
     
-  return puls_rfi,data,meta_data,top_candidates,best_pulses
-
-
-
-def read_best(idL,args):
-  top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
-  
   #-----------------------------------
   #Selection of values in the database
   #-----------------------------------
   
   if args.dmlo: 
     top_candidates = top_candidates[top_candidates['DM']>args.dmlo]
+    best_pulses = best_pulses[best_pulses['DM']>args.dmlo]
   if args.dmhi: 
     top_candidates = top_candidates[top_candidates['DM']<args.dmhi]    
+    best_pulses = best_pulses[best_pulses['DM']<args.dmhi]    
   if args.tmlo: 
     top_candidates = top_candidates[top_candidates['Time']>args.tmlo]
+    best_pulses = best_pulses[best_pulses['Time']>args.tmlo]
   if args.tmhi: 
     top_candidates = top_candidates[top_candidates['Time']<args.tmhi]
+    best_pulses = best_pulses[best_pulses['Time']<args.tmhi]
   if args.sap: 
     top_candidates = top_candidates[top_candidates['SAP'].isin(args.sap)]
+    best_pulses = best_pulses[best_pulses['SAP'].isin(args.sap)]
   if args.beam: 
     top_candidates = top_candidates[top_candidates['BEAM'].isin(args.beam)]
+    best_pulses = best_pulses[best_pulses['BEAM'].isin(args.beam)]
   if args.pulse: 
     top_candidates = top_candidates[top_candidates.index.isin(args.pulse)]
-    
-  try:
-    best_pulses = pd.read_hdf('sp/SinlgePulses.hdf5','best_pulses')
-  except KeyError:
-    best_pulses = pd.DataFrame()
-    
+    best_pulses = best_pulses[best_pulses.index.isin(args.pulse)]
+
   return top_candidates,best_pulses
 
 
@@ -161,14 +173,14 @@ def main():
     dim = len(puls.SAP.unique())+len(puls.BEAM.unique())-1
       
     if dim<=1:
-      puls_rfi,data,meta_data,top_candidates,best_pulses = read_DB(puls)
-      if args.events: LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulses,data=data)
-      else: LSPplot.plot(idL,puls,puls_rfi,meta_data,top_candidates,best_pulses)
-      LSPplot.sp(idL,top_candidates,data,meta_data)
+      puls_rfi,data,meta_data,top_candidates,best_pulses = read_DB(idL,args,puls)
+      if args.events: LSPplot.plot(puls,puls_rfi,meta_data,top_candidates,best_pulses,data=data)
+      else: LSPplot.plot(puls,puls_rfi,meta_data,top_candidates,best_pulses)
+      LSPplot.sp(top_candidates,data,meta_data)
     else:
-      top_candidates,best_pulses = read_best(pulse)
+      top_candidates,best_pulses = read_best(idL,args,puls)
       if top_candidates.empty: print "\nNo pulses found!"
-      else: LSPplot.obs_top_candidates(idL,top_candidates,best_pulses)
+      else: LSPplot.obs_top_candidates(top_candidates,best_pulses)
   
   else:
     print "\nThe DataBase doesn't exists.\nUse the command SPclean to create it!"

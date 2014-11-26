@@ -134,7 +134,7 @@ def Get_Group(float[::1] DM not None,
   
   
 #-------------------------
-# Compares different beams    #mettere duration invece di dT
+# Compares different beams
 #-------------------------
 def Compare(float[::1] DM_c_l not None,
             float[::1] dDM_l not None,

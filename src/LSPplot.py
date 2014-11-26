@@ -104,7 +104,7 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
   else: 
     plt.show()
   
-  plt.close('all')
+  plt.clf()
   return
   
 
@@ -141,15 +141,19 @@ def sp(top_candidates,data,meta_data,size=True,store=False):
   
   else: plt.show()
   
-  plt.close('all')
+  plt.clf()
   return
 
 
-def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=False): #top_candidates di tutti i beams
+def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=False,incoherent=False): #top_candidates di tutti i beams
   
-  if color: 
-    col_top = top_candidates.SAP *10 + (top_candidates.BEAM-13) /61. * 10.
-    col_best = best_pulses.SAP *10 + (best_pulses.BEAM-13) /61. * 10.
+  if color:
+    if incoherent:
+      col_top = top_candidates.SAP
+      if not best_pulses.empty: col_best = best_pulses.SAP
+    else:
+      col_top = top_candidates.SAP *10 + (top_candidates.BEAM-13) /61. * 10.
+      if not best_pulses.empty: col_best = best_pulses.SAP *10 + (best_pulses.BEAM-13) /61. * 10.
   else: 
     col_top = u'r' 
     col_best = u'r'
@@ -157,17 +161,25 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   if size: sig=(top_candidates.Sigma/6.)**4
   else: sig=100.
     
-  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col_top)  #cmap=cmap
+  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col_top)
   
   dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
   
-  if color & (dim>1):   #Testare che faccia tutto bene, sembra troppo robusto
-    ticks = np.linspace(col_top.min(),col_top.max(),num=10)
-    bar = plt.colorbar(ticks=ticks)
-    bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
-    bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
-    bar.update_ticks
-    bar.ax.xaxis.set_ticks_position('top')
+  if color & (dim>1):
+    if incoherent:
+      ticks = np.linspace(col_top.min(),col_top.max(),num=3)
+      bar = plt.colorbar(ticks=ticks)
+      bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
+      bar.ax.set_xlabel('sap',ha='left',labelpad=-380)
+      bar.update_ticks
+      bar.ax.xaxis.set_ticks_position('top')      
+    else:
+      ticks = np.linspace(col_top.min(),col_top.max(),num=10)
+      bar = plt.colorbar(ticks=ticks)
+      bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
+      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+      bar.update_ticks
+      bar.ax.xaxis.set_ticks_position('top')
     
     
   if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
@@ -186,7 +198,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   else: 
     plt.show()
   
-  plt.close('all')
+  plt.clf()
   return
     
       

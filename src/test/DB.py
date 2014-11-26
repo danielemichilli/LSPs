@@ -56,14 +56,14 @@ gb = data.groupby('Pulse',sort=False)
 
 N_events = gb.DM.count()
 N_events_rfi = gb_rfi.DM.count()
-puls=puls[N_events>=5]
-rfi_puls=rfi_puls[N_events_rfi>=5]
+puls=puls[N_events>=4]
+rfi_puls=rfi_puls[N_events_rfi>=4]
 
-pulsA = puls[N_events<9]
+pulsA = puls[(N_events>4)&(N_events<9)]
 pulsB = puls[(N_events>=9)&(N_events<=12)]
 pulsC = puls[N_events>12]
 
-rfiA = rfi_puls[N_events_rfi<9]
+rfiA = rfi_puls[(N_events>4)&(N_events<9)]
 rfiB = rfi_puls[(N_events_rfi>=9)&(N_events_rfi<=12)]
 rfiC = rfi_puls[N_events_rfi>12]
 
@@ -79,16 +79,21 @@ parameters_name.write('Observation\n\n')
 parameters.write('{}\n\n'.format(idL))
 
 
-for [puls,rfi_puls] in [[pulsA,rfiA],[pulsB,rfiB],[pulsC,rfiC]]:
+for [puls,rfi_puls] in [[pulsA,rfiA],[pulsB,rfiB]]:#,[pulsC,rfiC]]:
   rfi = ( len(puls[(puls.DM>up_DM_lo)&(puls.DM<up_DM_hi)]) + len(puls[(puls.DM>down_DM_lo)&(puls.DM<down_DM_hi)]) ) / 2
   num = len(puls)-rfi
   num_rfi = len(rfi_puls)
   data = data_all[data_all.Pulse.isin(puls.index)]
   gb = data.groupby('Pulse',sort=False)
-  Sigma_DM_max = data.Sigma[gb.DM.idxmax()].values
-  Sigma_DM_min = data.Sigma[gb.DM.idxmin()].values
-  Time_DM_max = data.Time[gb.DM.idxmax()].values
-  Time_DM_min = data.Time[gb.DM.idxmin()].values
+  data_idxmax = data.loc[gb.DM.idxmax()]
+  data_idxmax.index = data_idxmax.Pulse
+  data_idxmin = data.loc[gb.DM.idxmin()]
+  data_idxmin.index = data_idxmin.Pulse  
+  Sigma_DM_max = data_idxmax.Sigma
+  Sigma_DM_min = data_idxmin.Sigma
+  Time_DM_max = data_idxmax.Time
+  Time_DM_min = data_idxmin.Time
+  Sigma_min = gb.Sigma.min()
   DM_min = gb.DM.min()
   Sigma_min = gb.Sigma.min()
   N_events = gb.DM.count()
@@ -1004,12 +1009,137 @@ for [puls,rfi_puls] in [[pulsA,rfiA],[pulsB,rfiB],[pulsC,rfiC]]:
 
   out_file.write('\nTop candidates:\n60%:{}\n75%:{}\n95%:{}\n99%:{}'.format(selected60[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected75[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected95[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected99[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string()))
 
-  puls['parameter'] = puls.dDM/(puls.dTime+0.0000000001)*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max+0.0000000001)
+  puls['parameter'] = puls.dDM/(puls.dTime+0.000001)*(Time_DM_min-Time_DM_max)/(abs(Time_DM_min-Time_DM_max)+0.000001)
   sign = '<'
 
-  out_file.write( "\n\n-------------------------------------\n\npuls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max)\n")  
+  out_file.write( "\n\n-------------------------------------\n\npuls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max) (<)\n")  
   parameters_name.write('puls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max)\n\n\n\n\n')
-  rfi_puls['parameter'] = rfi_puls.dDM/rfi_puls.dTime*(Time_DM_min_rfi-Time_DM_max_rfi)/abs(Time_DM_min_rfi-Time_DM_max_rfi)
+  rfi_puls['parameter'] = rfi_puls.dDM/(rfi_puls.dTime+0.000001)*(Time_DM_min_rfi-Time_DM_max_rfi)/(abs(Time_DM_min_rfi-Time_DM_max_rfi)+0.000001)
+
+  gb60 = data[data.Pulse.isin(selected60.index)].groupby('Pulse',sort=False)
+  gb75 = data[data.Pulse.isin(selected75.index)].groupby('Pulse',sort=False)
+  gb95 = data[data.Pulse.isin(selected95.index)].groupby('Pulse',sort=False)
+  gb99 = data[data.Pulse.isin(selected99.index)].groupby('Pulse',sort=False)
+  Time_DM_max60 = data.Time[gb60.DM.idxmax()].values
+  Time_DM_max75 = data.Time[gb75.DM.idxmax()].values  
+  Time_DM_max95 = data.Time[gb95.DM.idxmax()].values
+  Time_DM_max99 = data.Time[gb99.DM.idxmax()].values
+  Time_DM_min60 = data.Time[gb60.DM.idxmin()].values
+  Time_DM_min75 = data.Time[gb75.DM.idxmin()].values
+  Time_DM_min95 = data.Time[gb95.DM.idxmin()].values
+  Time_DM_min99 = data.Time[gb99.DM.idxmin()].values
+
+  selected60['parameter'] = selected60.dDM/selected60.dTime*(Time_DM_min60-Time_DM_max60)/abs(Time_DM_min60-Time_DM_max60)
+  selected75['parameter'] = selected75.dDM/selected75.dTime*(Time_DM_min75-Time_DM_max75)/abs(Time_DM_min75-Time_DM_max75)
+  selected95['parameter'] = selected95.dDM/selected95.dTime*(Time_DM_min95-Time_DM_max95)/abs(Time_DM_min95-Time_DM_max95)
+  selected99['parameter'] = selected99.dDM/selected99.dTime*(Time_DM_min99-Time_DM_max99)/abs(Time_DM_min99-Time_DM_max99)
+
+  gb60_rfi = data_rfi[data_rfi.Pulse.isin(selected60_rfi.index)].groupby('Pulse',sort=False)
+  gb75_rfi = data_rfi[data_rfi.Pulse.isin(selected75_rfi.index)].groupby('Pulse',sort=False)
+  gb95_rfi = data_rfi[data_rfi.Pulse.isin(selected95_rfi.index)].groupby('Pulse',sort=False)
+  gb99_rfi = data_rfi[data_rfi.Pulse.isin(selected99_rfi.index)].groupby('Pulse',sort=False)
+  Time_DM_max60_rfi = data_rfi.Time[gb60_rfi.DM.idxmax()].values
+  Time_DM_max75_rfi = data_rfi.Time[gb75_rfi.DM.idxmax()].values
+  Time_DM_max95_rfi = data_rfi.Time[gb95_rfi.DM.idxmax()].values
+  Time_DM_max99_rfi = data_rfi.Time[gb99_rfi.DM.idxmax()].values
+  Time_DM_min60_rfi = data_rfi.Time[gb60_rfi.DM.idxmin()].values
+  Time_DM_min75_rfi = data_rfi.Time[gb75_rfi.DM.idxmin()].values
+  Time_DM_min95_rfi = data_rfi.Time[gb95_rfi.DM.idxmin()].values
+  Time_DM_min99_rfi = data_rfi.Time[gb99_rfi.DM.idxmin()].values
+
+  selected60_rfi['parameter'] = selected60_rfi.dDM/selected60_rfi.dTime*(Time_DM_min60_rfi-Time_DM_max60_rfi)/abs(Time_DM_min60_rfi-Time_DM_max60_rfi)
+  selected75_rfi['parameter'] = selected75_rfi.dDM/selected75_rfi.dTime*(Time_DM_min75_rfi-Time_DM_max75_rfi)/abs(Time_DM_min75_rfi-Time_DM_max75_rfi)
+  selected95_rfi['parameter'] = selected95_rfi.dDM/selected95_rfi.dTime*(Time_DM_min95_rfi-Time_DM_max95_rfi)/abs(Time_DM_min95_rfi-Time_DM_max95_rfi)
+  selected99_rfi['parameter'] = selected99_rfi.dDM/selected99_rfi.dTime*(Time_DM_min99_rfi-Time_DM_max99_rfi)/abs(Time_DM_min99_rfi-Time_DM_max99_rfi)
+
+
+  if sign =='<': 
+    puls = puls.sort('parameter',ascending=False)
+    rfi_puls = rfi_puls.sort('parameter',ascending=False)
+  elif sign =='>': 
+    puls = puls.sort('parameter',ascending=True)
+    rfi_puls = rfi_puls.sort('parameter',ascending=True)
+
+  p60 = puls.parameter.iloc[ int(.6*num) ]
+  p75 = puls.parameter.iloc[ int(.75*num) ]
+  p95 = puls.parameter.iloc[ int(.95*num) ]
+  p99 = puls.parameter.iloc[ int(.99*num) ]
+  
+  len60 = selected60.shape[0]
+  len75 = selected75.shape[0]
+  len95 = selected95.shape[0]
+  len99 = selected99.shape[0]
+
+  len60_rfi = selected60_rfi.shape[0]
+  len75_rfi = selected75_rfi.shape[0]
+  len95_rfi = selected95_rfi.shape[0]
+  len99_rfi = selected99_rfi.shape[0]
+  
+  if sign == '>': 
+    selected60 = selected60[selected60.parameter <= p60]
+    selected75 = selected75[selected75.parameter <= p75]
+    selected95 = selected95[selected95.parameter <= p95]
+    selected99 = selected99[selected99.parameter <= p99]
+    
+    selected60_rfi = selected60_rfi[selected60_rfi.parameter <= p60]
+    selected75_rfi = selected75_rfi[selected75_rfi.parameter <= p75]
+    selected95_rfi = selected95_rfi[selected95_rfi.parameter <= p95]
+    selected99_rfi = selected99_rfi[selected99_rfi.parameter <= p99]
+    
+  else:
+    selected60 = selected60[selected60.parameter >= p60]
+    selected75 = selected75[selected75.parameter >= p75]
+    selected95 = selected95[selected95.parameter >= p95]
+    selected99 = selected99[selected99.parameter >= p99]
+        
+    selected60_rfi = selected60_rfi[selected60_rfi.parameter >= p60]
+    selected75_rfi = selected75_rfi[selected75_rfi.parameter >= p75]
+    selected95_rfi = selected95_rfi[selected95_rfi.parameter >= p95]
+    selected99_rfi = selected99_rfi[selected99_rfi.parameter >= p99]
+
+  removed60 = ( 1 - (selected60.shape[0]+0.0000001) / float(len60+0.0000001) ) * 100
+  removed75 = ( 1 - (selected75.shape[0]+0.0000001) / float(len75+0.0000001) ) * 100
+  removed95 = ( 1 - (selected95.shape[0]+0.0000001) / float(len95+0.0000001) ) * 100
+  removed99 = ( 1 - (selected99.shape[0]+0.0000001) / float(len99+0.0000001) ) * 100
+  
+  removed60_rfi = ( 1 - (selected60_rfi.shape[0]+0.0000001) / float(len60_rfi+0.0000001) ) * 100
+  removed75_rfi = ( 1 - (selected75_rfi.shape[0]+0.0000001) / float(len75_rfi+0.0000001) ) * 100
+  removed95_rfi = ( 1 - (selected95_rfi.shape[0]+0.0000001) / float(len95_rfi+0.0000001) ) * 100
+  removed99_rfi = ( 1 - (selected99_rfi.shape[0]+0.0000001) / float(len99_rfi+0.0000001) ) * 100
+  
+  removed60_tot = ( 1 - (selected60.shape[0]+0.0000001) / float(num+0.0000001) ) * 100
+  removed75_tot = ( 1 - (selected75.shape[0]+0.0000001) / float(num+0.0000001) ) * 100
+  removed95_tot = ( 1 - (selected95.shape[0]+0.0000001) / float(num+0.0000001) ) * 100
+  removed99_tot = ( 1 - (selected99.shape[0]+0.0000001) / float(num+0.0000001) ) * 100
+
+  removed60_rfi_tot = ( 1 - (selected60_rfi.shape[0]+0.0000001) / float(num_rfi+0.0000001) ) * 100
+  removed75_rfi_tot = ( 1 - (selected75_rfi.shape[0]+0.0000001) / float(num_rfi+0.0000001) ) * 100
+  removed95_rfi_tot = ( 1 - (selected95_rfi.shape[0]+0.0000001) / float(num_rfi+0.0000001) ) * 100
+  removed99_rfi_tot = ( 1 - (selected99_rfi.shape[0]+0.0000001) / float(num_rfi+0.0000001) ) * 100
+  
+  out_file.write( '60%: {:.2e} - events removed: {:.1f}% ({:.1f}% of tot), {} left - rfi removed: {:.1f}% ({:.1f}% of tot), {} left\n'.format(p60,removed60,removed60_tot,selected60.shape[0],removed60_rfi,removed60_rfi_tot,selected60_rfi.shape[0]))
+  out_file.write( '75%: {:.2e} - events removed: {:.1f}% ({:.1f}% of tot), {} left - rfi removed: {:.1f}% ({:.1f}% of tot), {} left\n'.format(p75,removed75,removed75_tot,selected75.shape[0],removed75_rfi,removed75_rfi_tot,selected75_rfi.shape[0]))
+  out_file.write( '95%: {:.2e} - events removed: {:.1f}% ({:.1f}% of tot), {} left - rfi removed: {:.1f}% ({:.1f}% of tot), {} left\n'.format(p95,removed95,removed95_tot,selected95.shape[0],removed95_rfi,removed95_rfi_tot,selected95_rfi.shape[0]))
+  out_file.write( '99%: {:.2e} - events removed: {:.1f}% ({:.1f}% of tot), {} left - rfi removed: {:.1f}% ({:.1f}% of tot), {} left\n'.format(p99,removed99,removed99_tot,selected99.shape[0],removed99_rfi,removed99_rfi_tot,selected99_rfi.shape[0]))
+
+  parameters.write("{:.2e}\n".format(p60))
+  parameters.write("{:.2e}\n".format(p75))
+  parameters.write("{:.2e}\n".format(p95))
+  parameters.write("{:.2e}\n".format(p99))
+  parameters.write("\n")
+
+  out_file.write('\nTop candidates:\n60%:{}\n75%:{}\n95%:{}\n99%:{}'.format(selected60[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected75[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected95[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string(),selected99[['Sigma']].sort('Sigma',ascending=False).head(10).T.to_string()))
+
+
+
+
+
+  puls['parameter'] = puls.dDM/(puls.dTime+0.0000000001)*(Time_DM_min-Time_DM_max)/(abs(Time_DM_min-Time_DM_max)+0.0000000001)
+  sign = '>'
+
+  out_file.write( "\n\n-------------------------------------\n\npuls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max) (>)\n")  
+  parameters_name.write('puls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max)\n\n\n\n\n')
+  rfi_puls['parameter'] = rfi_puls.dDM/(rfi_puls.dTime+0.000001)*(Time_DM_min_rfi-Time_DM_max_rfi)/(abs(Time_DM_min_rfi-Time_DM_max_rfi)+0.000001)
 
   gb60 = data[data.Pulse.isin(selected60.index)].groupby('Pulse',sort=False)
   gb75 = data[data.Pulse.isin(selected75.index)].groupby('Pulse',sort=False)
