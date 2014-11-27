@@ -210,7 +210,5 @@ def output(folder,idL,puls,best_puls,data,meta_data):
     top_candidates.Duration *= 1000
     top_candidates['void'] = ''
     top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
-
-    #best pulses per incoherent
         
   return
