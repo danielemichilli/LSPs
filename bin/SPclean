@@ -119,7 +119,7 @@ def main():
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isfile('{}{}/sp/SinlgePulses.hdf5'.format(folder,idL)):
+  if not os.path.isfile('{}{}/sp/SinglePulses.hdf5'.format(folder,idL)):
     create_DB(folder,idL,args)
     
   #Otherwise create a new DataBase

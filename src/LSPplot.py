@@ -6,13 +6,12 @@
 #
 #############################
 
-import matplotlib as mpl
-#mpl.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import tarfile
 import os
+import matplotlib as mpl
 
 from Parameters import *
 
@@ -28,7 +27,7 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
     fill = u'k'
     square = u'k'
     
-  sig = (top_candidates.Sigma/6.5)**5
+  sig = (top_candidates.Sigma/1.5)**3
 
   fig = plt.figure()
   
@@ -45,7 +44,6 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
  
   if not puls.empty:
     if not data.empty: 
-      sig=(data.Sigma/4.)**4
       ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])
       
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
@@ -97,7 +95,6 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
   ax1.axis([0,3600,5,550])
   
   if store:
-    #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
@@ -134,7 +131,6 @@ def sp(top_candidates,data,meta_data,size=True,store=False):
   #fig.text(0.06, 0.5, 'DM (pc/cm3)', ha='center', va='center', rotation='vertical')
     
   if store:
-    #plt.switch_backend('Agg')
     if not top_candidates.empty:
       mpl.rc('font',size=5)
       plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
@@ -158,10 +154,12 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     col_top = u'r' 
     col_best = u'r'
   
-  if size: sig=(top_candidates.Sigma/6.)**4
+  if size: 
+    sig_top = (top_candidates.Sigma/6.)**4
+    if not best_pulses.empty: sig_best = (top_candidates.Sigma/6.)**4
   else: sig=100.
     
-  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=col_top)
+  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig_top,linewidths=[0.,],c=col_top)
   
   dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
   
@@ -182,7 +180,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       bar.ax.xaxis.set_ticks_position('top')
     
     
-  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
   plt.xlabel('Time (s)')
   plt.ylabel('DM (pc/cm3)')
   plt.axis([0,3600,5,550])
@@ -191,7 +189,6 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   
 
   if store:
-    #plt.switch_backend('Agg')
     mpl.rc('font',size=5)
     plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   

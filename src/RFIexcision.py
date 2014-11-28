@@ -304,11 +304,33 @@ def best_pulses(puls,data):
       #puls_chunk = puls_chunk[(f>=FILTERS_BEST[6][i])]
  
     best = best.append(puls_chunk)
+    
+  best.sort('Sigma',ascending=False,inplace=True)
+  top = best.groupby(['SAP','BEAM'],sort=False).head(10)
+  best = pd.DataFrame()
   
+  #Incoherent
+  min_chunk = [4,9]
+  max_chunk = list(min_chunk)
+  max_chunk[0] = np.inf
+  max_chunk=np.roll(np.add(max_chunk,-1),-1)
+  
+  for i in range(len(min_chunk)):
+    puls_chunk = puls_astro_inc[(puls_astro_inc.N_events >= min_chunk[i])&(puls_astro_inc.N_events <= max_chunk[i])]
+    if not puls_chunk.empty: 
+      puls_chunk0 = puls_chunk[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.01 <= FILTERS_BEST_INC[0][i])]
+      puls_chunk1 = puls_chunk[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.05 <= FILTERS_BEST_INC[0][i])]
+      puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.1 <= FILTERS_BEST_INC[0][i])]
+      puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
+    if not puls_chunk.empty: puls_chunk = puls_chunk[abs(puls_chunk.DM-puls_chunk.DM_c)/puls_chunk.dDM <= FILTERS_BEST_INC[1][i]]
+    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
+    Sigma_min = gb.Sigma.min()
+    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min >= FILTERS_BEST_INC[2][i]]
+    
+    best = best.append(puls_chunk)
   
   best.sort('Sigma',ascending=False,inplace=True)
-  
-  top = best.groupby(['SAP','BEAM'],sort=False).head(10)
+  top = top.append(best.groupby(['SAP','BEAM'],sort=False).head(30))
   best = 0
   
   if not top.empty:
@@ -331,7 +353,7 @@ def best_pulses(puls,data):
 
     top.Time  += top.DM * delay
     top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
-  
+    
   return top
 
 

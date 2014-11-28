@@ -11,6 +11,8 @@ import numpy as np
 import tarfile
 import os
 import logging
+import matplotlib as mpl
+mpl.use('Agg')
 
 import RFIexcision
 import Group
@@ -145,10 +147,10 @@ def obs_events(folder,idL):
   puls = RFIexcision.Compare_Beams(puls)
   meta_data = meta_data.astype(str)
   
-  best_puls = RFIexcision.best_pulses(puls,data)
-
   puls = puls.append(puls_inc_all,ignore_index=False)
-
+  puls_inc_all = 0
+  
+  best_puls = RFIexcision.best_pulses(puls,data)
   puls.sort(['SAP','BEAM','Pulse','Sigma'],ascending=[True,True,True,False],inplace=True)
   
   #Stores the table into a DataBase
@@ -180,16 +182,20 @@ def output(folder,idL,puls,best_puls,data,meta_data):
           data_plot = data[data.Pulse.isin(astro.index)]
           meta_data_plot = meta_data[(meta_data.SAP==str(sap))&(meta_data.BEAM==str(beam))]
           best_puls_plot = best_puls[(best_puls.SAP==sap)&(best_puls.BEAM==beam)]
-          LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
-          LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
           if beam == 12: 
-            LSPplot.sp(best_puls_plot[:10],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(0-9).png'.format(folder,idL,name))
-            LSPplot.sp(best_puls_plot[10:20],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(10-19).png'.format(folder,idL,name))
-            LSPplot.sp(best_puls_plot[20:],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(20-29).png'.format(folder,idL,name))
+            LSPplot.plot(astro.iloc[30:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
+            LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(0-9).png'.format(folder,idL,name))
+            LSPplot.sp(astro.iloc[10:20],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(10-19).png'.format(folder,idL,name))
+            LSPplot.sp(astro.iloc[20:30],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(20-29).png'.format(folder,idL,name))
+            LSPplot.sp(best_puls_plot.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(0-9).png'.format(folder,idL,name))
+            LSPplot.sp(best_puls_plot.iloc[10:20],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(10-19).png'.format(folder,idL,name))
+            LSPplot.sp(best_puls_plot.iloc[20:],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(20-29).png'.format(folder,idL,name))
           else:
+            LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
+            LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
             LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
-    LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM>12)].groupby(['SAP','BEAM'],sort=False).head(10),best_puls,store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
-    LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM==12)].groupby('SAP',sort=False).head(30),pd.DataFrame(),store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+    LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM>12)].groupby(['SAP','BEAM'],sort=False).head(10),best_puls[best_puls.BEAM>12],store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
+    LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM==12)].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
     
     best_puls['code'] = best_puls.index
     if not best_puls.empty:
