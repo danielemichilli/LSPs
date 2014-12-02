@@ -1,4 +1,5 @@
 #Files to ignore
-.c
-.so
-.pyc
+*.c
+*.so
+*.pyc
+build
