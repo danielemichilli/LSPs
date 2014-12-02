@@ -89,7 +89,7 @@ def create_DB(folder,idL,args):
             param_out.write(line)
   f.close()
   git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
-  vers = subprocess.check_output(['git', '--git-dir', git_folder, 'rev-parse', '--short', 'HEAD']).strip()
+  vers = subprocess.check_output(['git','describe','--tags','--always']).strip()
   logging.warning("LSPs version: %s\n"%(vers))
   logging.warning("Parameters used:\n\n%s\n\n"%(param_out.getvalue()))
   
