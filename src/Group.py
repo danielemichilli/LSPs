@@ -54,15 +54,15 @@ def Pulses(data,sap,beam):
   
   data = data[data.Pulse>0]
   
-  data.Pulse = (data.Pulse*10+sap)*100+beam  #pulse code deve essere unico: non ho trovato un modo migliore per selezionare eventi quando beam diversi hanno stesso codice
-
+  data.Pulse = (data.Pulse*10+sap)*100+beam
+  
   #------------------------------------------------------
   # Create a table with the characteristics of the pulses
   #------------------------------------------------------
   
   gb = data.groupby('Pulse',sort=False)
   
-  puls = data[data.index.isin(gb.Sigma.idxmax())]  #probabilmente esistono modi piu efficienti
+  puls = data[data.index.isin(gb.Sigma.idxmax())]
   puls.index = puls.Pulse
   puls.index.name = None
   puls = puls.loc[:,['DM','Sigma','Time','Duration']]
