@@ -1,0 +1,7 @@
+- Correct second order time misalignment
+  - Better study parameters of grouping
+    - Better study filter values
+- Substitute duration filter with downfact filter
+- Divide the general plot for the three saps
+- Plot horiontal lines in DM trial changes
+- Plots of pulse shapes larger 

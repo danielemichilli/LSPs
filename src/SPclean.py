@@ -73,7 +73,7 @@ def openSB(folder,idL,sap,beam):
     pulses.close()
     pulses_tar.close()
     
-  except IOError:
+  except (IOError,pd.parser.CParserError):
     #Handle missing beams
     data = pd.DataFrame()
     inf = pd.DataFrame()
