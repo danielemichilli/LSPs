@@ -41,7 +41,7 @@ def parser():
   return args
 
 def read_puls(idL,args):
-  puls = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['Pulse==0'])  #perche' era Pulse>=0 ??
+  puls = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['Pulse==0'])  #perche' era Pulse>=0 ??
   
   #-----------------------------------
   #Selection of values in the database
@@ -70,11 +70,11 @@ def read_puls(idL,args):
 
 
 def read_DB(idL,args,puls):
-  puls_rfi = pd.read_hdf('sp/SinlgePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
-  meta_data = pd.read_hdf('sp/SinlgePulses.hdf5','meta_data')
+  puls_rfi = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['(Pulse>0)&(Pulse<=args.rfi)'])
+  meta_data = pd.read_hdf('sp/SinglePulses.hdf5','meta_data')
   top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
   try:
-    best_pulses = pd.read_hdf('sp/SinlgePulses.hdf5','best_pulses')
+    best_pulses = pd.read_hdf('sp/SinglePulses.hdf5','best_pulses')
   except KeyError:
     best_pulses = pd.DataFrame()
     
@@ -113,7 +113,7 @@ def read_DB(idL,args,puls):
     top_candidates = top_candidates[top_candidates.index.isin(args.pulse)]
     best_pulses = best_pulses[best_pulses.index.isin(args.pulse)]
    
-  data = pd.read_hdf('sp/SinlgePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
+  data = pd.read_hdf('sp/SinglePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
   
   return puls_rfi,data,meta_data,top_candidates,best_pulses
 
@@ -122,7 +122,7 @@ def read_DB(idL,args,puls):
 def read_best(idL,args,puls):
   top_candidates = puls.groupby(['SAP','BEAM'],sort=False).head(10)
   try:
-    best_pulses = pd.read_hdf('sp/SinlgePulses.hdf5','best_pulses')
+    best_pulses = pd.read_hdf('sp/SinglePulses.hdf5','best_pulses')
   except KeyError:
     best_pulses = pd.DataFrame()
     
@@ -165,7 +165,7 @@ def main():
   idL = os.path.basename(os.getcwd())
   
 
-  if (os.path.isfile('sp/SinlgePulses.hdf5')):
+  if (os.path.isfile('sp/SinglePulses.hdf5')):
     print "The DataBase will be plotted."
     
     puls = read_puls(idL,args)
