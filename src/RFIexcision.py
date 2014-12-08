@@ -261,6 +261,9 @@ def best_pulses(puls,data):
   
   best = pd.DataFrame()
   
+  gb = data_astro.groupby('Pulse',sort=False)
+  Sigma_min = gb.Sigma.min()
+  
   min_chunk = [5,9,13]
   max_chunk = list(min_chunk)
   max_chunk[0] = np.inf
@@ -287,12 +290,8 @@ def best_pulses(puls,data):
       puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.1 <= FILTERS_BEST[0][i])]
       puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
     if not puls_chunk.empty: puls_chunk = puls_chunk[abs(puls_chunk.DM-puls_chunk.DM_c)/puls_chunk.dDM <= FILTERS_BEST[1][i]]
-    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
-    Sigma_min = gb.Sigma.min()
-    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min >= FILTERS_BEST[2][i]]
-    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
-    Sigma_min = gb.Sigma.min()
-    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min**4 >= FILTERS_BEST[3][i]]
+    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min.reindex_like(puls_chunk) >= FILTERS_BEST[2][i]]
+    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min.reindex_like(puls_chunk)**4 >= FILTERS_BEST[3][i]]
     #gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)
     #Sigma_DM_max = data_astro.Sigma[gb.DM.idxmax()]  
     #Sigma_DM_min = data_astro.Sigma[gb.DM.idxmin()]
@@ -323,9 +322,7 @@ def best_pulses(puls,data):
       puls_chunk2 = puls_chunk[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls_chunk.N_events-1)/0.1 <= FILTERS_BEST_INC[0][i])]
       puls_chunk = pd.concat([puls_chunk0,puls_chunk1,puls_chunk2])
     if not puls_chunk.empty: puls_chunk = puls_chunk[abs(puls_chunk.DM-puls_chunk.DM_c)/puls_chunk.dDM <= FILTERS_BEST_INC[1][i]]
-    gb = data_astro[data_astro.Pulse.isin(puls_chunk.index)].groupby('Pulse',sort=False)  #probabile meglio fuori dal for
-    Sigma_min = gb.Sigma.min()
-    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min >= FILTERS_BEST_INC[2][i]]
+    if not puls_chunk.empty: puls_chunk = puls_chunk[puls_chunk.Sigma/Sigma_min.reindex_like(puls_chunk) >= FILTERS_BEST_INC[2][i]]
     
     best = best.append(puls_chunk)
   
@@ -346,10 +343,11 @@ def best_pulses(puls,data):
     strongest_id = gb_puls.idxmax().reindex_like(max_top)
     gb_puls = 0
     
-    
     top.drop(min_top_ind[(max_top<strongest)&(count_top>=10)&(min_top_ind.index[0][1]>12)],inplace=True)
     top.drop(min_top_ind[(max_top<strongest)&(count_top>=30)&(min_top_ind.index[0][1]==12)],inplace=True)
     top = top.append(puls.loc[strongest_id[strongest>max_top]])
+    
+    #ATTENZIONE! alcune volte produce 31 pulses
 
     top.Time  += top.DM * delay
     top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)

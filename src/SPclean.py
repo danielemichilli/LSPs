@@ -73,7 +73,7 @@ def openSB(folder,idL,sap,beam):
     pulses.close()
     pulses_tar.close()
     
-  except IOError:
+  except (IOError,pd.parser.CParserError):
     #Handle missing beams
     data = pd.DataFrame()
     inf = pd.DataFrame()
@@ -189,7 +189,7 @@ def output(folder,idL,puls,best_puls,data,meta_data):
             LSPplot.sp(astro.iloc[20:30],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(20-29).png'.format(folder,idL,name))
             LSPplot.sp(best_puls_plot.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(0-9).png'.format(folder,idL,name))
             LSPplot.sp(best_puls_plot.iloc[10:20],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(10-19).png'.format(folder,idL,name))
-            LSPplot.sp(best_puls_plot.iloc[20:],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(20-29).png'.format(folder,idL,name))
+            LSPplot.sp(best_puls_plot.iloc[20:30],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(20-29).png'.format(folder,idL,name))
           else:
             LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
             LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
@@ -197,17 +197,21 @@ def output(folder,idL,puls,best_puls,data,meta_data):
     LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM>12)].groupby(['SAP','BEAM'],sort=False).head(10),best_puls[best_puls.BEAM>12],store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
     LSPplot.obs_top_candidates(puls[(puls.Pulse==0)&(puls.BEAM==12)].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
     
+    #print puls[(puls.Pulse==0)].groupby(['SAP','BEAM'],sort=False).head(10)
+    #print puls[(puls.Pulse==0)].groupby(['SAP','BEAM'],sort=False).max()
+    
     best_puls['code'] = best_puls.index
     if not best_puls.empty:
       a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
       b = [val for sublist in a for val in sublist]
-      best_puls.index=b
+      best_puls.index = b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
     best_puls.to_csv('{}{}/sp/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
     
     top_candidates = puls[puls.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
     top_candidates = top_candidates.append(puls[puls.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
+    top_candidates.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
     top_candidates['code'] = top_candidates.index
     if not top_candidates.empty:
       a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
