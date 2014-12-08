@@ -16,11 +16,7 @@ import matplotlib as mpl
 from Parameters import *
 
 def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False,data=pd.DataFrame()):
-  
-  puls_rfi = puls[puls.Sigma<=6.2]
-  puls = puls[puls.Sigma>6.2]
-  
-  
+
   col = puls.Sigma
   if color: 
     cmap = plt.get_cmap('gist_heat_r')
