@@ -4,6 +4,7 @@ BUG:
 - Only 10 top_candidates in inc beams
 - Rank in top_candidates.inf wronf without inc beam
 
+- General plot: high-right plot, axis range must include top and best
 - Single pulse plots: enlarge points dimension
 - General plots: enlarge points dimension
 - General plots: diminish square dimension
