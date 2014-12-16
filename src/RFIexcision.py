@@ -33,14 +33,15 @@ def Pulse_Thresh(puls,gb,data):
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  data_idxmax = data.loc[gb.DM.idxmax()]
-  data_idxmax.index = data_idxmax.Pulse
-  data_idxmin = data.loc[gb.DM.idxmin()]
-  data_idxmin.index = data_idxmin.Pulse  
-  Sigma_DM_max = data_idxmax.Sigma
-  Sigma_DM_min = data_idxmin.Sigma
-  Time_DM_max = data_idxmax.Time
-  Time_DM_min = data_idxmin.Time
+  #data_idxmax = data.loc[gb.DM.idxmax()]
+  #data_idxmax.index = data_idxmax.Pulse
+  #data_idxmin = data.loc[gb.DM.idxmin()]
+  #data_idxmin.index = data_idxmin.Pulse  
+  #Sigma_DM_max = data_idxmax.Sigma
+  #Sigma_DM_min = data_idxmin.Sigma
+  #Time_DM_max = data_idxmax.Time
+  #Time_DM_min = data_idxmin.Time
+  
   Sigma_min = gb.Sigma.min()
   
   puls.Pulse.loc[puls.N_events < 5] = 10
@@ -62,6 +63,9 @@ def Pulse_Thresh(puls,gb,data):
     puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
     puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
+    
+    #Sigma/Sigma_DM_max
+    #Sigma/Sigma_DM_min
     
     #puls.Pulse[abs(Sigma_DM_max-Sigma_DM_min) > FILTERS[5][i]] += 1
     #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])

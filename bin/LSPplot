@@ -41,7 +41,7 @@ def parser():
   return args
 
 def read_puls(idL,args):
-  puls = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['Pulse==0'])  #perche' era Pulse>=0 ??
+  puls = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['Pulse==0'])
   
   #-----------------------------------
   #Selection of values in the database

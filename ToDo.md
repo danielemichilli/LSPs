@@ -1,9 +1,12 @@
 BUG:
-- Sort top_candidates
+- High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
 - Top_candidates in inf and plot different
 - Only 10 top_candidates in inc beams
-- Rank in top_candidates.inf wronf without inc beam
+- Rank in top_candidates.inf wrong without inc beam
+- Ignore corrupted tar files
 
+- Sometimes top_candidates reported in the output are not the best and the same reported in the plot (es. L232335_SAP0_BEAM24)
+- SAP0_BEAM12 has repeated best_pulses (es. L232335)
 - Single pulse plots: enlarge points dimension
 - General plots: enlarge points dimension
 - General plots: diminish square dimension

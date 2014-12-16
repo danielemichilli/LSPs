@@ -15,11 +15,10 @@ import matplotlib as mpl
 
 from Parameters import *
 
-def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=False,data=pd.DataFrame()):
+def plot(puls,puls_rfi,meta_data,top_candidates,best_pulses,color=True,store=False,data=pd.DataFrame()):
   
-  puls_rfi = puls[puls.Sigma<=6.2]
-  puls = puls[puls.Sigma>6.2]
-  
+  #puls_rfi = puls[puls.Sigma<=6.]
+  #puls = puls[puls.Sigma>6.]
   
   col = puls.Sigma
   if color: 
@@ -41,8 +40,6 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
   ax4 = plt.subplot2grid((3,4),(0,0))
   ax5 = plt.subplot2grid((3,4),(0,3))
 
-  fig.tight_layout()
-    
   ax1.scatter(puls_rfi.Time, puls_rfi.DM, s=5., c=u'k',marker='+',linewidths=[0.4,])
   
  
@@ -53,7 +50,7 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     
     if not top_candidates.empty: ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
-    if not best_pulse.empty: ax1.scatter(best_pulse.Time,best_pulse.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
+    if not best_pulses.empty: ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
     
     ax1.set_yscale('log')
         
@@ -75,7 +72,7 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
     
     ax3.scatter(puls.DM,puls.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
     ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
-    ax3.scatter(best_pulse.DM,best_pulse.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
+    ax3.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
     ax3.set_xscale('log')
     ax3.set_ylabel('SNR')
     ax3.set_xlabel('DM (pc/cm3)')
@@ -98,6 +95,8 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulse,color=True,store=Fals
   ax1.set_ylabel('DM (pc/cm3)')
   ax1.axis([0,3600,5,550])
   
+  fig.tight_layout()
+
   if store:
     mpl.rc('font',size=5)
     plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
@@ -163,35 +162,64 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     if not best_pulses.empty: sig_best = (top_candidates.Sigma/6.)**4
   else: sig=100.
     
-  plt.scatter(top_candidates.Time,top_candidates.DM,s=sig_top,linewidths=[0.,],c=col_top)
+  fig = plt.figure()
+  plt.title("Best Candidates")
+  
+  ax1 = plt.subplot2grid((3,4),(1,0),colspan=3,rowspan=2)
+  ax2 = plt.subplot2grid((3,4),(0,1))
+  ax3 = plt.subplot2grid((3,4),(0,2))
+  ax4 = plt.subplot2grid((3,4),(0,0))
+
+  main_plt = ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig_top,linewidths=[0.,],c=col_top)
   
   dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
   
   if color & (dim>1):
     if incoherent:
       ticks = np.linspace(col_top.min(),col_top.max(),num=3)
-      bar = plt.colorbar(ticks=ticks)
+      bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
       bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
-      bar.ax.set_xlabel('sap',ha='left',labelpad=-380)
+      bar.ax.set_xlabel('sap',ha='left',labelpad=10)
       bar.update_ticks
       bar.ax.xaxis.set_ticks_position('top')      
     else:
       ticks = np.linspace(col_top.min(),col_top.max(),num=10)
-      bar = plt.colorbar(ticks=ticks)
+      bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
       bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
-      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=-380)
+      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=10)
       bar.update_ticks
       bar.ax.xaxis.set_ticks_position('top')
     
     
-  if not best_pulses.empty: plt.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
-  plt.xlabel('Time (s)')
-  plt.ylabel('DM (pc/cm3)')
-  plt.axis([0,3600,5,550])
-  plt.yscale('log')
-  plt.title("Best Candidates")
-  
+  if not best_pulses.empty: ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+  ax1.set_xlabel('Time (s)')
+  ax1.set_ylabel('DM (pc/cm3)')
+  ax1.axis([0,3600,5,550])
+  ax1.set_yscale('log')
 
+  if not top_candidates.empty:
+    if len(top_candidates.DM.unique())>1:
+      ax2.hist(top_candidates.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+      ax2.set_xscale('log')
+      ax2.set_xlabel('DM (pc/cm3)')
+      ax2.set_ylabel('Counts')
+      ax2.set_xlim(5,550)
+    
+      ax4.hist(top_candidates.Sigma.tolist(),bins=100,histtype='step',color='k')
+      ax4.set_xlabel('SNR')
+      ax4.set_ylabel('Counts')
+      ax4.set_yscale('log')
+    
+    ax3.scatter(top_candidates.DM,top_candidates.Sigma,c=u'k',s=3.,linewidths=[0.,],vmin=5,vmax=10)
+    ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=u'k',marker='*')
+    ax3.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c=u'b',marker=u's',facecolors='none',edgecolor=u'g')
+    ax3.set_xscale('log')
+    ax3.set_ylabel('SNR')
+    ax3.set_xlabel('DM (pc/cm3)')
+    ax3.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
+  
+  fig.tight_layout()
+  
   if store:
     mpl.rc('font',size=5)
     plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
