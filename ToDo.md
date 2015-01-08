@@ -21,6 +21,7 @@ BUG:
 - In top_candidates.inf incoherent pulses are reported twice
 - Remove time spans affected by RFI in general plot
 
+- Add filter duration/sigma 
 - Do not plot if plot is empty
 - Correct second order time misalignment
   - Better study parameters of grouping
