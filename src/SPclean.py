@@ -113,8 +113,8 @@ def obs_events(folder,idL):
       else:
         data_sb = RFIexcision.Event_Thresh(data_sb)
         data_sb, puls_sb = Group.Pulses(data_sb,sap,beam)
-        if not data_inc.empty: 
-          puls_sb,puls_inc = RFIexcision.Compare_IB(puls_sb,puls_inc)
+        #if not data_inc.empty: 
+          #puls_sb,puls_inc = RFIexcision.Compare_IB(puls_sb,puls_inc)
         
         data_sb.insert(0,'BEAM',beam)
         data_sb.insert(0,'SAP',sap)
