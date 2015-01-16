@@ -297,8 +297,6 @@ def best_pulses(puls,data):
   top = top.append(best.groupby(['SAP','BEAM'],sort=False).head(30))
   best = 0
   
-  print top
-  
   if not top.empty:
   
     gb_top = top.groupby(['SAP','BEAM'],sort=False).Sigma

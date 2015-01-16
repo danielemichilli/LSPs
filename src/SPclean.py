@@ -142,7 +142,7 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
   gb_best = best_puls.groupby(['SAP','BEAM'],sort=False)
-    
+
   gb_event = events.loc[(events.Pulse.isin(gb_puls.head(30).index))|(events.Pulse.isin(gb_best.head(30).index))].groupby(['SAP','BEAM'],sort=False)
   events = 0  
   
@@ -152,6 +152,15 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   for n in gb_puls.indices.iterkeys():
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
     os.makedirs('{}{}/sp/'.format(folder,idL)+name)
+  
+  
+  
+  #METTERE che n salta best_pulses se non sono presenti  
+  pool = mp.Pool(mp.cpu_count()-1)
+  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
+  pool.close()
+  pool.join()
+  
   
   best_puls['code'] = best_puls.index
   if not best_puls.empty:
@@ -179,13 +188,6 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   
   pulses = 0
 
-  
-  #METTERE che n salta best_pulses se non sono presenti  
-  pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()
-    
   
   #LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
   

@@ -17,7 +17,6 @@ from Parameters import *
 
 
 def plot(gb):
-  
   pulses = gb[0]
   rfi = gb[1]
   meta_data = gb[2]
@@ -28,6 +27,8 @@ def plot(gb):
   beam = gb[0].BEAM.iloc[0]
   
   plt.clf()
+  
+  #NON PLOTTA best_pulses: indice sbagliato!!!!
   
   if beam == 12:
     sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam))
