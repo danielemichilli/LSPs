@@ -92,7 +92,7 @@ def obs_events(folder,idL):
   
   #pulses = Pulses.Generator(pulses,events)
   
-    
+  
   #Correct for the time misalignment of events
   Pulses.TimeAlign(events.Time,events.DM)
   
@@ -110,6 +110,19 @@ def obs_events(folder,idL):
   #Clean the pulses table
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
+
+
+
+  
+  #ALERT su massimo numero pulses per DM
+  #print pulses.groupby(['SAP','BEAM','DM'],sort=False).count().idxmax()[0][2]
+  
+  #repeated_pulses = pulses.groupby(['SAP','BEAM','DM'],sort=False).count()
+  
+  #if not repeated_pulses.loc[repeated_pulses.Pulse>2].empty:
+    #repeated_pulses[repeated_pulses.Pulse>2].to_csv('{}{}/sp/ALERT.inf'.format(folder,idL),float_format='%.2f',sep='\t',columns=['Pulse'],header=['N. pulses'],encoding='utf-8')
+  
+  
   #Generate best_puls table
   best_puls = RFIexcision.best_pulses(pulses,events)
 
@@ -117,7 +130,7 @@ def obs_events(folder,idL):
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   store.append(idL+'_pulses',pulses,data_columns=['Pulse'])
   store.append('meta_data',meta_data)
-  if not best_puls.empty: store.append('best_pulses',best_puls)  #FORSE da togliere
+  if not best_puls.empty: store.append('best_pulses',best_puls)
   store.close()
   
   time0 = time.time()
@@ -155,9 +168,16 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   
   
   
+  def Group_Clean(gb_best,n):
+    try:
+      return gb_best.get_group(n)
+    except KeyError:
+      return pd.DataFrame()
+  
+  
   #METTERE che n salta best_pulses se non sono presenti  
   pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
+  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),Group_Clean(gb_best,n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
   
