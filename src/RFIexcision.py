@@ -40,6 +40,9 @@ def Pulse_Thresh(puls,gb,data,Sigma_min):
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
     puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
     
+    #Sigma/Sigma_DM_max
+    #Sigma/Sigma_DM_min
+    
     #puls.Pulse[abs(Sigma_DM_max-Sigma_DM_min) > FILTERS[5][i]] += 1
     #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
     #puls.Pulse[(f>FILTERS[6][i])|(f<FILTERS[7][i])] += 1

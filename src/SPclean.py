@@ -73,8 +73,7 @@ def obs_events(folder,idL):
   
   time0 = time.time()  
   
-  #Generate the pulses table
-  
+  #Generate the pulses table  
   rows_core = events.shape[0] / (mp.cpu_count()+2)
   
   gb = events.groupby('BEAM',sort=False)
