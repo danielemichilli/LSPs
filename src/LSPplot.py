@@ -235,7 +235,6 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   ax2.tick_params(which='both',direction='out')
   ax3.tick_params(which='both',direction='out')
   ax4.tick_params(which='both',direction='out')
-  ax5.tick_params(which='both',direction='out')
   
   fig.tight_layout()
   
