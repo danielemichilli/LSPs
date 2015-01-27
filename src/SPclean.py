@@ -144,7 +144,7 @@ def obs_events(folder,idL):
     puls_inc_all = puls_inc_all.append(puls_inc,ignore_index=False)
       
   #Compares pulses in different beams
-  puls = RFIexcision.Compare_Beams(puls)
+  #puls = RFIexcision.Compare_Beams(puls)
   meta_data = meta_data.astype(str)
   
   puls = puls.append(puls_inc_all,ignore_index=False)

@@ -102,6 +102,12 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulses,color=True,store=Fal
   ax1.set_ylabel('DM (pc/cm3)')
   ax1.axis([0,3600,5,550])
   
+  ax1.tick_params(which='both',direction='out')
+  ax2.tick_params(which='both',direction='out')
+  ax3.tick_params(which='both',direction='out')
+  ax4.tick_params(which='both',direction='out')
+  ax5.tick_params(which='both',direction='out')
+  
   fig.tight_layout()
 
   if store:
@@ -224,6 +230,12 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     ax4.set_ylabel('SNR')
     ax4.set_xlabel('DM (pc/cm3)')
     ax4.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
+  
+  ax1.tick_params(which='both',direction='out')
+  ax2.tick_params(which='both',direction='out')
+  ax3.tick_params(which='both',direction='out')
+  ax4.tick_params(which='both',direction='out')
+  ax5.tick_params(which='both',direction='out')
   
   fig.tight_layout()
   
