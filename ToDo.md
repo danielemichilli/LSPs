@@ -1,15 +1,18 @@
 BUG:
-- Sort top_candidates
-- Top_candidates in inf and plot different
+- High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
+- Top_candidates in inf are wrong
 - Only 10 top_candidates in inc beams
-- Rank in top_candidates.inf wronf without inc beam
+- Rank in top_candidates.inf wrong without inc beam
+- Ignore corrupted tar files
+- Check dimension of squares, sometimes not related with sigma apparently
 
-- General plot: high-right plot, axis range must include top and best
+- Remove space from output file names
+- Folder with general best plots
+- Sometimes top_candidates reported in the output are not the best and the same reported in the plot (es. L232335_SAP0_BEAM24)
+- SAP0_BEAM12 has repeated best_pulses (es. L232335)
 - Single pulse plots: enlarge points dimension
-- General plots: enlarge points dimension
-- General plots: diminish square dimension
+- General plots: enlarge points dimension and diminish square dimension
 - Single pulse plots: report obs name, sigma max, rank number
-- Histograms in general plot
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
 - Beam plots: in top-right plot move numbers to the left
@@ -18,6 +21,8 @@ BUG:
 - In top_candidates.inf incoherent pulses are reported twice
 - Remove time spans affected by RFI in general plot
 
+- Add filter duration/sigma 
+- Do not plot if plot is empty
 - Better study parameters of grouping
   - Better study filter values
 - Substitute duration filter with downfact filter
