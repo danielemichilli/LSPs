@@ -64,7 +64,7 @@ def Generator(events):
   #Time_DM_min = data_idxmin.Time
   Sigma_min = gb.Sigma.min()
   
-  time0 = time.clock()  
+  time0 = time.clock()
 
   RFIexcision.IB_Pulse_Thresh(pulses,gb,events,Sigma_min)
   RFIexcision.Pulse_Thresh(pulses,gb,events,Sigma_min)
@@ -86,9 +86,16 @@ def TimeAlign(Time,DM):
   
   # Quantifies the misalignment for a broad-band pulse
   # Only the extreme frequencies are taken into account
-  k = 4.1488078e3  #s
-  delay = np.float32(.5 * k * (F_MIN**-2 - F_MAX**-2))
+  k = 0.000241*2  #s-1
+  delay1 = np.float32((F_MIN**-2 - F_MAX**-2) / (2*k))
   
-  Time[:] += DM * delay
+  bin=(F_MAX-F_MIN)/288  #288 subbands
+  delay2 = np.float32((F_MIN**-2 - (F_MAX-bin)**-2) / k)
+  
+  Time += DM * (delay1 + delay2)
+  
+  #Time.loc[DM<=40.48] += DM * (delay1 + delay2)
+  #Time.loc[(DM>40.48)&(DM<=141.68)] += DM * (delay1 + delay2)
+  #Time.loc[DM>141.68] += DM * (delay1 + delay2)
   
   return

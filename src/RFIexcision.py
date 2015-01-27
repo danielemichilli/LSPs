@@ -33,9 +33,9 @@ def Pulse_Thresh(puls,gb,data,Sigma_min):
     puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])].reindex_like(puls)
 
     puls.Pulse[puls_chunk.Duration > FILTERS[0][i]] += 1
-    puls.Pulse[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(puls.N_events-1)/0.01 > FILTERS[1][i])] += 1
-    puls.Pulse[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(puls.N_events-1)/0.05 > FILTERS[1][i])] += 1
-    puls.Pulse[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls.N_events-1)/0.1 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM<=40.48) & (puls_chunk.dDM/(puls.N_events-1)/0.01 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>40.48) & (puls_chunk.DM<=141.68) & (puls.dDM/(puls.N_events-1)/0.05 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>141.68) & (puls_chunk.dDM/(puls.N_events-1)/0.1 > FILTERS[1][i])] += 1
     puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
     puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
