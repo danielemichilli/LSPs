@@ -25,7 +25,6 @@ PLOT:
 
 
 OUTPUT:
-- Remove space from output file names
 - Folder with general best plots
 - Sometimes top_candidates reported in the output are not the best and the same reported in the plot (es. L232335_SAP0_BEAM24)
 - SAP0_BEAM12 has repeated best_pulses (es. L232335)

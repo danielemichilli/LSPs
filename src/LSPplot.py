@@ -90,31 +90,31 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
     ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
     
   if len(pulses.DM.unique())>1:
-    hist = ax2.hist(pulses.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
-    ax2.set_xscale('log')
-    ax2.set_xlabel('DM (pc/cm3)')
+    ax2.hist(pulses.Sigma.tolist(),bins=100,histtype='step',color='k')
+    ax2.set_xlabel('SNR')
     ax2.set_ylabel('Counts')
-    ax2.set_xlim(5,550)
-    ax2.plot([40.5,40.5],[0,hist[0].max()],'k--')
-    ax2.plot([141.7,141.7],[0,hist[0].max()],'k--')
+    ax2.set_yscale('log')
   
-    ax4.hist(pulses.Sigma.tolist(),bins=100,histtype='step',color='k')
-    ax4.set_xlabel('SNR')
-    ax4.set_ylabel('Counts')
-    ax4.set_yscale('log')
+    hist = ax3.hist(pulses.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+    ax3.set_xscale('log')
+    ax3.set_xlabel('DM (pc/cm3)')
+    ax3.set_ylabel('Counts')
+    ax3.set_xlim(5,550)
+    ax3.plot([40.5,40.5],[0,hist[0].max()],'k--')
+    ax3.plot([141.7,141.7],[0,hist[0].max()],'k--')
   
-  ax3.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-  ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
-  ax3.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
-  ax3.set_xscale('log')
-  ax3.set_ylabel('SNR')
-  ax3.set_xlabel('DM (pc/cm3)')
-  ax3.axis([5,550,pulses.Sigma.min(),pulses.Sigma.max()+3.])
-  ax3.plot([40.5,40.5],[0,best_pulses.Sigma.max()],'k--')
-  ax3.plot([141.7,141.7],[0,best_pulses.Sigma.max()],'k--')
+  ax4.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
+  ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
+  ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
+  ax4.set_xscale('log')
+  ax4.set_ylabel('SNR')
+  ax4.set_xlabel('DM (pc/cm3)')
+  ax4.axis([5,550,pulses.Sigma.min(),pulses.Sigma.max()+3.])
+  ax4.plot([40.5,40.5],[0,best_pulses.Sigma.max()],'k--')
+  ax4.plot([141.7,141.7],[0,best_pulses.Sigma.max()],'k--')
   mpl.rc('font', size=3.5)
   for i in range(0,top_candidates.shape[0]):
-    ax3.annotate(i,xy=(top_candidates.DM.iloc[i]*1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
+    ax4.annotate(i,xy=(top_candidates.DM.iloc[i]*1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
   
   mpl.rc('font', size=5)
   ax5.axis([0,10,0,7])
@@ -229,16 +229,16 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
 
   if not top_candidates.empty:
     if len(top_candidates.DM.unique())>1:
+      ax2.hist(top_candidates.Sigma.tolist(),bins=100,histtype='step',color='k')
+      ax2.set_xlabel('SNR')
+      ax2.set_ylabel('Counts')
+      ax2.set_yscale('log')
+      
       ax3.hist(top_candidates.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
       ax3.set_xscale('log')
       ax3.set_xlabel('DM (pc/cm3)')
       ax3.set_ylabel('Counts')
       ax3.set_xlim(5,550)
-    
-      ax2.hist(top_candidates.Sigma.tolist(),bins=100,histtype='step',color='k')
-      ax2.set_xlabel('SNR')
-      ax2.set_ylabel('Counts')
-      ax2.set_yscale('log')
     
     ax4.scatter(top_candidates.DM,top_candidates.Sigma,c=u'k',s=3.,linewidths=[0.,],vmin=5,vmax=10)
     ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=u'k',marker='*')
