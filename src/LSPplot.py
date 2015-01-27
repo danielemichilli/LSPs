@@ -48,8 +48,8 @@ def plot(puls,puls_rfi,meta_data,top_candidates,best_pulses,color=True,store=Fal
       ax1.scatter(data.Time, data.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])
       
     ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-    ax1.plot([0,3600],[40.5,40.5],'k--')
-    ax1.plot([0,3600],[141.7,141.7],'k--')
+    ax1.plot([0,3600],[40.48,40.48],'k--')
+    ax1.plot([0,3600],[141.68,141.68],'k--')
     
     if not top_candidates.empty: ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig,linewidths=[0.,],c=fill,marker='*')
     if not best_pulses.empty: ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig,linewidths=[1.,],marker='s',facecolors='none',edgecolor=square)
@@ -204,7 +204,11 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       bar.ax.xaxis.set_ticks_position('top')
     
     
-  if not best_pulses.empty: ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+  if not best_pulses.empty: 
+    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+    ax1.plot([0,3600],[40.48,40.48],'k--')
+    ax1.plot([0,3600],[141.68,141.68],'k--')
+    
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('DM (pc/cm3)')
   ax1.axis([0,3600,5,550])
