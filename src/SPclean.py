@@ -54,7 +54,30 @@ def obs_events(folder,idL):
   
   time0 = time.clock()
   #Import the events
-  events, meta_data = Events.Loader(folder,idL,events,meta_data)
+  
+  
+  pool = mp.Pool(mp.cpu_count()-1)
+  results = pool.map(Events.Loader, [(folder,idL,beam) for beam in range(12,74)])
+  pool.close()
+  pool.join()
+  
+  results_events = [x[0] for x in results]
+  results_meta_data = [x[1] for x in results]
+  results = 0
+  
+  events = pd.concat(results_events)
+  meta_data = pd.concat(results_meta_data)
+  results_events = 0
+  results_meta_data = 0
+  
+  #events, meta_data = Events.Loader((folder,idL,12))
+  
+  events['Pulse'] = 0
+  
+  events = events.astype(np.float32)
+  events.SAP = events.SAP.astype(np.uint8)
+  events.BEAM = events.BEAM.astype(np.uint8)
+  events.Pulse = events.Pulse.astype(np.int32)
   
   print 't1: ',time.clock() - time0
 
@@ -84,8 +107,8 @@ def obs_events(folder,idL):
   pool.join()
   #output = [p.get() for p in results] 
   
-  
   pulses = pd.concat(results)
+  results = 0
   
   print 't3: ',time.time() - time0
   
