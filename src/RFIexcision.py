@@ -15,53 +15,33 @@ from Parameters import *
 
 import time
 
-
-def Event_Thresh(data):
-  #-----------------------------------------------------
-  # Applies thresholds to the events in a coherent beams
-  #-----------------------------------------------------
-
-  #Remove low DM
-  data = data[data.DM>DM_MIN]
-      
-  return data
-
-
-
-def Pulse_Thresh(puls,gb,data):
+def Pulse_Thresh(puls,gb,data,Sigma_min):
   #-----------------------------------------------------
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  data_idxmax = data.loc[gb.DM.idxmax()]
-  data_idxmax.index = data_idxmax.Pulse
-  data_idxmin = data.loc[gb.DM.idxmin()]
-  data_idxmin.index = data_idxmin.Pulse  
-  Sigma_DM_max = data_idxmax.Sigma
-  Sigma_DM_min = data_idxmin.Sigma
-  Time_DM_max = data_idxmax.Time
-  Time_DM_min = data_idxmin.Time
-  Sigma_min = gb.Sigma.min()
-  
-  puls.Pulse.loc[puls.N_events < 5] = 10
+  #puls.Pulse.loc[puls.N_events < 5] = 10
   
   min_chunk = [5,9,13]
   max_chunk = list(min_chunk)
   max_chunk[0] = np.inf
   max_chunk=np.roll(np.add(max_chunk,-1),-1)
     
-  puls_astro = puls[puls.Pulse < RFI_percent]
-  
+  puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM>12)]
+
   for i in range(len(min_chunk)):
     puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])].reindex_like(puls)
 
     puls.Pulse[puls_chunk.Duration > FILTERS[0][i]] += 1
-    puls.Pulse[(puls_chunk.DM<=40.5) & (puls_chunk.dDM/(puls.N_events-1)/0.01 > FILTERS[1][i])] += 1
-    puls.Pulse[(puls_chunk.DM>40.5) & (puls_chunk.DM<=141.7) & (puls.dDM/(puls.N_events-1)/0.05 > FILTERS[1][i])] += 1
-    puls.Pulse[(puls_chunk.DM>141.7) & (puls_chunk.dDM/(puls.N_events-1)/0.1 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM<=40.48) & (puls_chunk.dDM/(puls.N_events-1)/0.01 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>40.48) & (puls_chunk.DM<=141.68) & (puls.dDM/(puls.N_events-1)/0.05 > FILTERS[1][i])] += 1
+    puls.Pulse[(puls_chunk.DM>141.68) & (puls_chunk.dDM/(puls.N_events-1)/0.1 > FILTERS[1][i])] += 1
     puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
     puls.Pulse[puls.Sigma/Sigma_min**4 < FILTERS[4][i]] += 1
+    
+    #Sigma/Sigma_DM_max
+    #Sigma/Sigma_DM_min
     
     #puls.Pulse[abs(Sigma_DM_max-Sigma_DM_min) > FILTERS[5][i]] += 1
     #f = data[data.Pulse.isin(puls_chunk.index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
@@ -84,33 +64,23 @@ def Pulse_Thresh(puls,gb,data):
   #puls.Pulse[(puls.Pulse<RFI_percent) & (puls.dDM/puls.dTime*(Time_DM_min-Time_DM_max)/abs(Time_DM_min-Time_DM_max) < 11.3)] += 1  
   #f = data[data.Pulse.isin(puls[puls.Pulse<RFI_percent].index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
   #puls.Pulse[(puls.Pulse<RFI_percent) & ((f<-33.6)|(f>-8.55))] += 1
-  
-  return puls
+
+  return
 
   
-def IB_Pulse_Thresh(puls,gb,data):
+def IB_Pulse_Thresh(puls,gb,data,Sigma_min):
   #--------------------------------------------------------
   # Applies thresholds to the pulses in an incoherent beams
   #--------------------------------------------------------
-
-  data_idxmax = data.loc[gb.DM.idxmax()]
-  data_idxmax.index = data_idxmax.Pulse
-  data_idxmin = data.loc[gb.DM.idxmin()]
-  data_idxmin.index = data_idxmin.Pulse  
-  Sigma_DM_max = data_idxmax.Sigma
-  Sigma_DM_min = data_idxmin.Sigma
-  Time_DM_max = data_idxmax.Time
-  Time_DM_min = data_idxmin.Time
-  Sigma_min = gb.Sigma.min()
   
-  puls.Pulse[puls.N_events<4] = 10
+  #puls.Pulse[puls.N_events<4] = 10
   
   min_chunk = [4,9]
   max_chunk = list(min_chunk)
   max_chunk[0] = np.inf
   max_chunk=np.roll(np.add(max_chunk,-1),-1)
   
-  puls_astro = puls[puls.Pulse < RFI_percent]
+  puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM==12)]
   
   for i in range(len(min_chunk)):
     puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])].reindex_like(puls)
@@ -122,7 +92,7 @@ def IB_Pulse_Thresh(puls,gb,data):
     puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
 
-  return puls
+  return
 
 
 def Align_Pulse_Thresh(puls,gb,data):
@@ -134,7 +104,7 @@ def Align_Pulse_Thresh(puls,gb,data):
   #max_chunk[0] = np.inf
   #max_chunk=np.roll(np.add(max_chunk,-1),-1)
   
-  #puls_astro = puls[(puls.Pulse < RFI_percent)]
+  #puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM>12)]
   
   #for i in range(len(min_chunk)):
     #puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])]
@@ -150,7 +120,7 @@ def Align_Pulse_Thresh(puls,gb,data):
   count,div = np.histogram(puls.Time,bins=3600)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
   
-  return puls
+  return
 
 
 
@@ -163,7 +133,7 @@ def IB_Align_Pulse_Thresh(puls,gb,data):
   #max_chunk[0] = np.inf
   #max_chunk=np.roll(np.add(max_chunk,-1),-1)
   
-  #puls_astro = puls[(puls.Pulse < RFI_percent)]
+  #puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM==12)]
   
   #for i in range(len(min_chunk)):
     #puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])]
@@ -176,7 +146,7 @@ def IB_Align_Pulse_Thresh(puls,gb,data):
   
   count,div = np.histogram(puls.Time,bins=3600)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
-  return puls
+  return
 
 
 
@@ -196,7 +166,7 @@ def Compare_IB(coh,incoh):
   coh.Pulse.loc[coh.Pulse<=RFI_percent] = CB.Pulse
   incoh.Pulse.loc[incoh.Pulse<=RFI_percent] = IB.Pulse
   
-  return coh, incoh
+  return
 
 
 def Compare_Beams(puls):
@@ -211,15 +181,15 @@ def Compare_Beams(puls):
   #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
-  sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
   
-  sap1 = puls[(puls.SAP==1)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1 = puls[(puls.SAP==1)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap1['Time_low'] = sap1.Time_c-sap1.dTime
   sap1.sort('Time_low',inplace=True)
   
-  sap2 = puls[(puls.SAP==2)&(puls.Pulse<=RFI_percent)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap2 = puls[(puls.SAP==2)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap2['Time_low'] = sap2.Time_c-sap2.dTime
   sap2.sort('Time_low',inplace=True)
   
@@ -238,13 +208,13 @@ def Compare_Beams(puls):
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
-  puls.Pulse.loc[(puls.SAP==0)&(puls.Pulse<=RFI_percent)]=sap0.Pulse
+  puls.Pulse.loc[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap0.Pulse
   
-  puls.Pulse.loc[(puls.SAP==1)&(puls.Pulse<=RFI_percent)]=sap1.Pulse
+  puls.Pulse.loc[(puls.SAP==1)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap1.Pulse
   
-  puls.Pulse.loc[(puls.SAP==2)&(puls.Pulse<=RFI_percent)]=sap2.Pulse
+  puls.Pulse.loc[(puls.SAP==2)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap2.Pulse
     
-  return puls
+  return
 
 
 
@@ -347,11 +317,10 @@ def best_pulses(puls,data):
     top.drop(min_top_ind[(max_top<strongest)&(count_top>=30)&(min_top_ind.index[0][1]==12)],inplace=True)
     top = top.append(puls.loc[strongest_id[strongest>max_top]])
     
-    #ATTENZIONE! alcune volte produce 31 pulses
-
     top.Time  += top.DM * delay
     top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
     
+        
   return top
 
 

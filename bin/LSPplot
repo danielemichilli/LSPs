@@ -41,7 +41,7 @@ def parser():
   return args
 
 def read_puls(idL,args):
-  puls = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['Pulse==0'])  #perche' era Pulse>=0 ??
+  puls = pd.read_hdf('sp/SinglePulses.hdf5',idL+'_pulses',where=['Pulse==0'])
   
   #-----------------------------------
   #Selection of values in the database
@@ -112,7 +112,7 @@ def read_DB(idL,args,puls):
     puls_rfi = puls_rfi[puls_rfi.index.isin(args.pulse)]
     top_candidates = top_candidates[top_candidates.index.isin(args.pulse)]
     best_pulses = best_pulses[best_pulses.index.isin(args.pulse)]
-   
+    
   data = pd.read_hdf('sp/SinglePulses.hdf5',idL,where=['Pulse=puls.index.tolist()'])
   
   return puls_rfi,data,meta_data,top_candidates,best_pulses
