@@ -19,8 +19,6 @@ import RFIexcision
 import LSPplot
 from Parameters import *
 
-import time
-
 
 def Initialize():  #TOGLIERE!
   #Creates the tables in memory
@@ -52,10 +50,7 @@ def obs_events(folder,idL):
   #Initialize the tables
   events,pulses,meta_data = Initialize()
   
-  time0 = time.clock()
   #Import the events
-  
-  
   pool = mp.Pool(mp.cpu_count()-1)
   results = pool.map(Events.Loader, [(folder,idL,beam) for beam in range(12,74)])
   pool.close()
@@ -79,23 +74,15 @@ def obs_events(folder,idL):
   events.BEAM = events.BEAM.astype(np.uint8)
   events.Pulse = events.Pulse.astype(np.int32)
   
-  print 't1: ',time.clock() - time0
-
   #Apply the thresholds to the events
   events = Events.Thresh(events)
 
-  time0 = time.clock()
     
   #Group the events
   Events.Group(events)
   
-  print 't2: ',time.clock() - time0
-
   events = events[events.Pulse>0]
-  
-  
-  time0 = time.time()  
-  
+    
   #Generate the pulses table  
   rows_core = events.shape[0] / (mp.cpu_count()+2)
   
@@ -109,9 +96,7 @@ def obs_events(folder,idL):
   
   pulses = pd.concat(results)
   results = 0
-  
-  print 't3: ',time.time() - time0
-  
+    
   #pulses = Pulses.Generator(pulses,events)
   
     
@@ -142,10 +127,8 @@ def obs_events(folder,idL):
   if not best_puls.empty: store.append('best_pulses',best_puls)  #FORSE da togliere
   store.close()
   
-  time0 = time.time()
   #Produce the output
   output(folder,idL,pulses,best_puls,events,meta_data)
-  print 't4: ',time.time() - time0
   
   return
 

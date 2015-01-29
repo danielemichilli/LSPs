@@ -5,9 +5,6 @@ import C_Funct
 import RFIexcision
 from Parameters import *
 
-import time
-
-
 def Initialize():
   #Creates the tables in memory
   pulses = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c','N_events'])
@@ -29,9 +26,7 @@ def Generator(events):
   pulses = Initialize()
   
   gb = events.groupby('Pulse',sort=False)
-  time0 = time.clock()
   pulses = events.loc[events.index.isin(gb.Sigma.idxmax())]
-  print ' tA: ',time.clock() - time0
   pulses.index = pulses.Pulse
   pulses.index.name = None
   pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration']]
@@ -64,7 +59,6 @@ def Generator(events):
   #Time_DM_min = data_idxmin.Time
   Sigma_min = gb.Sigma.min()
   
-  time0 = time.clock()
 
   RFIexcision.IB_Pulse_Thresh(pulses,gb,events,Sigma_min)
   RFIexcision.Pulse_Thresh(pulses,gb,events,Sigma_min)
