@@ -177,8 +177,8 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       col_top = top_candidates.SAP
       if not best_pulses.empty: col_best = best_pulses.SAP
     else:
-      col_top = top_candidates.SAP *10 + (top_candidates.BEAM-13) /61. * 10.
-      if not best_pulses.empty: col_best = best_pulses.SAP *10 + (best_pulses.BEAM-13) /61. * 10.
+      col_top = top_candidates.BEAM
+      if not best_pulses.empty: col_best = best_pulses.BEAM
   else: 
     col_top = u'r' 
     col_best = u'r'
@@ -191,7 +191,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   fig = plt.figure()
   plt.title("Best Candidates")
   
-  ax1 = plt.subplot2grid((3,4),(1,0),colspan=3,rowspan=2)
+  ax1 = plt.subplot2grid((3,4),(1,0),colspan=4,rowspan=2)
   ax2 = plt.subplot2grid((3,4),(0,0))
   ax3 = plt.subplot2grid((3,4),(0,1))
   ax4 = plt.subplot2grid((3,4),(0,2))
@@ -211,14 +211,14 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     else:
       ticks = np.linspace(col_top.min(),col_top.max(),num=10)
       bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
-      bar.set_ticklabels(['{0:.0f}, {1:.0f}'.format(int(t)/10,t%10*6.+13) for t in ticks])
-      bar.ax.set_xlabel('sap, beam',ha='left',labelpad=10)
+      bar.set_ticklabels(['{1:.0f}'.format(int(t)) for t in ticks])
+      bar.ax.set_xlabel('beam',ha='left',labelpad=10)
       bar.update_ticks
       bar.ax.xaxis.set_ticks_position('top')
     
     
   if not best_pulses.empty: 
-    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
     ax1.plot([0,3600],[40.48,40.48],'k--')
     ax1.plot([0,3600],[141.68,141.68],'k--')
     
@@ -240,9 +240,8 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       ax3.set_ylabel('Counts')
       ax3.set_xlim(5,550)
     
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,c=u'k',s=3.,linewidths=[0.,],vmin=5,vmax=10)
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=u'k',marker='*')
-    ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c=u'b',marker=u's',facecolors='none',edgecolor=u'g')
+    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=sig_top/3.,linewidths=[0.,],c=col_top)
+    ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=sig_best/3.,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
     ax4.set_xscale('log')
     ax4.set_ylabel('SNR')
     ax4.set_xlabel('DM (pc/cm3)')

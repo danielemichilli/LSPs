@@ -19,8 +19,6 @@ import RFIexcision
 import LSPplot
 from Parameters import *
 
-import time
-
 
 def Initialize():  #TOGLIERE!
   #Creates the tables in memory
@@ -52,10 +50,7 @@ def obs_events(folder,idL):
   #Initialize the tables
   events,pulses,meta_data = Initialize()
   
-  time0 = time.clock()
   #Import the events
-  
-  
   pool = mp.Pool(mp.cpu_count()-1)
   results = pool.map(Events.Loader, [(folder,idL,beam) for beam in range(12,74)])
   pool.close()
@@ -79,23 +74,15 @@ def obs_events(folder,idL):
   events.BEAM = events.BEAM.astype(np.uint8)
   events.Pulse = events.Pulse.astype(np.int32)
   
-  print 't1: ',time.clock() - time0
-
   #Apply the thresholds to the events
   events = Events.Thresh(events)
 
-  time0 = time.clock()
     
   #Group the events
   Events.Group(events)
   
-  print 't2: ',time.clock() - time0
-
   events = events[events.Pulse>0]
-  
-  
-  time0 = time.time()  
-  
+    
   #Generate the pulses table  
   rows_core = events.shape[0] / (mp.cpu_count()+2)
   
@@ -109,9 +96,7 @@ def obs_events(folder,idL):
   
   pulses = pd.concat(results)
   results = 0
-  
-  print 't3: ',time.time() - time0
-  
+    
   #pulses = Pulses.Generator(pulses,events)
   
     
@@ -142,10 +127,8 @@ def obs_events(folder,idL):
   if not best_puls.empty: store.append('best_pulses',best_puls)  #FORSE da togliere
   store.close()
   
-  time0 = time.time()
   #Produce the output
   output(folder,idL,pulses,best_puls,events,meta_data)
-  print 't4: ',time.time() - time0
   
   return
 
@@ -206,9 +189,13 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10),best_puls[best_puls.BEAM>12],store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
-  
+  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],\
+                             store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+
+  for sap in pulses.SAP.unique():
+    LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),best_puls[(best_puls.SAP==sap)&(best_puls.BEAM>12)],\
+                               store='{}{}/sp/top_candidates(SAP{}).png'.format(folder,idL,sap)) 
+
   pulses = 0
 
   
