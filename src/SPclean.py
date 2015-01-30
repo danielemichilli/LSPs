@@ -111,6 +111,19 @@ def obs_events(folder,idL):
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
 
+  noise_level = data.groupby('DM',sort=False).count().Pulse/data.groupby(['SAP','BEAM'],sort=False).count().shape[0]
+  
+  
+  
+  
+  
+  
+  a=data.groupby(['SAP','BEAM'],sort=False)
+  for n in a.indices.iterkeys():
+    m=a.get_group(n).groupby('DM',sort=False).count().Pulse
+    print m[m>3.*b.loc[m.index]]
+
+
 
 
   
