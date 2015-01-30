@@ -218,7 +218,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     
     
   if not best_pulses.empty: 
-    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker='s',facecolors='none',c=col_best)
+    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
     ax1.plot([0,3600],[40.48,40.48],'k--')
     ax1.plot([0,3600],[141.68,141.68],'k--')
     
@@ -240,9 +240,8 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       ax3.set_ylabel('Counts')
       ax3.set_xlim(5,550)
     
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,c=u'k',s=3.,linewidths=[0.,],vmin=5,vmax=10)
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=u'k',marker='*')
-    ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c=u'b',marker=u's',facecolors='none',edgecolor=u'g')
+    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=sig_top/3.,linewidths=[0.,],c=col_top)
+    ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=sig_best/3.,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
     ax4.set_xscale('log')
     ax4.set_ylabel('SNR')
     ax4.set_xlabel('DM (pc/cm3)')
