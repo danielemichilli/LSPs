@@ -8,6 +8,8 @@ BUGS:
 
 
 PLOT:
+- General plot: don't plot stars and squares in top-right plot
+- General plot: enlarge the dimension on the central plot (similar to the beam plots
 - General plots: enlarge points dimension and diminish square dimension
 - Single pulse plots: enlarge points dimension
 - Single pulse plots: report obs name, sigma max, rank number
