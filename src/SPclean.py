@@ -188,9 +188,13 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10),best_puls[best_puls.BEAM>12],store='{}{}/sp/top_candidates.png'.format(folder,idL)) 
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
-  
+  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],\
+                             store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+
+  for sap in pulses.SAP.unique():
+    LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),best_puls[(best_puls.SAP==sap)&(best_puls.BEAM>12)],\
+                               store='{}{}/sp/top_candidates(SAP{}).png'.format(folder,idL,sap)) 
+
   pulses = 0
 
   

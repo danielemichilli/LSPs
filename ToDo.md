@@ -18,7 +18,6 @@ PLOT:
 - Beam plots: in top-right plot move numbers to the left
 - Beam plots: give numbers to squares
 - Remove time spans affected by RFI in general plot
-- Divide the general plot for the three saps
 - Plots of pulse shapes larger when few pulses
 - Plots smaller
 - Single pulse plots: circle dimensions relative to max
