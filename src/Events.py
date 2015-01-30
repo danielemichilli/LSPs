@@ -16,8 +16,8 @@ def Loader(parameters):
   idL = parameters[1]
   beam = parameters[2]
   
-  data = pd.DataFrame()
-  inf = pd.DataFrame()
+  events = pd.DataFrame()
+  meta_data = pd.DataFrame()
   
   for sap in range(0,3):
       
@@ -62,15 +62,15 @@ def Loader(parameters):
       inf.BEAM = inf.BEAM.astype(np.uint8)
       
       #Append to the existing tables
-      #events = events.append(data,ignore_index=True)
-      #meta_data = meta_data.append(inf,ignore_index=False)
+      events = events.append(data,ignore_index=True)
+      meta_data = meta_data.append(inf,ignore_index=False)
       
     except (IOError,pd.parser.CParserError):
       #Handle missing beams
       logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
 
   
-  return (data,inf)
+  return (events,meta_data)
 
 
 
