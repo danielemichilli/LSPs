@@ -191,7 +191,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   fig = plt.figure()
   plt.title("Best Candidates")
   
-  ax1 = plt.subplot2grid((3,4),(1,0),colspan=3,rowspan=2)
+  ax1 = plt.subplot2grid((3,4),(1,0),colspan=4,rowspan=2)
   ax2 = plt.subplot2grid((3,4),(0,0))
   ax3 = plt.subplot2grid((3,4),(0,1))
   ax4 = plt.subplot2grid((3,4),(0,2))
