@@ -111,18 +111,49 @@ def obs_events(folder,idL):
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
 
-  noise_level = data.groupby('DM',sort=False).count().Pulse/data.groupby(['SAP','BEAM'],sort=False).count().shape[0]
-  
-  
-  
-  
-  
-  
-  a=data.groupby(['SAP','BEAM'],sort=False)
-  for n in a.indices.iterkeys():
-    m=a.get_group(n).groupby('DM',sort=False).count().Pulse
-    print m[m>3.*b.loc[m.index]]
 
+
+
+
+
+  
+  
+  #PROBABILMENTE necessario trattare le tre SAP separatamente
+  #MEGLIO su pulses o su events in pulses<RFI?
+  
+  
+  def ALERT(sap,beam,dm):
+    file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
+    if not file.readlines():
+      file.write('Pulsar candidate\n')
+      file.write('SAP\tBEAM\tDMs\n')
+    file.write('{}\t{}\t{}\n'.format(sap,beam,dm))
+    file.close()
+    return
+  
+  
+  
+  noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  noise_level.dropna(inplace=True)
+  
+  beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
+  for ind,beam in beams:
+    counts = beam.groupby('DM',sort=False).Pulse.count()
+    counts = counts[counts>noise_level.loc[counts.index]]
+    if not counts.empty:
+      ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
+      
+  noise_level = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  noise_level.dropna(inplace=True)
+  
+  beams = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM'],sort=False)
+  for ind,beam in beams:
+    counts = beam.groupby('DM',sort=False).Pulse.count()
+    counts = counts[counts>noise_level.loc[counts.index]]
+    if not counts.empty:
+      ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
 
 
 
