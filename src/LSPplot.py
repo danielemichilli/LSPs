@@ -240,13 +240,13 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
       ax3.set_ylabel('Counts')
       ax3.set_xlim(5,550)
     
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,c=u'k',s=3.,linewidths=[0.,],vmin=5,vmax=10)
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=u'k',marker='*')
-    ax4.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c=u'b',marker=u's',facecolors='none',edgecolor=u'g')
+    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=3,linewidths=[0.,],c=col_top)
     ax4.set_xscale('log')
     ax4.set_ylabel('SNR')
     ax4.set_xlabel('DM (pc/cm3)')
     ax4.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
+    ax4.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
+    ax4.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
   
   ax1.tick_params(which='both',direction='out')
   ax2.tick_params(which='both',direction='out')
