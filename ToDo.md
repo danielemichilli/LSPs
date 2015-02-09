@@ -20,7 +20,6 @@ BUG:
 - Correct second order time misalignment
   - Better study parameters of grouping
     - Better study filter values
-  - alert for repeated pulses
   - alert for FRB
     
 - Substitute duration filter with downfact filter
@@ -36,5 +35,4 @@ TO TEST:
 - Strongest pulse only for DM > x
 
 - General plot with counts in every beam
-- Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
 - Pulse spectra
