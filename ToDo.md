@@ -17,7 +17,6 @@ PLOT:
 - Beam plots: give numbers to squares
 - Remove time spans affected by RFI in general plot
 - Plots of pulse shapes larger when few pulses
-- Plots smaller
 - Single pulse plots: circle dimensions relative to max
 - Histogram also for only pulses brighter than threshold
 - General plot with counts in every beam
