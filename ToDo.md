@@ -3,7 +3,6 @@ BUGS:
 - Top_candidates in inf are wrong
 - Only 10 top_candidates in inc beams
 - Rank in top_candidates.inf wrong without inc beam
-- Ignore corrupted tar files
 - Check dimension of squares, sometimes not related with sigma apparently
 
 
