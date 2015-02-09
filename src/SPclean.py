@@ -134,26 +134,30 @@ def obs_events(folder,idL):
   
   
   noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  noise_level = noise_level.mean(level=['SAP','DM']) + 3.* noise_level.std(level=['SAP','DM'])   #3 sigmas tollerance
   noise_level.dropna(inplace=True)
   
   beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
   for ind,beam in beams:
-    counts = beam.groupby('DM',sort=False).Pulse.count()
+    counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
     counts = counts[counts>noise_level.loc[counts.index]]
     if not counts.empty:
       ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
       
-  noise_level = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
-  noise_level.dropna(inplace=True)
+      
   
-  beams = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM'],sort=False)
-  for ind,beam in beams:
-    counts = beam.groupby('DM',sort=False).Pulse.count()
-    counts = counts[counts>noise_level.loc[counts.index]]
-    if not counts.empty:
-      ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
+  # ALERT su incoherent beams rispetto a cosa? media dei tre? media di piu' osservazioni?
+  
+  #noise_level = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  #noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  #noise_level.dropna(inplace=True)
+  
+  #beams = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM'],sort=False)
+  #for ind,beam in beams:
+    #counts = beam.groupby('DM',sort=False).Pulse.count()
+    #counts = counts[counts>noise_level.loc[counts.index]]
+    #if not counts.empty:
+      #ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
 
 
 
