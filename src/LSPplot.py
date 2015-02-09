@@ -57,7 +57,8 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   fill = u'b'
   square = u'g'
     
-  sig = (top_candidates.Sigma/1.5)**3
+  sig_top = (top_candidates.Sigma/1.5)**3
+  sig_best = (top_candidates.Sigma/1.5)**3
 
   fig = plt.figure()
   
@@ -77,8 +78,8 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
     ax1.plot([0,3600],[40.48,40.48],'k--')
     ax1.plot([0,3600],[141.68,141.68],'k--')
     
-  if not top_candidates.empty: ax1.scatter(top_candidates.Time, top_candidates.DM, s=sig, linewidths=[0.,], c=fill, marker='*')
-  if not best_pulses.empty: ax1.scatter(best_pulses.Time, best_pulses.DM, s=sig, linewidths=[1.,], marker='s', facecolors='none', edgecolor=square)
+  if not top_candidates.empty: ax1.scatter(top_candidates.Time, top_candidates.DM, s=sig_top, linewidths=[0.,], c=fill, marker='*')
+  if not best_pulses.empty: ax1.scatter(best_pulses.Time, best_pulses.DM, s=sig_best, linewidths=[1.,], marker='s', facecolors='none', edgecolor=square)
 
   ax1.set_yscale('log')
   ax1.set_xlabel('Time (s)')
@@ -186,7 +187,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
   
   if size: 
     sig_top = (top_candidates.Sigma/6.)**4
-    if not best_pulses.empty: sig_best = (top_candidates.Sigma/6.)**4
+    if not best_pulses.empty: sig_best = ((best_pulses.Sigma/6.)**4)/2
   else: sig=100.
     
   fig = plt.figure()

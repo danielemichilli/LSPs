@@ -4,11 +4,8 @@ BUGS:
 - Only 10 top_candidates in inc beams
 - Rank in top_candidates.inf wrong without inc beam
 - Ignore corrupted tar files
-- Check dimension of squares, sometimes not related with sigma apparently
-
 
 PLOT:
-- General plots: enlarge points dimension and diminish square dimension
 - Single pulse plots: enlarge points dimension
 - Single pulse plots: report obs name, sigma max, rank number
 - Histogram bins smaller
