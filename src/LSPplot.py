@@ -223,7 +223,7 @@ def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=Fal
     else:
       ticks = np.linspace(col_top.min(),col_top.max(),num=10)
       bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
-      bar.set_ticklabels(['{1:.0f}'.format(int(t)) for t in ticks])
+      bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
       bar.ax.set_xlabel('beam',ha='left',labelpad=10)
       bar.update_ticks
       bar.ax.xaxis.set_ticks_position('top')
