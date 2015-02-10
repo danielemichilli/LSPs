@@ -48,7 +48,7 @@ def obs_events(folder,idL):
     
   
   #Initialize the tables
-  events,pulses,meta_data = Initialize()
+  #events,pulses,meta_data = Initialize()
   
   #Import the events
   pool = mp.Pool(mp.cpu_count()-1)
@@ -121,7 +121,7 @@ def obs_events(folder,idL):
   best_puls = RFIexcision.best_pulses(pulses,events)
 
   #Store the pulses
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
+  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append(idL+'_pulses',pulses,data_columns=['Pulse'])
   store.append('meta_data',meta_data)
   if not best_puls.empty: store.append('best_pulses',best_puls)  #FORSE da togliere
