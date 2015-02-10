@@ -116,33 +116,52 @@ def obs_events(folder,idL):
 
 
 
+
+#PROVA con events
+  noise_level = events.loc[events.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  noise_level = noise_level.mean(level=['SAP','DM']) + 6.* noise_level.std(level=['SAP','DM'])   #6 sigmas tollerance
+  noise_level.dropna(inplace=True)
+  
+  beams = events.loc[events.BEAM>12].groupby(['SAP','BEAM'],sort=False)
+  for ind,beam in beams:
+    counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
+    counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
+    if not counts.empty:
+      for i in counts.index.get_level_values('DM'):
+        Sigma = beams.get_group((ind[0],ind[1]))
+        Sigma = Sigma.Sigma[Sigma.DM==i]
+        ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
+
+
   
   
-  #PROBABILMENTE necessario trattare le tre SAP separatamente
   #MEGLIO su pulses o su events in pulses<RFI?
   
   
-  def ALERT(sap,beam,dm):
+  def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
     file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
     if not file.readlines():
-      file.write('Pulsar candidate\n')
-      file.write('SAP\tBEAM\tDMs\n')
-    file.write('{}\t{}\t{}\n'.format(sap,beam,dm))
+      file.write('Pulsar candidates\n\n')
+      file.write('SAP\tBEAM\tDM\tLimit\tCounts\tS_Max\tS_Mean\n')
+    file.write('{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4}\t{5:.2f}\t{6:.2f}\n'.format(sap,beam,dm,limit,counts,s_max,s_mean))
     file.close()
     return
   
   
   
   noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  noise_level = noise_level.mean(level=['SAP','DM']) + 3.* noise_level.std(level=['SAP','DM'])   #3 sigmas tollerance
+  noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
   noise_level.dropna(inplace=True)
   
   beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
   for ind,beam in beams:
     counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
-    counts = counts[counts>noise_level.loc[counts.index]]
+    counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
     if not counts.empty:
-      ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
+      for i in counts.index.get_level_values('DM'):
+        Sigma = beams.get_group((ind[0],ind[1]))
+        Sigma = Sigma.Sigma[Sigma.DM==i]
+        ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
       
       
   
@@ -161,15 +180,8 @@ def obs_events(folder,idL):
 
 
 
-  
-  #ALERT su massimo numero pulses per DM
-  #print pulses.groupby(['SAP','BEAM','DM'],sort=False).count().idxmax()[0][2]
-  
-  #repeated_pulses = pulses.groupby(['SAP','BEAM','DM'],sort=False).count()
-  
-  #if not repeated_pulses.loc[repeated_pulses.Pulse>2].empty:
-    #repeated_pulses[repeated_pulses.Pulse>2].to_csv('{}{}/sp/ALERT.inf'.format(folder,idL),float_format='%.2f',sep='\t',columns=['Pulse'],header=['N. pulses'],encoding='utf-8')
-  
+
+ 
   
   #Generate best_puls table
   best_puls = RFIexcision.best_pulses(pulses,events)
