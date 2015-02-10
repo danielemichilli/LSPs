@@ -22,6 +22,7 @@ def plot(gb):
   best_pulses = gb[3]
   events = gb[4]
   folder = gb[5]
+  obs = os.path.basename(folder)
   sap = gb[0].SAP.iloc[0]
   beam = gb[0].BEAM.iloc[0]
   
@@ -29,18 +30,18 @@ def plot(gb):
   
   
   if beam == 12:
-    sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam))
-    sp_shape(pulses.iloc[10:20],events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam))
-    sp_shape(pulses.iloc[20:30],events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam))
-    sp_shape(best_pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(0-9).png'.format(folder,sap,beam))
-    sp_shape(best_pulses.iloc[10:20],events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(10-19).png'.format(folder,sap,beam))
-    sp_shape(best_pulses.iloc[20:30],events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(20-29).png'.format(folder,sap,beam))
+    sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[10:20],events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[20:30],events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
+    sp_shape(best_pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(0-9).png'.format(folder,sap,beam),obs)
+    sp_shape(best_pulses.iloc[10:20],events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(10-19).png'.format(folder,sap,beam),obs)
+    sp_shape(best_pulses.iloc[20:30],events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses(20-29).png'.format(folder,sap,beam),obs)
     plt.clf()
     sp_plot(pulses.iloc[30:],rfi,meta_data,pulses.head(30),best_pulses,sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
     
   else:
-    sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam))
-    sp_shape(best_pulses,events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses.png'.format(folder,sap,beam))
+    sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
+    sp_shape(best_pulses,events,sap,beam,'{}/sp/SAP{}_BEAM{}/best_pulses.png'.format(folder,sap,beam),obs)
     plt.clf()
     sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),best_pulses,sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
   
@@ -88,7 +89,9 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   
   mpl.rc('font', size=5)
   for i in range(0,top_candidates.shape[0]):
-    ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
+    ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]/1.15),horizontalalignment='center',verticalalignment='top')
+  for i in range(0,best_pulses.shape[0]):
+    ax1.annotate(i,xy=(best_pulses.Time.iloc[i],best_pulses.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
     
   if len(pulses.DM.unique())>1:
     ax2.hist(pulses.Sigma.tolist(),bins=100,histtype='step',color='k')
@@ -101,8 +104,8 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
     ax3.set_xlabel('DM (pc/cm3)')
     ax3.set_ylabel('Counts')
     ax3.set_xlim(5,550)
-    ax3.plot([40.5,40.5],[0,hist[0].max()],'k--')
-    ax3.plot([141.7,141.7],[0,hist[0].max()],'k--')
+    ax3.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
+    ax3.plot([141.7,141.7],[0,hist[0].max()+10],'k--')
   
   ax4.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
   ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
@@ -112,12 +115,14 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   ax4.set_xlabel('DM (pc/cm3)')
   limit = max(pulses.Sigma.max(),top_candidates.Sigma.max(),best_pulses.Sigma.max())
   ax4.axis([5,550,pulses.Sigma.min(),limit+3.])
-  ax4.plot([40.5,40.5],[0,best_pulses.Sigma.max()],'k--')
-  ax4.plot([141.7,141.7],[0,best_pulses.Sigma.max()],'k--')
+  ax4.plot([40.5,40.5],[0,limit+3.],'k--')
+  ax4.plot([141.7,141.7],[0,limit+3.],'k--')
   mpl.rc('font', size=3.5)
   for i in range(0,top_candidates.shape[0]):
-    ax4.annotate(i,xy=(top_candidates.DM.iloc[i]*1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
-  
+    ax4.annotate(i,xy=(top_candidates.DM.iloc[i]/1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center')
+  for i in range(0,best_pulses.shape[0]):
+    ax4.annotate(i,xy=(best_pulses.DM.iloc[i]*1.15,best_pulses.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
+    
   mpl.rc('font', size=5)
   ax5.axis([0,10,0,7])
   ax5.annotate('File: '+meta_data.File.iloc[0], xy=(0,6))
@@ -143,8 +148,11 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
 
 
 
-def sp_shape(pulses,events,sap,beam,store):
+def sp_shape(pulses,events,sap,beam,store,obs):
   
+  plt.title(obs)
+  plt.xlabel('DM (pc/cm3)')
+  plt.ylabel('Time (s)')
   fig = plt.figure()
   
   for i in range(0,pulses.shape[0]):
@@ -152,16 +160,18 @@ def sp_shape(pulses,events,sap,beam,store):
     puls = pulses.iloc[i]
     event = events[events.Pulse==puls.name]
 
-    sig=(event.Sigma/5.)**4
+    sig=(event.Sigma/event.Sigma.max()*5)**4
   
     ax = plt.subplot2grid((2,5),(i/5,i%5))
     ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
     ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt='none', ecolor='r')
-    #ax.set_title = "Pulse "+str(i)+" (DM "+str(puls.DM)+")"
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('DM (pc/cm3)')
     
+    ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(event.Sigma.max(),i))
+  
+  fig.suptitle(obs)
   fig.tight_layout()
+  fig.set_canvas(plt.gcf().canvas)
+  
   mpl.rc('font',size=5)
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   

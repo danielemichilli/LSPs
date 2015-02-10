@@ -6,7 +6,6 @@ BUGS:
 - Ignore corrupted tar files
 
 PLOT:
-- Single pulse plots: enlarge points dimension
 - Single pulse plots: report obs name, sigma max, rank number
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
@@ -14,7 +13,6 @@ PLOT:
 - Beam plots: give numbers to squares
 - Remove time spans affected by RFI in general plot
 - Plots of pulse shapes larger when few pulses
-- Single pulse plots: circle dimensions relative to max
 - Histogram also for only pulses brighter than threshold
 - General plot with counts in every beam
 
