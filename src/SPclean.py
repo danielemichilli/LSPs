@@ -116,27 +116,6 @@ def obs_events(folder,idL):
 
 
 
-
-#PROVA con events
-  noise_level = events.loc[events.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  noise_level = noise_level.mean(level=['SAP','DM']) + 6.* noise_level.std(level=['SAP','DM'])   #6 sigmas tollerance
-  noise_level.dropna(inplace=True)
-  
-  beams = events.loc[events.BEAM>12].groupby(['SAP','BEAM'],sort=False)
-  for ind,beam in beams:
-    counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
-    counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
-    if not counts.empty:
-      for i in counts.index.get_level_values('DM'):
-        Sigma = beams.get_group((ind[0],ind[1]))
-        Sigma = Sigma.Sigma[Sigma.DM==i]
-        ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
-
-
-  
-  
-  #MEGLIO su pulses o su events in pulses<RFI?
-  
   
   def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
     file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
@@ -149,11 +128,14 @@ def obs_events(folder,idL):
   
   
   
-  noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  
+  data = pulses.loc[pulses.BEAM>12,['SAP','BEAM','DM','Sigma','Pulse']]
+  data.DM = data.DM.round(decimals=1)
+  noise_level = data.groupby(['SAP','BEAM','DM'],sort=False).Pulse.count()
   noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
   noise_level.dropna(inplace=True)
-  
-  beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
+    
+  beams = data.groupby(['SAP','BEAM'],sort=False)
   for ind,beam in beams:
     counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
     counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
@@ -163,15 +145,19 @@ def obs_events(folder,idL):
         Sigma = Sigma.Sigma[Sigma.DM==i]
         ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
       
-      
+
+
+
+        
+        
   
   # ALERT su incoherent beams rispetto a cosa? media dei tre? media di piu' osservazioni?
   
-  #noise_level = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  #noise_level = noise_level.mean(level='DM') + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  #noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  #noise_level = noise_level.mean(level='DM')# + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
   #noise_level.dropna(inplace=True)
   
-  #beams = pulses.loc[pulses.BEAM==12].groupby(['SAP','BEAM'],sort=False)
+  #beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
   #for ind,beam in beams:
     #counts = beam.groupby('DM',sort=False).Pulse.count()
     #counts = counts[counts>noise_level.loc[counts.index]]
