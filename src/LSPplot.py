@@ -45,8 +45,6 @@ def plot(gb):
     plt.clf()
     sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),best_pulses,sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
   
-  plt.clf()
-    
   return
 
 
@@ -149,32 +147,33 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
 
 
 def sp_shape(pulses,events,sap,beam,store,obs):
-  
-  plt.title(obs)
-  plt.xlabel('DM (pc/cm3)')
-  plt.ylabel('Time (s)')
+
   fig = plt.figure()
-  
+
+  mpl.rc('font',size=5)
+ 
   for i in range(0,pulses.shape[0]):
   
     puls = pulses.iloc[i]
-    event = events[events.Pulse==puls.name]
+    event = events.loc[events.Pulse==puls.name]
 
-    sig=(event.Sigma/event.Sigma.max()*5)**4
+    sig = (event.Sigma/event.Sigma.max()*5)**4
   
     ax = plt.subplot2grid((2,5),(i/5,i%5))
     ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
     ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt='none', ecolor='r')
     
     ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(event.Sigma.max(),i))
+      
   
-  fig.suptitle(obs)
-  fig.tight_layout()
-  fig.set_canvas(plt.gcf().canvas)
-  
-  mpl.rc('font',size=5)
+  # Set common labels
+  fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
+  fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
+  fig.text(0.5, 0.95, obs, ha='center', va='center', fontsize=12)
+    
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
+ 
   return
 
 
@@ -182,7 +181,6 @@ def sp_shape(pulses,events,sap,beam,store,obs):
 
 
 def obs_top_candidates(top_candidates,best_pulses,color=True,size=True,store=False,incoherent=False): #top_candidates di tutti i beams
-  plt.clf()
   
   if color:
     if incoherent:

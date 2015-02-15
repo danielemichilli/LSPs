@@ -12,6 +12,7 @@ import os
 import matplotlib as mpl
 mpl.use('Agg')
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 import Events
 import Pulses
@@ -129,6 +130,11 @@ def obs_events(folder,idL):
 
 def output(folder,idL,pulses,best_puls,events,meta_data):
   
+  f, ax = plt.subplots()
+  ax.plot()
+  f.tight_layout()
+    
+  
   store = '{}{}'.format(folder,idL)
   
   pulses.sort('Sigma',ascending=False,inplace=True)
@@ -159,6 +165,11 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
+  
+  
+  #for n in gb_puls.indices.iterkeys():
+    #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store))
+  
   
   
   best_puls['code'] = best_puls.index
