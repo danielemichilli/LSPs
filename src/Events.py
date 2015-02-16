@@ -48,7 +48,8 @@ def Loader(parameters):
       
       data.insert(0,'BEAM',beam)
       data.insert(0,'SAP',sap)
-      
+      data.SAP = data.SAP.astype(np.uint8)
+      data.BEAM = data.BEAM.astype(np.uint8)      
       
       inf = inf.iloc[[0,1,2,4,5,7],1]
       inf.iloc[0] = inf.iloc[0].replace("_rfifind","")
@@ -69,7 +70,6 @@ def Loader(parameters):
       #Handle missing beams
       logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
 
-  
   return (events,meta_data)
 
 
@@ -86,7 +86,7 @@ def Thresh(events):
 
 
 
-def Group(events):   #SBAGLIATO?
+def Group(events):
   #-----------------------------------
   # Assigns a pulse-code to each event
   #-----------------------------------
@@ -94,7 +94,7 @@ def Group(events):   #SBAGLIATO?
   events.sort(['SAP','BEAM','DM'],inplace=True)  
   
   C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
-    
-  events.Pulse = (events.Pulse*10+events.SAP)*100+events.BEAM
+
+  events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
   
   return

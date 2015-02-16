@@ -12,6 +12,7 @@ import os
 import matplotlib as mpl
 mpl.use('Agg')
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 import Events
 import Pulses
@@ -19,36 +20,10 @@ import RFIexcision
 import LSPplot
 from Parameters import *
 
-
-def Initialize():  #TOGLIERE!
-  #Creates the tables in memory
-  meta_data = pd.DataFrame(columns=['SAP','BEAM','File','Telescope','Instrument','RA','DEC','Epoch'])
-  events = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse'])
-  pulses = pd.DataFrame(columns=['SAP','BEAM','DM','Sigma','Time','Duration','Pulse','dDM','dTime','DM_c','Time_c','N_events'])
-  
-  pulses = pulses.astype(np.float32)
-  pulses.SAP = pulses.SAP.astype(np.uint8)
-  pulses.BEAM = pulses.BEAM.astype(np.uint8)
-  pulses.Pulse = pulses.Pulse.astype(np.int8)
-  pulses.N_events = pulses.N_events.astype(np.int16)
-  
-  meta_data = meta_data.astype(str)
-  meta_data.SAP = meta_data.SAP.astype(np.uint8)
-  meta_data.BEAM = meta_data.BEAM.astype(np.uint8)
-  
-  return events,pulses,meta_data
-
-
-
 def obs_events(folder,idL):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
-  
-    
-  
-  #Initialize the tables
-  #events,pulses,meta_data = Initialize()
   
   #Import the events
   pool = mp.Pool(mp.cpu_count()-1)
@@ -68,19 +43,15 @@ def obs_events(folder,idL):
   #events, meta_data = Events.Loader((folder,idL,12))
   
   events['Pulse'] = 0
-  
-  events = events.astype(np.float32)
-  events.SAP = events.SAP.astype(np.uint8)
-  events.BEAM = events.BEAM.astype(np.uint8)
   events.Pulse = events.Pulse.astype(np.int32)
   
   #Apply the thresholds to the events
   events = Events.Thresh(events)
 
-    
+
   #Group the events
   Events.Group(events)
-  
+
   events = events[events.Pulse>0]
     
   #Generate the pulses table  
@@ -194,6 +165,11 @@ def obs_events(folder,idL):
 
 def output(folder,idL,pulses,best_puls,events,meta_data):
   
+  f, ax = plt.subplots()
+  ax.plot()
+  f.tight_layout()
+    
+  
   store = '{}{}'.format(folder,idL)
   
   pulses.sort('Sigma',ascending=False,inplace=True)
@@ -231,6 +207,11 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),Group_Clean(gb_best,n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
+  
+  
+  #for n in gb_puls.indices.iterkeys():
+    #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store))
+  
   
   
   best_puls['code'] = best_puls.index

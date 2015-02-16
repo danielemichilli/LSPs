@@ -1,17 +1,10 @@
-<<<<<<< HEAD
 BUGS:
 - High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
 - Top_candidates in inf are wrong
 - Only 10 top_candidates in inc beams
 - Rank in top_candidates.inf wrong without inc beam
-- Check dimension of squares, sometimes not related with sigma apparently
-
 
 PLOT:
-- General plot: don't plot stars and squares in top-right plot
-- General plot: enlarge the dimension on the central plot (similar to the beam plots
-- General plots: enlarge points dimension and diminish square dimension
-- Single pulse plots: enlarge points dimension
 - Single pulse plots: report obs name, sigma max, rank number
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
@@ -19,11 +12,8 @@ PLOT:
 - Beam plots: give numbers to squares
 - Remove time spans affected by RFI in general plot
 - Plots of pulse shapes larger when few pulses
-- Plots smaller
-- Single pulse plots: circle dimensions relative to max
 - Histogram also for only pulses brighter than threshold
 - General plot with counts in every beam
-
 
 OUTPUT:
 - Folder with general best plots
