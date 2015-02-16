@@ -99,7 +99,7 @@ def obs_events(folder,idL):
     
   #pulses = Pulses.Generator(pulses,events)
   
-    
+  
   #Correct for the time misalignment of events
   Pulses.TimeAlign(events.Time,events.DM)
   
@@ -117,6 +117,65 @@ def obs_events(folder,idL):
   #Clean the pulses table
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
+
+
+
+
+
+
+  
+  def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
+    file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
+    if not file.readlines():
+      file.write('Pulsar candidates\n\n')
+      file.write('SAP\tBEAM\tDM\tLimit\tCounts\tS_Max\tS_Mean\n')
+    file.write('{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4}\t{5:.2f}\t{6:.2f}\n'.format(sap,beam,dm,limit,counts,s_max,s_mean))
+    file.close()
+    return
+  
+  
+  
+  
+  data = pulses.loc[pulses.BEAM>12,['SAP','BEAM','DM','Sigma','Pulse']]
+  data.DM = data.DM.round(decimals=1)
+  noise_level = data.groupby(['SAP','BEAM','DM'],sort=False).Pulse.count()
+  noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
+  noise_level.dropna(inplace=True)
+    
+  beams = data.groupby(['SAP','BEAM'],sort=False)
+  for ind,beam in beams:
+    counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
+    counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
+    if not counts.empty:
+      for i in counts.index.get_level_values('DM'):
+        Sigma = beams.get_group((ind[0],ind[1]))
+        Sigma = Sigma.Sigma[Sigma.DM==i]
+        ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
+      
+
+
+
+        
+        
+  
+  # ALERT su incoherent beams rispetto a cosa? media dei tre? media di piu' osservazioni?
+  
+  #noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
+  #noise_level = noise_level.mean(level='DM')# + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
+  #noise_level.dropna(inplace=True)
+  
+  #beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
+  #for ind,beam in beams:
+    #counts = beam.groupby('DM',sort=False).Pulse.count()
+    #counts = counts[counts>noise_level.loc[counts.index]]
+    #if not counts.empty:
+      #ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
+
+
+
+
+ 
+  
   #Generate best_puls table
   best_puls = RFIexcision.best_pulses(pulses,events)
 
@@ -124,7 +183,7 @@ def obs_events(folder,idL):
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append(idL+'_pulses',pulses,data_columns=['Pulse'])
   store.append('meta_data',meta_data)
-  if not best_puls.empty: store.append('best_pulses',best_puls)  #FORSE da togliere
+  if not best_puls.empty: store.append('best_pulses',best_puls)
   store.close()
   
   #Produce the output
@@ -160,9 +219,16 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   
   
   
+  def Group_Clean(gb_best,n):
+    try:
+      return gb_best.get_group(n)
+    except KeyError:
+      return pd.DataFrame()
+  
+  
   #METTERE che n salta best_pulses se non sono presenti  
   pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
+  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),Group_Clean(gb_best,n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
   

@@ -26,8 +26,7 @@ def plot(gb):
   beam = gb[0].BEAM.iloc[0]
   
   plt.clf()
-  
-  
+
   if beam == 12:
     sp_shape(pulses.head(10),events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam))
     sp_shape(pulses.iloc[10:20],events,sap,beam,'{}/sp/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam))

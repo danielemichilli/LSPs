@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 BUGS:
 - High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
 - Top_candidates in inf are wrong
@@ -40,3 +41,4 @@ ANALYSIS:
 - Strongest pulse only for DM > x
 - Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
 - Pulse spectra
+
