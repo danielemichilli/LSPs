@@ -5,15 +5,11 @@ BUGS:
 - Rank in top_candidates.inf wrong without inc beam
 
 PLOT:
-- Single pulse plots: report obs name, sigma max, rank number
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
 - Beam plots: in top-right plot move numbers to the left
-- Beam plots: give numbers to squares
 - Remove time spans affected by RFI in general plot
-- Plots of pulse shapes larger when few pulses
 - Histogram also for only pulses brighter than threshold
-- General plot with counts in every beam
 
 OUTPUT:
 - Folder with general best plots
