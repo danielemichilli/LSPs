@@ -299,32 +299,34 @@ def best_pulses(puls,data):
   best.sort('Sigma',ascending=False,inplace=True)
   top = top.append(best.groupby(['SAP','BEAM'],sort=False).head(30))
   best = 0
+    
+  top.Time  += top.DM * delay
+  top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
   
-  if not top.empty:
-  
-    gb_top = top.groupby(['SAP','BEAM'],sort=False).Sigma
-    max_top = gb_top.max()
-    min_top_ind = gb_top.idxmin()
-    count_top = gb_top.count()
-    gb_top = 0
-    
-    gb_puls = puls[puls.Pulse<=RFI_percent].groupby(['SAP','BEAM'],sort=False).Sigma
-    strongest = gb_puls.max().reindex_like(max_top)
-    strongest_id = gb_puls.idxmax().reindex_like(max_top)
-    gb_puls = 0
-    
-    top.drop(min_top_ind[(max_top<strongest)&(count_top>=10)&(min_top_ind.index[0][1]>12)],inplace=True)
-    top.drop(min_top_ind[(max_top<strongest)&(count_top>=30)&(min_top_ind.index[0][1]==12)],inplace=True)
-    top = top.append(puls.loc[strongest_id[strongest>max_top]])
-    
-    top.Time  += top.DM * delay
-    top.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
-    
-        
   return top
 
 
+def strongest(puls,best_pulses):
+  
+  strong = puls.loc[puls[(puls.Pulse>0)&(puls.Pulse<=RFI_percent)].groupby(['SAP','BEAM'],sort=False).Sigma.idxmax()]
+  
+  best = best_pulses.loc[best_pulses.groupby(['SAP','BEAM'],sort=False).Sigma.idxmax()]
+  best = best.reindex_like(strong)
+  best.dropna(inplace=True)
 
+  strong.drop(best.index,inplace=True)
+  
+  strong = strong[(strong.Sigma>8)&(strong.DM>50)]
+  
+  strong.sort(['SAP','BEAM','Sigma'],inplace=True)
+
+  return strong
+    
+    
+    
+    
+    
+    
     
     
   ''' OLD!!!

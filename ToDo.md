@@ -17,14 +17,14 @@ OUTPUT:
 - SAP0_BEAM12 has repeated best_pulses (es. L232335)
 - In top_candidates.inf incoherent pulses are reported twice
 
-
 ANALYSIS:
 - Add filter duration/sigma 
 - Better study parameters of grouping
   - Better study filter values
 - Substitute duration filter with downfact filter
-- Strongest pulse in other list
-- Strongest pulse only for DM > x
 - Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
 - Pulse spectra
 
+GENERAL
+- Write Readme
+- Re-write Installation
