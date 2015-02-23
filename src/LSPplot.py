@@ -87,9 +87,11 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   
   mpl.rc('font', size=5)
   for i in range(0,top_candidates.shape[0]):
-    ax1.annotate(i,xy=(top_candidates.Time.iloc[i],top_candidates.DM.iloc[i]/1.15),horizontalalignment='center',verticalalignment='top')
+    if top_candidates.Time.iloc[i]>100:
+      ax1.annotate(i,xy=(top_candidates.Time.iloc[i]-60,top_candidates.DM.iloc[i]),horizontalalignment='right',verticalalignment='center')
   for i in range(0,best_pulses.shape[0]):
-    ax1.annotate(i,xy=(best_pulses.Time.iloc[i],best_pulses.DM.iloc[i]*1.15),horizontalalignment='center',verticalalignment='bottom')
+    if best_pulses.Time.iloc[i]<3500:
+      ax1.annotate(i,xy=(best_pulses.Time.iloc[i]+60,best_pulses.DM.iloc[i]),horizontalalignment='left',verticalalignment='center')
     
   if len(pulses.DM.unique())>1:
     ax2.hist(pulses.Sigma.tolist(),bins=100,histtype='step',color='k')
