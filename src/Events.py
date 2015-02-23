@@ -22,7 +22,7 @@ def Loader(parameters):
   for sap in range(0,3):
       
     name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
-    path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam) #'' per i test
+    path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
     events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
     
     try:
@@ -50,6 +50,8 @@ def Loader(parameters):
       data.insert(0,'SAP',sap)
       data.SAP = data.SAP.astype(np.uint8)
       data.BEAM = data.BEAM.astype(np.uint8)      
+      data['Pulse'] = 0
+      data.Pulse = data.Pulse.astype(np.int32)
       
       inf = inf.iloc[[0,1,2,4,5,7],1]
       inf.iloc[0] = inf.iloc[0].replace("_rfifind","")
@@ -91,10 +93,10 @@ def Group(events):
   # Assigns a pulse-code to each event
   #-----------------------------------
 
-  events.sort(['SAP','BEAM','DM'],inplace=True)  
-  
+  events.sort('DM',inplace=True)
+   
   C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
-
+  
   events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
   
-  return
+  return events.Pulse

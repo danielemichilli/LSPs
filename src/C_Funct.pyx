@@ -52,7 +52,7 @@ def Get_Group(float[::1] DM not None,
           if Sigma[i] < Sigma[j] : Pulse[i] = -1
           else : Pulse[j] = -1
   
-    if Pulse[i]==-1: continue
+    if Pulse[i]==-1: continue  #CONTROLLARE!!!
     
     # Set a code to the events that aren't in a pulse
     if Pulse[i]==0: 
@@ -78,7 +78,7 @@ def Get_Group(float[::1] DM not None,
       step_max = step * n_steps + float_err
       
       
-      # Find the minimum and maximum event in the range
+      #find the minimum and maximum event in the range
       for j in range(i+1,dim):
         
         dDM = DM[j] - DM_new
@@ -175,7 +175,6 @@ def Compare(float[::1] DM_c_l not None,
     
     for j in range(j_min, dim_r):
       
-      # Skip the comparison if both the pulses are above the RFI limit
       if Pulse_r[j] >= rfi_limit: 
         
         if RFI > 0:
@@ -187,7 +186,6 @@ def Compare(float[::1] DM_c_l not None,
       
       sign = Time_c_l[i]-Time_c_r[j]
       
-      # Condition on time to group two events
       if Time < 4.*DTime :
       
         if j_flag == j_min: j_min = j
@@ -195,10 +193,8 @@ def Compare(float[::1] DM_c_l not None,
         DM = abs(DM_c_l[i]-DM_c_r[j])
         DDM = dDM_l[i]+dDM_r[j]
         
-        # Condition on DM to group two events
         if DM < 2.*DDM :
           
-          # Condition on sigma to group two events
           if abs(Sigma_l[i]-Sigma_r[j]) < TollSigma:
                         
             Pulse_l[i] += 1

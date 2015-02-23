@@ -35,34 +35,44 @@ def obs_events(folder,idL):
   results_meta_data = [x[1] for x in results]
   results = 0
   
+  #zip(*[('a', 1), ('b', 2), ('c', 3), ('d', 4)])
+  #[('a', 'b', 'c', 'd'), (1, 2, 3, 4)]
+  
   events = pd.concat(results_events)
   meta_data = pd.concat(results_meta_data)
   results_events = 0
   results_meta_data = 0
+  events.reset_index(drop=True,inplace=True)
+  meta_data.reset_index(drop=True,inplace=True)
   
   #events, meta_data = Events.Loader((folder,idL,12))
-  
-  events['Pulse'] = 0
-  events.Pulse = events.Pulse.astype(np.int32)
   
   #Apply the thresholds to the events
   events = Events.Thresh(events)
 
-
   #Group the events
-  Events.Group(events)
+  gb = events.groupby(['SAP','BEAM'])
+  pool = mp.Pool(mp.cpu_count()-1)
+  results = pool.map(Events.Group, [gb.get_group(n) for n in gb.indices.iterkeys()])
+  pool.close()
+  pool.join()  
+  gb = 0
+
+  Pulse = pd.concat(results)
+  results = 0
+  events.Pulse = Pulse
+  Pulse = 0
 
   events = events[events.Pulse>0]
-    
-  #Generate the pulses table  
-  rows_core = events.shape[0] / (mp.cpu_count()+2)
-  
+
+
   gb = events.groupby('BEAM',sort=False)
   
   pool = mp.Pool(mp.cpu_count()-1)
   results = pool.map(Pulses.Generator, [gb.get_group(n) for n in gb.indices.iterkeys()])
   pool.close()
   pool.join()
+  gb = 0
   #output = [p.get() for p in results] 
   
   pulses = pd.concat(results)
@@ -213,7 +223,7 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
     #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store))
   
   
-  
+  best_puls.sort(['SAP','BEAM','Sigma'],inplace=True)
   best_puls['code'] = best_puls.index
   if not best_puls.empty:
     a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
@@ -225,6 +235,7 @@ def output(folder,idL,pulses,best_puls,events,meta_data):
   
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
   top_candidates = top_candidates.append(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
+  top_candidates.sort(['SAP','BEAM','Sigma'],inplace=True)
   top_candidates['code'] = top_candidates.index
   if not top_candidates.empty:
     a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
