@@ -62,8 +62,10 @@ def obs_events(folder,idL):
   events = pd.concat(results)
   results = 0
 
+  #Correct for the time misalignment of events
+  events.Time = Pulses.TimeAlign(events.Time,events.DM)
+
   gb = events.groupby('BEAM',sort=False)
-  
   pool = mp.Pool(mp.cpu_count()-1)
   results = pool.map(Pulses.Generator, [gb.get_group(n) for n in gb.indices.iterkeys()])
   pool.close()
@@ -74,19 +76,10 @@ def obs_events(folder,idL):
   pulses = pd.concat(results)
   results = 0
     
-  #pulses = Pulses.Generator(pulses,events)
-  
-  
-  #Correct for the time misalignment of events
-  Pulses.TimeAlign(events.Time,events.DM)
-  
   #Store the events
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   store.append(idL,events,data_columns=['Pulse'])
   store.close() 
-  
-  #Clean the events table
-  events = events.loc[events.Pulse.isin(pulses.index)]
   
   #Compares pulses in different beams
   RFIexcision.Compare_Beams(pulses)
@@ -94,7 +87,8 @@ def obs_events(folder,idL):
   #Clean the pulses table
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
-
+  #Clean the events table
+  events = events.loc[events.Pulse.isin(pulses.index)]
 
 
 

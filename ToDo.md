@@ -11,7 +11,7 @@ OUTPUT:
 - Folder with general best plots
 
 ANALYSIS:
-- Better time alignment
+- Study better time alignment with high-DM pulsar
 - Probably better to join the first 3 pools together
 - Add filter duration/sigma 
 - Better study parameters of grouping
