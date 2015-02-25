@@ -99,4 +99,4 @@ def Group(events):
   
   events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
   
-  return events.Pulse
+  return events

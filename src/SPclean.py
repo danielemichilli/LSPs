@@ -52,19 +52,15 @@ def obs_events(folder,idL):
 
   #Group the events
   gb = events.groupby(['SAP','BEAM'])
+  events = 0
   pool = mp.Pool(mp.cpu_count()-1)
   results = pool.map(Events.Group, [gb.get_group(n) for n in gb.indices.iterkeys()])
   pool.close()
   pool.join()  
   gb = 0
 
-  Pulse = pd.concat(results)
+  events = pd.concat(results)
   results = 0
-  events.Pulse = Pulse
-  Pulse = 0
-
-  events = events[events.Pulse>0]
-
 
   gb = events.groupby('BEAM',sort=False)
   
@@ -105,33 +101,33 @@ def obs_events(folder,idL):
 
 
   
-  def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
-    file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
-    if not file.readlines():
-      file.write('Pulsar candidates\n\n')
-      file.write('SAP\tBEAM\tDM\tLimit\tCounts\tS_Max\tS_Mean\n')
-    file.write('{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4}\t{5:.2f}\t{6:.2f}\n'.format(sap,beam,dm,limit,counts,s_max,s_mean))
-    file.close()
-    return
+  #def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
+    #file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
+    #if not file.readlines():
+      #file.write('Pulsar candidates\n\n')
+      #file.write('SAP\tBEAM\tDM\tLimit\tCounts\tS_Max\tS_Mean\n')
+    #file.write('{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4}\t{5:.2f}\t{6:.2f}\n'.format(sap,beam,dm,limit,counts,s_max,s_mean))
+    #file.close()
+    #return
   
   
   
   
-  data = pulses.loc[pulses.BEAM>12,['SAP','BEAM','DM','Sigma','Pulse']]
-  data.DM = data.DM.round(decimals=1)
-  noise_level = data.groupby(['SAP','BEAM','DM'],sort=False).Pulse.count()
-  noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
-  noise_level.dropna(inplace=True)
+  #data = pulses.loc[pulses.BEAM>12,['SAP','BEAM','DM','Sigma','Pulse']]
+  #data.DM = data.DM.round(decimals=1)
+  #noise_level = data.groupby(['SAP','BEAM','DM'],sort=False).Pulse.count()
+  #noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
+  #noise_level.dropna(inplace=True)
     
-  beams = data.groupby(['SAP','BEAM'],sort=False)
-  for ind,beam in beams:
-    counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
-    counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
-    if not counts.empty:
-      for i in counts.index.get_level_values('DM'):
-        Sigma = beams.get_group((ind[0],ind[1]))
-        Sigma = Sigma.Sigma[Sigma.DM==i]
-        ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
+  #beams = data.groupby(['SAP','BEAM'],sort=False)
+  #for ind,beam in beams:
+    #counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
+    #counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
+    #if not counts.empty:
+      #for i in counts.index.get_level_values('DM'):
+        #Sigma = beams.get_group((ind[0],ind[1]))
+        #Sigma = Sigma.Sigma[Sigma.DM==i]
+        #ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
       
 
 
@@ -190,7 +186,7 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
 
   if not strongest.empty:
     for i in range(strongest.shape[0]/10+1):
-      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/strongest_pulses.png'.format(store),idL)
+      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/strongest_pulses({}).png'.format(store,strongest.shape[0]/10),idL)
     
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
@@ -226,25 +222,29 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store))
   
   if not best_puls.empty:
-    best_puls.sort(['SAP','BEAM','Sigma'],inplace=True)
+    best_puls.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
     best_puls['code'] = best_puls.index
     a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
     b = [val for sublist in a for val in sublist]
     best_puls.index = b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
-    best_puls.to_csv('{}{}/sp/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
+    best_puls.to_csv('{}{}/sp/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+      columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
+      header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   if not strongest.empty:
     strongest['code'] = strongest.index
     strongest.reset_index(drop=True,inplace=True)
     strongest.Duration *= 1000
     strongest['void'] = ''
-    strongest.to_csv('{}{}/sp/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
+    strongest.to_csv('{}{}/sp/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+      columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','Pulse','code'],\
+      header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','#RFI','code','','',''],index_label='rank',encoding='utf-8')
   
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
   top_candidates = top_candidates.append(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
-  top_candidates.sort(['SAP','BEAM','Sigma'],inplace=True)
+  top_candidates.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
   top_candidates['code'] = top_candidates.index
   if not top_candidates.empty:
     a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
@@ -252,7 +252,9 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     top_candidates.index=b
   top_candidates.Duration *= 1000
   top_candidates['void'] = ''
-  top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
+  top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+    columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
+    header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   
   LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],strongest[strongest.BEAM==12],\

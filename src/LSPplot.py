@@ -235,7 +235,7 @@ def obs_top_candidates(top_candidates,best_pulses,strongest,color=True,size=True
   if not best_pulses.empty: 
     ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
   if not strongest.empty: 
-    ax1.scatter(strongest.Time,strongest.DM,s=sig_str,linewidths=[1.,],marker=u'^',facecolors='none',c=col_str)
+    ax1.scatter(strongest.Time,strongest.DM,s=sig_str,linewidths=[.5,],marker=u'^',facecolors='none',c=col_str)
   
   ax1.plot([0,3600],[40.48,40.48],'k--')
   ax1.plot([0,3600],[141.68,141.68],'k--')

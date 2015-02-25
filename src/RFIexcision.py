@@ -316,7 +316,7 @@ def strongest(puls,best_pulses):
 
   strong.drop(best.index,inplace=True)
   
-  strong = strong[(strong.Sigma>8)&(strong.DM>50)]
+  strong = strong[(strong.Sigma>=10.)&(strong.DM>50)]
   
   strong.sort(['SAP','BEAM','Sigma'],inplace=True)
 
