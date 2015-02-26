@@ -24,27 +24,6 @@ import StringIO
 import SPclean
 import Parameters
 
-#def update_version_py():
-  #if not os.path.isdir(".git"):
-    #print "This does not appear to be a Git repository."
-    #return
-  #try:
-    #p = subprocess.Popen(["git", "describe","--tags", "--dirty", "--always"],stdout=subprocess.PIPE)
-  #except EnvironmentError:
-    #print "Unable to import the program version from git"
-  #return
-  #stdout = p.communicate()[0]
-  #if p.returncode != 0:
-    #print "Unable to import the program version from git"
-    #return
-  #assert stdout.startswith("python-ecdsa-")
-  #ver = stdout[len("python-ecdsa-"):].strip()
-  #f = open("ecdsa/_version.py", "w")
-  #f.write(VERSION_PY % ver)
-  #f.close()
-  #print "set ecdsa/_version.py to '%s'" % ver
-
-
 def parser():
   #---------------------
   # Command-line options

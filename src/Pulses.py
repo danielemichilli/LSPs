@@ -23,7 +23,7 @@ def Generator(events):
   # Create a table with the pulses
   #-------------------------------
   
-  pulses = Initialize()
+  pulses = Initialize()  #serve??
   
   gb = events.groupby('Pulse',sort=False)
   pulses = events.loc[events.index.isin(gb.Sigma.idxmax())]
@@ -68,6 +68,7 @@ def Generator(events):
   RFIexcision.IB_Align_Pulse_Thresh(pulses,gb,events)
   RFIexcision.Align_Pulse_Thresh(pulses,gb,events)
   
+  #Clean the pulses table
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
   return pulses
@@ -81,15 +82,13 @@ def TimeAlign(Time,DM):
   # Quantifies the misalignment for a broad-band pulse
   # Only the extreme frequencies are taken into account
   k = 0.000241*2  #s-1
-  delay1 = np.float32((F_MIN**-2 - F_MAX**-2) / (2*k))
+  delay1 = np.float32((F_MIN**-2 - F_MAX**-2) / (k))
   
-  bin=(F_MAX-F_MIN)/288  #288 subbands
-  delay2 = np.float32((F_MIN**-2 - (F_MAX-bin)**-2) / k)
+  #bin=(F_MAX-F_MIN)/288  #288 subbands
+  f_range = F_MAX-F_MIN
+  #delay2 = np.float32(((F_MIN+f_range/2)**-2 - (F_MIN+f_range*145/288)**-2) / k)
+  delay2=0
   
   Time += DM * (delay1 + delay2)
   
-  #Time.loc[DM<=40.48] += DM * (delay1 + delay2)
-  #Time.loc[(DM>40.48)&(DM<=141.68)] += DM * (delay1 + delay2)
-  #Time.loc[DM>141.68] += DM * (delay1 + delay2)
-  
-  return
+  return Time
