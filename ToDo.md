@@ -12,7 +12,7 @@ OUTPUT:
 
 ANALYSIS:
 - Study better time alignment with high-DM pulsar
-- Probably better to join the first 3 pools together
+- Modify filters for the aligned pulse shape
 - Add filter duration/sigma 
 - Better study parameters of grouping
   - Better study filter values

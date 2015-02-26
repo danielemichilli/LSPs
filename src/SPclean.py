@@ -24,63 +24,26 @@ def obs_events(folder,idL):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
+
+  folders = zip(range(3)*62,range(12,74)*3)
   
-  #Import the events
+  #Create events, meta_data and pulses lists
   pool = mp.Pool(mp.cpu_count()-1)
-  results = pool.map(Events.Loader, [(folder,idL,beam) for beam in range(12,74)])
+  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
   pool.close()
   pool.join()
   
-  results_events = [x[0] for x in results]
-  results_meta_data = [x[1] for x in results]
-  results = 0
+  meta_data = pd.DataFrame()
+  events = pd.DataFrame()
+  pulses = pd.DataFrame()
   
-  #zip(*[('a', 1), ('b', 2), ('c', 3), ('d', 4)])
-  #[('a', 'b', 'c', 'd'), (1, 2, 3, 4)]
-  
-  events = pd.concat(results_events)
-  meta_data = pd.concat(results_meta_data)
-  results_events = 0
-  results_meta_data = 0
-  events.reset_index(drop=True,inplace=True)
-  meta_data.reset_index(drop=True,inplace=True)
-  
-  #events, meta_data = Events.Loader((folder,idL,12))
-  
-  #Apply the thresholds to the events
-  events = Events.Thresh(events)
-
-  #Group the events
-  gb = events.groupby(['SAP','BEAM'])
-  events = 0
-  pool = mp.Pool(mp.cpu_count()-1)
-  results = pool.map(Events.Group, [gb.get_group(n) for n in gb.indices.iterkeys()])
-  pool.close()
-  pool.join()  
-  gb = 0
-
-  events = pd.concat(results)
+  for idx, (meta,event,puls) in enumerate(results):
+    meta_data = meta_data.append(meta,ignore_index=True)
+    events = events.append(event,ignore_index=True)
+    pulses = pulses.append(puls)
+    results[idx] = 0
   results = 0
 
-  #Correct for the time misalignment of events
-  events.Time = Pulses.TimeAlign(events.Time,events.DM)
-
-  gb = events.groupby('BEAM',sort=False)
-  pool = mp.Pool(mp.cpu_count()-1)
-  results = pool.map(Pulses.Generator, [gb.get_group(n) for n in gb.indices.iterkeys()])
-  pool.close()
-  pool.join()
-  gb = 0
-  #output = [p.get() for p in results] 
-  
-  pulses = pd.concat(results)
-  results = 0
-    
-  #Store the events
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
-  store.append(idL,events,data_columns=['Pulse'])
-  store.close() 
-  
   #Compares pulses in different beams
   RFIexcision.Compare_Beams(pulses)
 
@@ -90,7 +53,10 @@ def obs_events(folder,idL):
   #Clean the events table
   events = events.loc[events.Pulse.isin(pulses.index)]
 
-
+  #Store the events
+  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
+  store.append(idL,events,data_columns=['Pulse'])
+  store.close() 
 
 
 
@@ -150,7 +116,7 @@ def obs_events(folder,idL):
   #Generate best_puls table
   best_puls = RFIexcision.best_pulses(pulses,events)
   
-  
+  #Generate strongest table
   strongest = RFIexcision.strongest(pulses,best_puls)
   
   #Store the pulses
@@ -165,6 +131,41 @@ def obs_events(folder,idL):
   output(folder,idL,pulses,best_puls,strongest,events,meta_data)
   
   return
+
+
+
+
+def lists_creation((folder,idL,sap,beam)):
+  #folder = parameters[0]
+  #idL = parameters[1]
+  #sap = parameters[2]
+  #beam = parameters[3]
+
+  #Import the events
+  events, meta_data = Events.Loader(folder,idL,sap,beam)
+  pulses = pd.DataFrame()
+
+  if not events.empty:
+    
+    #Apply the thresholds to the events
+    events = Events.Thresh(events)
+    
+    #Group the events
+    Events.Group(events)
+    events = events[events.Pulse>0]
+    
+    #Correct for the time misalignment of events
+    events.Time = Pulses.TimeAlign(events.Time,events.DM)  #probabilmente si puo' togliere l'uguaglianza  
+    
+    #Generate the pulses
+    pulses = Pulses.Generator(events)
+    
+    #Clean the events table
+    events = events.loc[events.Pulse.isin(pulses.index)]
+
+  return (meta_data,events,pulses)
+
+
 
 
 def output(folder,idL,pulses,best_puls,strongest,events,meta_data):

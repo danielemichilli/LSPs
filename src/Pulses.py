@@ -23,7 +23,7 @@ def Generator(events):
   # Create a table with the pulses
   #-------------------------------
   
-  pulses = Initialize()
+  pulses = Initialize()  #serve??
   
   gb = events.groupby('Pulse',sort=False)
   pulses = events.loc[events.index.isin(gb.Sigma.idxmax())]
@@ -68,6 +68,7 @@ def Generator(events):
   RFIexcision.IB_Align_Pulse_Thresh(pulses,gb,events)
   RFIexcision.Align_Pulse_Thresh(pulses,gb,events)
   
+  #Clean the pulses table
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
   return pulses
