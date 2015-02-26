@@ -179,12 +179,17 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
   
   pulses = pulses.loc[pulses.Pulse==0]
 
-  if not strongest.empty:
-    for i in range(strongest.shape[0]/10+1):
-      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/strongest_pulses({}).png'.format(store,strongest.shape[0]/10),idL)
-    
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
+  for n in gb_puls.indices.iterkeys():
+    name = 'SAP{}_BEAM{}'.format(n[0],n[1])
+    os.makedirs('{}/sp/'.format(store)+name)
+  
+  if not strongest.empty:
+    os.makedirs('{}/sp/strongest'.format(store))
+    for i in range(strongest.shape[0]/10+1):
+      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/strongest/strongest_pulses({}).png'.format(store,i),idL)
+      
   gb_best = best_puls.groupby(['SAP','BEAM'],sort=False)
   
   gb_strong = strongest.groupby(['SAP','BEAM'],sort=False)
@@ -195,11 +200,7 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
   gb_md = meta_data.groupby(['SAP','BEAM'],sort=False)
   meta_data = 0
   
-  for n in gb_puls.indices.iterkeys():
-    name = 'SAP{}_BEAM{}'.format(n[0],n[1])
-    os.makedirs('{}{}/sp/'.format(folder,idL)+name)
-  
-    
+      
   def Group_Clean(gb,n):
     try:
       return gb.get_group(n)
@@ -233,7 +234,7 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     strongest.reset_index(drop=True,inplace=True)
     strongest.Duration *= 1000
     strongest['void'] = ''
-    strongest.to_csv('{}{}/sp/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+    strongest.to_csv('{}{}/sp/strongest/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
       columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','Pulse','code'],\
       header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','#RFI','code','','',''],index_label='rank',encoding='utf-8')
   

@@ -9,11 +9,12 @@ PLOT:
 
 OUTPUT:
 - Folder with general best plots
+- Same name to folders inside hdf5 to all observations
 
 ANALYSIS:
 - Study better time alignment with high-DM pulsar
 - Modify filters for the aligned pulse shape
-- Add filter duration/sigma 
+- Study other possible filters: duration*sigma2 (astronomy book), fit shape, pulse simmetry, pulse straight
 - Better study parameters of grouping
   - Better study filter values
 - Substitute duration filter with downfact filter
