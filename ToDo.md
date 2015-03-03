@@ -1,17 +1,25 @@
 BUGS:
+- MemoryError: store events on the fly
 - High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
 
 PLOT:
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
-- Remove time spans affected by RFI in general plot
-- Histogram also for only pulses brighter than threshold
+- Highlight time spans affected by RFI in general plot
+- Histogram also for only pulses brighter than threshold (or maybe cumulative SNR) 
+- General plot: obs and sap names
+- General plot: legend discrete 
+- Pulses shape: name of sap and beam and best/top
+- General and beam plots: vertical lines also on central hist
+- Change dim/SNR scaling of points
 
 OUTPUT:
 - Folder with general best plots
 - Same name to folders inside hdf5 to all observations
 
 ANALYSIS:
+- Remove pulses at the end of tim
+- Parameter for time spans affected by RFI in the whole sap
 - Study better time alignment with high-DM pulsar
 - Modify filters for the aligned pulse shape
 - Study other possible filters: duration*sigma2 (astronomy book), fit shape, pulse simmetry, pulse straight

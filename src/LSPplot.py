@@ -165,7 +165,7 @@ def sp_shape(pulses,events,store,obs):
     ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt='none', ecolor='r')
     
     ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(event.Sigma.max(),i))
-      
+    
   
   # Set common labels
   fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
