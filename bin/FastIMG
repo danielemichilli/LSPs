@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+'''
+
+Fast Imager
+
+Written by Daniele Michilli
+
+'''
+
+
+
+import os
+import argparse
+import tarfile
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+ra = np.array([ 
+        499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
+        742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
+        873,  869,  865,  862,  740,  619,  499,  380,  259,  137,  134,
+        129,  126,  249,  374,  499,  627,  752,  876, 1000,  995,  990,
+        985,  981,  859,  738,  618,  499,  381,  261,  140,   18,   14,
+          9,    4,    0,  123,  247,  372])
+
+ 
+dec = np.array([ 
+        500,  625,  562,  437,  375,  437,  562,  750,  687,  625,  500,
+        375,  312,  250,  312,  375,  500,  625,  687,  875,  812,  750,
+        687,  562,  437,  312,  250,  187,  125,  187,  250,  312,  437,
+        562,  687,  750,  812, 1000,  937,  875,  812,  750,  625,  500,
+        375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
+        500,  625,  750,  812,  875,  937])
+
+ 
+parser = argparse.ArgumentParser()
+parser.add_argument('filenm', nargs=1)
+args = parser.parse_args()
+idL = args.filenm[0]
+
+folder = '/projects/lotaas/test/Daniele/out/'
+
+for sap in range(2,3):
+  DM1 = np.zeros([61,100],dtype=np.float32)
+  DM2 = np.zeros([61,100],dtype=np.float32)
+  DM3 = np.zeros([61,100],dtype=np.float32)
+  DM4 = np.zeros([61,100],dtype=np.float32)
+  DM5 = np.zeros([61,100],dtype=np.float32)
+  
+  for beam in range(13,74):
+    
+    name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
+    path = '{}{}/SAP{}/BEAM{}_sift/sp/'.format(folder,idL,sap,beam)
+    events_path = '{}{}_singlepulse_down.tgz'.format(path,name)
+    num = beam-13
+    #num = beam+sap*61-13
+    
+    try:
+      #Open the file
+      tar_file = tarfile.open(events_path)
+      tar_file.extractall(path)
+      tar_file.close()
+      
+      try: DM1[num] = np.fromfile(path+name+'_DM183.47_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+    
+      try: DM2[num] = np.fromfile(path+name+'_DM275.17_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+
+      try: DM3[num] = np.fromfile(path+name+'_DM366.87_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+        
+      try: DM4[num] = np.fromfile(path+name+'_DM458.57_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+        
+      try: DM4[num] = np.fromfile(path+name+'_DM546.37_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+    
+      [ os.remove(path+f) for f in os.listdir(path) if f.endswith(".ds") ]
+    
+    except IOError: pass
+
+#if not np.in1d(a[:, 1], 0)  #to avoid to plot missing beams    
+    
+DM1 = DM1.T
+DM2 = DM2.T
+DM3 = DM3.T
+DM4 = DM4.T
+DM5 = DM5.T
+
+for row in DM1:
+    row[row==0.] = np.median(row)
+for row in DM2:
+    row[row==0.] = np.median(row)
+for row in DM3:
+    row[row==0.] = np.median(row)
+for row in DM4:
+    row[row==0.] = np.median(row)
+for row in DM5:
+    row[row==0.] = np.median(row)
+    
+
+
+fig = plt.figure(figsize=(7,7))
+ax = fig.add_axes([0, 0, 1, 1], frameon=False)
+ax.set_xlim(-50,1050), ax.set_xticks([])
+ax.set_ylim(-50,1050), ax.set_yticks([])
+
+
+scat = ax.scatter(ra,dec,s=800,facecolors=None,c=DM1[0])
+bar = plt.colorbar(mappable=scat,ax=ax)
+bar.set_ticks([])
+
+[plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
+
+plt.colorbar()
+
+def update(frame_number):
+  color = cm.rainbow(DM1[frame_number])
+  scat.set_color(color)
+
+
+animation = FuncAnimation(fig, update, frames=100, interval=500)
+animation.save('fstimg.mp4',writer='ffmpeg',dpi=400,bitrate=-1)
+
+
+
