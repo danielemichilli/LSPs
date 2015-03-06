@@ -12,6 +12,7 @@ PLOT:
 - Pulses shape: name of sap and beam and best/top
 - General and beam plots: vertical lines also on central hist
 - Change dim/SNR scaling of points
+- General plot, top-right: y-axis limits accordingly to actual data values
 
 OUTPUT:
 - Folder with general best plots

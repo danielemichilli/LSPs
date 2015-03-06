@@ -14,7 +14,10 @@ import os
 import argparse
 import tarfile
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+from  matplotlib.animation import FuncAnimation
 
 
 ra = np.array([ 
@@ -43,11 +46,9 @@ idL = args.filenm[0]
 folder = '/projects/lotaas/test/Daniele/out/'
 
 for sap in range(2,3):
-  DM1 = np.zeros([61,100],dtype=np.float32)
-  DM2 = np.zeros([61,100],dtype=np.float32)
-  DM3 = np.zeros([61,100],dtype=np.float32)
-  DM4 = np.zeros([61,100],dtype=np.float32)
-  DM5 = np.zeros([61,100],dtype=np.float32)
+  DM1 = np.full([61,100],np.nan,dtype=np.float32)
+  DM2 = np.full([61,100],np.nan,dtype=np.float32)
+  DM3 = np.full([61,100],np.nan,dtype=np.float32)
   
   for beam in range(13,74):
     
@@ -62,68 +63,92 @@ for sap in range(2,3):
       tar_file = tarfile.open(events_path)
       tar_file.extractall(path)
       tar_file.close()
-      
-      try: DM1[num] = np.fromfile(path+name+'_DM183.47_down_30s.ds',dtype=np.float32)
-      except IOError: pass
-    
-      try: DM2[num] = np.fromfile(path+name+'_DM275.17_down_30s.ds',dtype=np.float32)
-      except IOError: pass
 
-      try: DM3[num] = np.fromfile(path+name+'_DM366.87_down_30s.ds',dtype=np.float32)
+      try: DM1[num] = np.fromfile(path+name+'_DM366.87_down_30s.ds',dtype=np.float32)
       except IOError: pass
         
-      try: DM4[num] = np.fromfile(path+name+'_DM458.57_down_30s.ds',dtype=np.float32)
+      try: DM2[num] = np.fromfile(path+name+'_DM458.57_down_30s.ds',dtype=np.float32)
       except IOError: pass
         
-      try: DM4[num] = np.fromfile(path+name+'_DM546.37_down_30s.ds',dtype=np.float32)
+      try: DM3[num] = np.fromfile(path+name+'_DM546.37_down_30s.ds',dtype=np.float32)
       except IOError: pass
     
       [ os.remove(path+f) for f in os.listdir(path) if f.endswith(".ds") ]
     
     except IOError: pass
 
-#if not np.in1d(a[:, 1], 0)  #to avoid to plot missing beams    
+
+  for row in DM1:
+      row -= np.median(row)
+  for row in DM2:
+      row -= np.median(row)
+  for row in DM3:
+      row -= np.median(row)
     
-DM1 = DM1.T
-DM2 = DM2.T
-DM3 = DM3.T
-DM4 = DM4.T
-DM5 = DM5.T
+  DM1 = DM1.T
+  DM2 = DM2.T
+  DM3 = DM3.T
 
-for row in DM1:
-    row[row==0.] = np.median(row)
-for row in DM2:
-    row[row==0.] = np.median(row)
-for row in DM3:
-    row[row==0.] = np.median(row)
-for row in DM4:
-    row[row==0.] = np.median(row)
-for row in DM5:
-    row[row==0.] = np.median(row)
-    
+  DM1 = DM1-np.nanmin(DM1)
+  DM1 = DM1/np.nanmax(DM1)
 
+  DM2 = DM2-np.nanmin(DM2)
+  DM2 = DM2/np.nanmax(DM2)
 
-fig = plt.figure(figsize=(7,7))
-ax = fig.add_axes([0, 0, 1, 1], frameon=False)
-ax.set_xlim(-50,1050), ax.set_xticks([])
-ax.set_ylim(-50,1050), ax.set_yticks([])
+  DM3 = DM3-np.nanmin(DM3)
+  DM3 = DM3/np.nanmax(DM3)
+  
+  DM1 = np.nan_to_num(DM1)
+  DM2 = np.nan_to_num(DM2)
+  DM3 = np.nan_to_num(DM3)
 
+  fig = plt.figure()
+  ax = fig.add_axes([0, 0, 0.97, 1], frameon=False)
+  ax.set_axis_off()
 
-scat = ax.scatter(ra,dec,s=800,facecolors=None,c=DM1[0])
-bar = plt.colorbar(mappable=scat,ax=ax)
-bar.set_ticks([])
+  ax1 = fig.add_axes([0.97, 0, 1, 1], frameon=False)
+  ax1.set_axis_off()
+      
+  scat = ax.scatter(ra,dec,s=800,facecolors='none',edgecolor='none')
 
-[plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
+  norm = mpl.colors.Normalize(vmin=0, vmax=1)
+  cb = mpl.colorbar.ColorbarBase(ax1,norm=norm,cmap=mpl.cm.hot_r)
+  cb.outline.set_visible(False)
 
-plt.colorbar()
+  [ax.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
+  ax.annotate(idL,(0.01,0.95),xycoords='figure fraction')
+  ax.annotate('SAP: {}'.format(sap),(0.02,0.925),xycoords='figure fraction',size='small')
+  ax.annotate('Duration: 36s',(0.02,0.90),xycoords='figure fraction',size='small')
+  t = ax.annotate('',(0.02,0.875),xycoords='figure fraction',size='small')
+  
+  #path = '{}{}/sp/FastIMG'.format(folder,idL)
+  #os.makedirs(path)
 
-def update(frame_number):
-  color = cm.rainbow(DM1[frame_number])
-  scat.set_color(color)
+  path = '/home/danielem/'
 
+  def DM1_func(frame_number):
+    color = mpl.cm.hot_r(DM1[frame_number])
+    scat.set_color(color)
+    t.set_text('Start t: {}s'.format(frame_number*36))
 
-animation = FuncAnimation(fig, update, frames=100, interval=500)
-animation.save('fstimg.mp4',writer='ffmpeg',dpi=400,bitrate=-1)
+  animation = FuncAnimation(fig, DM1_func, frames=100, interval=1000)
+  animation.save('{}/SAP{}_DM366.gif'.format(path,sap),writer='imagemagick',dpi=200,bitrate=-1)
+
+  def DM2_func(frame_number):
+    color = mpl.cm.hot_r(DM2[frame_number])
+    scat.set_color(color)
+    t.set_text('Start t: {}s'.format(frame_number*36))
+
+  animation = FuncAnimation(fig, DM2_func, frames=100, interval=1000)
+  animation.save('{}/SAP{}_DM458.gif'.format(path,sap),writer='imagemagick',dpi=200,bitrate=-1)
+
+  def DM3_func(frame_number):
+    color = mpl.cm.hot_r(DM3[frame_number])
+    scat.set_color(color)
+    t.set_text('Start t: {}s'.format(frame_number*36))
+
+  animation = FuncAnimation(fig, DM3_func, frames=100, interval=1000)
+  animation.save('{}/SAP{}_DM546.gif'.format(path,sap),writer='imagemagick',dpi=200,bitrate=-1)
 
 
 
