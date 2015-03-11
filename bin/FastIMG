@@ -78,6 +78,7 @@ for sap in range(2,3):
     except IOError: pass
 
 
+  #To remove variability between beams
   for row in DM1:
       row -= np.median(row)
   for row in DM2:
@@ -88,6 +89,16 @@ for sap in range(2,3):
   DM1 = DM1.T
   DM2 = DM2.T
   DM3 = DM3.T
+  
+  
+  #To remove variability between frames
+  for row in DM1:
+      row -= np.median(row)
+  for row in DM2:
+      row -= np.median(row)
+  for row in DM3:
+      row -= np.median(row)
+      
 
   DM1 = DM1-np.nanmin(DM1)
   DM1 = DM1/np.nanmax(DM1)
