@@ -46,6 +46,7 @@ idL = args.filenm[0]
 folder = '/projects/lotaas/test/Daniele/out/'
 
 for sap in range(2,3):
+  DM0 = np.full([61,100],np.nan,dtype=np.float32)
   DM1 = np.full([61,100],np.nan,dtype=np.float32)
   DM2 = np.full([61,100],np.nan,dtype=np.float32)
   DM3 = np.full([61,100],np.nan,dtype=np.float32)
@@ -63,7 +64,10 @@ for sap in range(2,3):
       tar_file = tarfile.open(events_path)
       tar_file.extractall(path)
       tar_file.close()
-
+      
+      try: DM0[num] = np.fromfile(path+name+'_DM0.00_down_30s.ds',dtype=np.float32)
+      except IOError: pass
+        
       try: DM1[num] = np.fromfile(path+name+'_DM366.87_down_30s.ds',dtype=np.float32)
       except IOError: pass
         
@@ -78,6 +82,16 @@ for sap in range(2,3):
     except IOError: pass
 
 
+  for row in DM0:
+      row -= np.median(row)  
+  DM0 = DM0.T
+  for row in DM0:
+      row -= np.median(row)
+
+
+  #DM0 = DM0.astype(np.int) / np.median(DM0)+3*np.std(DM0)  #Rischio di togliere FRB!!
+
+
   #To remove variability between beams
   for row in DM1:
       row -= np.median(row)
@@ -90,7 +104,6 @@ for sap in range(2,3):
   DM2 = DM2.T
   DM3 = DM3.T
   
-  
   #To remove variability between frames
   for row in DM1:
       row -= np.median(row)
@@ -98,7 +111,17 @@ for sap in range(2,3):
       row -= np.median(row)
   for row in DM3:
       row -= np.median(row)
-      
+
+
+
+  #DM0 = DM0 + np.roll(DM0,-1,axis=1)
+  #DM1[ DM0 > 0] = np.median(DM1)
+  
+  #DM0 = DM0 + np.roll(DM0,-1,axis=1)
+  #DM2[ DM0 > 0] = np.median(DM2)
+  #DM3[ DM0 > 0] = np.median(DM3)
+
+
 
   DM1 = DM1-np.nanmin(DM1)
   DM1 = DM1/np.nanmax(DM1)

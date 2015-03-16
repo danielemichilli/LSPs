@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+'''
+
+Downsampler
+
+Written by Daniele Michilli
+
+'''
+
+
+import numpy as np
+import os
+import argparse
+import pyfits
+
+print 'Starting to downsample'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filenm', nargs=1)
+args = parser.parse_args()
+filenm = args.filenm[0]
+
+timeserie = np.fromfile(filenm,dtype=np.float32)
+
+#Downsampling to 30s time resloution
+if timeserie.size == 7392000:  down_fact = 73920
+elif timeserie.size == 3696000: down_fact = 36960
+elif timeserie.size == 1848000: down_fact = 18480
+else:
+  print "Error: length of the timeserie unknown!"
+  exit()
+
+downsampled = np.mean(timeserie.reshape(100,down_fact),axis=1)  #The first value is the length after the downsample, the second the downsampling factor
+
+RFI = mI()
+
+downsampled.tofile('{}_down_30s.ds'.format(os.path.splitext(filenm)[0]))
+
+print 'Downsample finished' 
+
+
+
+
+def mI():
+  
+  fits = pyfits.open(file_name,memmap=True)
+  subint = fits['SUBINT'].data['DATA']
+  
+  N_channels = fits['SUBINT'].header['NCHAN']
+  N_spectra = frame_duration*fits['SUBINT'].header['NSBLK']
+  subint = subint.reshape(_spectra/384,384,N_channels).mean(axis=1)
+  
+  signal.var(axis=1)
+  #signal.var(axis=1)/signal.mean(axis=1)
+  #(signal.shape[0]*np.sum(signal**2,axis=1)-signal.sum(axis=1))/signal.sum(axis=1)
