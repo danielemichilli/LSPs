@@ -117,7 +117,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
     ax3.annotate(i,xy=(best_pulses.DM.iloc[i]*1.15,best_pulses.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
     
   SNR = pulses.groupby('DM',sort=False).Sigma.sum()
-  ax4.plot(SNR.index,SNR,'k',linewidths=[3.,])
+  ax4.plot(SNR.index,SNR,'k',linewidth=3.)
   ax4.set_xscale('log')
   ax4.set_xlabel('DM (pc/cm3)')
   ax4.set_ylabel('Cumulative SNR')
@@ -249,25 +249,28 @@ def obs_top_candidates(top_candidates,best_pulses,strongest,color=True,size=True
 
   if not top_candidates.empty:
     if len(top_candidates.DM.unique())>1:
-      ax2.hist(top_candidates.Sigma.tolist(),bins=100,histtype='step',color='k')
-      ax2.set_xlabel('SNR')
+      ax2.hist(top_candidates.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+      ax2.set_xscale('log')
+      ax2.set_xlabel('DM (pc/cm3)')
       ax2.set_ylabel('Counts')
-      ax2.set_yscale('log')
+      ax2.set_xlim(5,550)
       
-      ax3.hist(top_candidates.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+      ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=3,linewidths=[0.,],c=col_top)
       ax3.set_xscale('log')
+      ax3.set_ylabel('SNR')
       ax3.set_xlabel('DM (pc/cm3)')
-      ax3.set_ylabel('Counts')
-      ax3.set_xlim(5,550)
-    
-    ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=3,linewidths=[0.,],c=col_top)
+      ax3.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
+      ax3.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
+      ax3.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
 
-    ax4.set_xscale('log')
-    ax4.set_ylabel('SNR')
-    ax4.set_xlabel('DM (pc/cm3)')
-    ax4.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
-    ax4.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
-    ax4.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
+      SNR = pulses.groupby('DM',sort=False).Sigma.sum()
+      ax4.plot(SNR.index,SNR,'k',linewidth=3.)
+      ax4.set_xscale('log')
+      ax4.set_xlabel('DM (pc/cm3)')
+      ax4.set_ylabel('Cumulative SNR')
+      ax4.set_xlim(5,550)
+      ax4.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
+      ax4.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
   
   ax1.tick_params(which='both',direction='out')
   ax2.tick_params(which='both',direction='out')
