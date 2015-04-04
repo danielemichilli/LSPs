@@ -25,13 +25,15 @@ def obs_events(folder,idL):
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
 
-  folders = zip(range(3)*62,range(12,74)*3)
+  folders = zip(range(3)*74,range(74)*3)
+  
+  #folders = [(0,0),(0,68)]
   
   #Create events, meta_data and pulses lists
-  pool = mp.Pool(mp.cpu_count()-1)
-  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
-  pool.close()
-  pool.join()
+  #pool = mp.Pool(mp.cpu_count()-1)
+  results = [lists_creation((folder,idL,sap,beam)) for (sap,beam) in folders]
+  #pool.close()
+  #pool.join()
   
   meta_data = pd.DataFrame()
   events = pd.DataFrame()
@@ -45,13 +47,13 @@ def obs_events(folder,idL):
   results = 0
 
   #Compares pulses in different beams
-  RFIexcision.Compare_Beams(pulses)
+  #RFIexcision.Compare_Beams(pulses)
 
   #Clean the pulses table
-  pulses = pulses[pulses.Pulse <= RFI_percent]
+  #pulses = pulses[pulses.Pulse <= RFI_percent]
 
   #Clean the events table
-  events = events.loc[events.Pulse.isin(pulses.index)]
+  #events = events.loc[events.Pulse.isin(pulses.index)]
 
   #Store the events
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
@@ -114,21 +116,21 @@ def obs_events(folder,idL):
  
   
   #Generate best_puls table
-  best_puls = RFIexcision.best_pulses(pulses,events)
+  #best_puls = RFIexcision.best_pulses(pulses,events)
   
   #Generate strongest table
-  strongest = RFIexcision.strongest(pulses,best_puls)
+  #strongest = RFIexcision.strongest(pulses,best_puls)
   
   #Store the pulses
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append(idL+'_pulses',pulses,data_columns=['Pulse'])
   store.append('meta_data',meta_data)
-  if not best_puls.empty: store.append('best_pulses',best_puls)
-  if not strongest.empty: store.append('strongest',strongest)
+  #if not best_puls.empty: store.append('best_pulses',best_puls)
+  #if not strongest.empty: store.append('strongest',strongest)
   store.close()
   
   #Produce the output
-  output(folder,idL,pulses,best_puls,strongest,events,meta_data)
+  #output(folder,idL,pulses,best_puls,strongest,events,meta_data)
   
   return
 
@@ -150,12 +152,12 @@ def lists_creation((folder,idL,sap,beam)):
     #Apply the thresholds to the events
     events = Events.Thresh(events)
     
+    #Correct for the time misalignment of events
+    #events.Time = Events.TimeAlign(events.Time,events.DM)
+    
     #Group the events
     Events.Group(events)
     events = events[events.Pulse>0]
-    
-    #Correct for the time misalignment of events
-    events.Time = Pulses.TimeAlign(events.Time,events.DM)  #probabilmente si puo' togliere l'uguaglianza  
     
     #Generate the pulses
     pulses = Pulses.Generator(events)

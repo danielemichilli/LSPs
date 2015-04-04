@@ -20,8 +20,6 @@ def Pulse_Thresh(puls,gb,data,Sigma_min):
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  #puls.Pulse.loc[puls.N_events < 5] = 10
-  
   min_chunk = [5,9,13]
   max_chunk = list(min_chunk)
   max_chunk[0] = np.inf
@@ -65,7 +63,36 @@ def Pulse_Thresh(puls,gb,data,Sigma_min):
   #f = data[data.Pulse.isin(puls[puls.Pulse<RFI_percent].index)].loc[:,['DM','Time','Pulse']].astype(np.float64).groupby('Pulse',sort=False).apply(lambda x: np.polyfit(x.Time.astype(np.float64),x.DM.astype(np.float64),1)[0])
   #puls.Pulse[(puls.Pulse<RFI_percent) & ((f<-33.6)|(f>-8.55))] += 1
 
+
+
+
+  #min_chunk = [5,9,13]
+  #max_chunk = min_chunk
+  #max_chunk[0] = np.inf
+  #max_chunk=np.roll(np.add(max_chunk,-1),-1)
+  
+  #puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM>12)]
+  
+  #for i in range(len(min_chunk)):
+    #puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])]
+
+    #puls.Pulse[gb.Time.apply(np.var) > FILTERS[8][i]] += 1
+  
+  #studiare se meglio std o senza /N o con altre opzioni
+  
+  
+  
+  #Escludere RFI?
+  count,div = np.histogram(puls.Time,bins=360)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
+  
+  count,div = np.histogram(puls.Time,bins=3600)
+  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
+  
+  
   return
+
+
 
   
 def IB_Pulse_Thresh(puls,gb,data,Sigma_min):
@@ -92,43 +119,9 @@ def IB_Pulse_Thresh(puls,gb,data,Sigma_min):
     puls.Pulse[abs(puls.DM-puls.DM_c)/puls.dDM > FILTERS[2][i]] += 1  #mettere condizione su N_elements: ignorare se =5 (es. *(N_elements-5))
     puls.Pulse[puls.Sigma/Sigma_min < FILTERS[3][i]] += 1
 
-  return
 
 
-def Align_Pulse_Thresh(puls,gb,data):
-  #-----------------------------------------------------
-  # Applies thresholds to the pulses in a coherent beams
-  #-----------------------------------------------------
-  #min_chunk = [5,9,13]
-  #max_chunk = min_chunk
-  #max_chunk[0] = np.inf
-  #max_chunk=np.roll(np.add(max_chunk,-1),-1)
-  
-  #puls_astro = puls[(puls.Pulse < RFI_percent)&(puls.BEAM>12)]
-  
-  #for i in range(len(min_chunk)):
-    #puls_chunk = puls_astro[(puls.N_events >= min_chunk[i])&(puls.N_events <= max_chunk[i])]
-
-    #puls.Pulse[gb.Time.apply(np.var) > FILTERS[8][i]] += 1
-  
-  #studiare se meglio std o senza /N o con altre opzioni
-  
-  
-  count,div = np.histogram(puls.Time,bins=360)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=2.*np.median(count[count>0])])] += 1
-  
-  count,div = np.histogram(puls.Time,bins=3600)
-  puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
-  
-  return
-
-
-
-def IB_Align_Pulse_Thresh(puls,gb,data):
-  #--------------------------------------------------------
-  # Applies thresholds to the pulses in an incoherent beams
-  #--------------------------------------------------------
-  #min_chunk = [5,9]
+ #min_chunk = [5,9]
   #max_chunk = min_chunk
   #max_chunk[0] = np.inf
   #max_chunk=np.roll(np.add(max_chunk,-1),-1)
@@ -146,27 +139,11 @@ def IB_Align_Pulse_Thresh(puls,gb,data):
   
   count,div = np.histogram(puls.Time,bins=3600)
   puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=1.*np.median(count[count>0])])] += 1
-  return
-
-
-
-def Compare_IB(coh,incoh):
   
-  CB = coh[coh.Pulse<=RFI_percent].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  CB['Time_low'] = CB.Time_c-CB.dTime
-  CB.sort('Time_low',inplace=True)
-  
-  IB = incoh[incoh.Pulse<=RFI_percent].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  IB['Time_low'] = IB.Time_c-IB.dTime
-  IB.sort('Time_low',inplace=True)
-  
-  C_Funct.Compare(CB.DM_c.values,CB.dDM.values,CB.Time_c.values,CB.dTime.values,CB.Sigma.values,CB.Pulse.values,\
-                  IB.DM_c.values,IB.dDM.values,IB.Time_c.values,IB.dTime.values,IB.Sigma.values,IB.Pulse.values,np.int8(0))  
-  
-  coh.Pulse.loc[coh.Pulse<=RFI_percent] = CB.Pulse
-  incoh.Pulse.loc[incoh.Pulse<=RFI_percent] = IB.Pulse
   
   return
+
+
 
 
 def Compare_Beams(puls):

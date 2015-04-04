@@ -72,9 +72,8 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   if not events.empty: 
     ax1.scatter(events.Time, events.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,])
       
-    ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-    ax1.plot([0,3600],[40.48,40.48],'k--')
-    ax1.plot([0,3600],[141.68,141.68],'k--')
+  ax1.plot([0,3600],[40.48,40.48],'k--')
+  ax1.plot([0,3600],[141.68,141.68],'k--')
     
   if not top_candidates.empty: ax1.scatter(top_candidates.Time, top_candidates.DM, s=sig_top, linewidths=[0.,], c=fill, marker='*')
   if not best_pulses.empty: ax1.scatter(best_pulses.Time, best_pulses.DM, s=sig_best, linewidths=[1.,], marker='s', facecolors='none', edgecolor=square)
@@ -104,7 +103,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
     ax3.set_ylabel('Counts')
     ax3.set_xlim(5,550)
     ax3.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
-    ax3.plot([141.7,141.7],[0,hist[0].max()+10],'k--')
+    ax3.plot([141.68,141.68],[0,hist[0].max()+10],'k--')
   
   ax4.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
   ax4.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
@@ -115,7 +114,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   limit = max(pulses.Sigma.max(),top_candidates.Sigma.max(),best_pulses.Sigma.max())
   ax4.axis([5,550,pulses.Sigma.min(),limit+3.])
   ax4.plot([40.5,40.5],[0,limit+3.],'k--')
-  ax4.plot([141.7,141.7],[0,limit+3.],'k--')
+  ax4.plot([141.68,141.68],[0,limit+3.],'k--')
   mpl.rc('font', size=3.5)
   for i in range(0,top_candidates.shape[0]):
     ax4.annotate(i,xy=(top_candidates.DM.iloc[i]/1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center')
@@ -264,7 +263,7 @@ def obs_top_candidates(top_candidates,best_pulses,strongest,color=True,size=True
     ax4.set_xlabel('DM (pc/cm3)')
     ax4.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
     ax4.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
-    ax4.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
+    ax4.plot([141.68,141.68],[0,top_candidates.Sigma.max()+3.],'k--')
   
   ax1.tick_params(which='both',direction='out')
   ax2.tick_params(which='both',direction='out')

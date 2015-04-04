@@ -17,8 +17,10 @@ def Loader(folder,idL,sap,beam):
       
   name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
   path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
-  events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
+  #events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
   
+  events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
+
   try:
     #Open the file
     tar_file = tarfile.open(events_path)
@@ -28,7 +30,7 @@ def Loader(folder,idL,sap,beam):
     #Load the events and meta-data tables
     data = pd.read_csv(events_file, delim_whitespace=True, dtype=np.float32)
     inf = pd.read_csv(inf_file, sep="=", dtype=str,error_bad_lines=False,warn_bad_lines=False,header=None,skipinitialspace=True)
-    
+
     tar_file.close()
     events_file.close()
     
@@ -88,9 +90,35 @@ def Group(events):
   #-----------------------------------
 
   events.sort('DM',inplace=True)
-   
+     
   C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
   
   events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
   
   return
+
+
+
+def TimeAlign(Time,DM):
+  #-------------------------------------------------
+  # Corrects for the time misalignment of the pulses
+  #-------------------------------------------------
+  
+  # Quantifies the misalignment for a broad-band pulse
+  # Only the extreme frequencies are taken into account
+  k = 4149. / 2  #s-1
+  delay1 = np.float32(k * (F_MIN**-2 - F_MAX**-2))
+  
+  
+  delay2 = np.float32( 0.50833285845243015 * np.digitize(DM, np.arange(2.53*2, 546.48, 2.53)) )
+  
+  
+  #delay2 = delay1 * 2.53 * np.digitize(DM, np.arange(2.53*2, 546.48, 2.53))
+  
+  #bin=(F_MAX-F_MIN)/288  #288 subbands
+  #f_range = F_MAX-F_MIN
+  #delay2 = np.float32(((F_MIN+f_range/2)**-2 - (F_MIN+f_range*145/288)**-2) / k)
+  
+  Time += DM * delay1 + delay2
+  
+  return Time

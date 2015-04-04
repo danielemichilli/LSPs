@@ -23,6 +23,7 @@ SIGMA_TOLL = 4
 SIGMA_TOLL_IB = 2
 
 RFI_percent = 3
+PULS_LENGHT = 15
 
 FILTERS = [
   [3.44e-2,3.44e-2,3.44e-2],    #duration
