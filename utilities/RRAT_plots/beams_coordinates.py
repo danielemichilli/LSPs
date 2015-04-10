@@ -1,5 +1,5 @@
-idL = 'L202425'
-sap = 2
+idL = 'L204720'
+sap = 1
 
 import os
 import numpy as np

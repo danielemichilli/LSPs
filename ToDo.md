@@ -22,6 +22,7 @@ OUTPUT:
 - Same name to folders inside hdf5 to all observations
 
 ANALYSIS:
+- Beam comparison: time rnage ~0.05s
 - Remove pulses at the end of tim
 - Parameter for time spans affected by RFI in the whole sap
 - Study better time alignment with high-DM pulsar

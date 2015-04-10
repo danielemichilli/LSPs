@@ -49,8 +49,16 @@ def parser():
 
 def create_DB(folder,idL,args):
   
-  if os.path.exists('{}{}/sp'.format(folder,idL)): shutil.rmtree('{}{}/sp'.format(folder,idL))
+  ALERTS = 0
+  if os.path.exists('{}{}/sp'.format(folder,idL)): 
+    if os.path.exists('{}{}/sp/ALERTS'.format(folder,idL)):
+       shutil.move('{}{}/sp/ALERTS','{}{}')
+       ALERTS = 1
+    shutil.rmtree('{}{}/sp'.format(folder,idL))
+
   os.makedirs('{}{}/sp'.format(folder,idL))
+  if ALERTS == 1:
+    shutil.move('{}{}/ALERTS','{}{}/sp')
   
   TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'

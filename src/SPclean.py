@@ -54,7 +54,7 @@ def obs_events(folder,idL):
 
   #Clean the events table
   #events = events.loc[events.Pulse.isin(pulses.index)]
-
+  print events
   #Store the events
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   store.append(idL,events,data_columns=['Pulse'])
@@ -157,13 +157,13 @@ def lists_creation((folder,idL,sap,beam)):
     
     #Group the events
     Events.Group(events)
-    events = events[events.Pulse>0]
+    #events = events[events.Pulse>0]
     
     #Generate the pulses
     pulses = Pulses.Generator(events)
     
     #Clean the events table
-    events = events.loc[events.Pulse.isin(pulses.index)]
+    #events = events.loc[events.Pulse.isin(pulses.index)]
 
   return (meta_data,events,pulses)
 
