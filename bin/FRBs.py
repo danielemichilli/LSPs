@@ -159,12 +159,6 @@ for sap in range(0,3):
       os.remove(path+name+'_DM546.37_down_30s(ind_cand).dx')
     except IOError: continue
 
-    print idx
-    print num
-    print med[num]
-    print signal[num,idx]
-    print idx[ signal[num,idx] > med[num] ] 
-
     for i in idx[ signal[num,idx] > med[num] ]:
       new_path = '{}{}/sp/ALERTS/'.format(folder,idL)
       if not os.path.exists(new_path): os.makedirs(new_path)

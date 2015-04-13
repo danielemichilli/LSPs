@@ -9,13 +9,13 @@ Written by Daniele Michilli
 '''
 
 
-import numpy as np
 import os
 import argparse
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pyfits
+import numpy as np
 
 
 def dynspect_plot(idx,idL,filename,raw_file):
@@ -41,13 +41,6 @@ def dynspect_plot(idx,idL,filename,raw_file):
 
   #Prepare the DM lines to plot
   freq = np.arange(151,117,-1,dtype=np.float)
-  DM=300
-  time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
-  DM=500
-  time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
-  DM=700
-  time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
-
 
   for ind0 in idx:
     #Set the start of the spectrum
@@ -57,15 +50,22 @@ def dynspect_plot(idx,idL,filename,raw_file):
     #Load the data
     subint = fits['SUBINT'].data[subint_index:subint_index+frame_duration]['DATA']
 
+    if subint_index+frame_duration > fits['SUBINT'].header['NAXIS2']:
+      num_rows = subint_index+frame_duration - fits['SUBINT'].header['NAXIS2']
+      end_rows = np.zeros((num_rows,subint.shape[1]))
+      subint = np.append(subint,end_rows,axis=0)
+
     #Average and clean the spectrum
     subint = subint.reshape(N_spectra/down_fact,down_fact,N_channels).mean(axis=1)
     subint = subint[:,~np.all(subint == 0, axis=0)]
 
     #Define the color range
-    min_element = subint.size/20
-    max_element = subint.size*9/10
-    vmin = np.partition(subint, min_element, axis=None)[min_element]
-    vmax = np.partition(subint, max_element, axis=None)[max_element]
+    clean = subint[subint>0]
+    min_element = clean.size/20
+    max_element = clean.size*9/10
+    vmin = np.partition(clean, min_element, axis=None)[min_element]   #invece di subint[subint>0] possibile subint[:-(num_rows/down_fact)]
+    vmax = np.partition(clean, max_element, axis=None)[max_element]
+    clean = 0
     
     #Plot the spectrum
     plt.figure(figsize=(20,10))
@@ -79,10 +79,18 @@ def dynspect_plot(idx,idL,filename,raw_file):
     plt.axis([t0,t0+total_duration,119,151])
 
     #plot the DM lines
+    DM=300
+    time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
     plt.plot(time,freq,'b-')
     plt.annotate(str(DM),(time[freq==120],120),color='b',horizontalalignment='left',fontweight='bold')
+
+    DM=500
+    time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
     plt.plot(time,freq,'b-')
     plt.annotate(str(DM),(time[freq==120],120),color='b',horizontalalignment='left',fontweight='bold')
+ 
+    DM=700
+    time = 4149 * DM * (np.power(freq,-2) - 151.**-2) + t0 + 1
     plt.plot(time,freq,'b-')
     plt.annotate(str(DM),(time[freq==120],120),color='b',horizontalalignment='left',fontweight='bold')
 
@@ -149,7 +157,7 @@ downsampled.tofile('{}_{}_down_30s.ds'.format(idL,filenm))
 if filenm != 'DM0.00':
   med = np.median(downsampled)
   DM0 = np.fromfile('{}_DM0.00_down_30s.ds'.format(idL),dtype=np.float32)
-  idx = np.where( ( downsampled > 1.005 * med )&( downsampled > DM0 )&( downsampled > np.roll(DM0,-1) )&( downsampled > np.roll(DM0,-2) ))[0]
+  idx = np.where( ( downsampled > 1.006 * med )&( downsampled > DM0 )&( downsampled > np.roll(DM0,-1) )&( downsampled > np.roll(DM0,-2) ))[0]
   idx.tofile('{}_{}_down_30s(ind_cand).dx'.format(idL,filenm))
   dynspect_plot(idx,idL,filenm,raw_file)
   
