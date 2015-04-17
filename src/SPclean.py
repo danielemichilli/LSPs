@@ -54,7 +54,7 @@ def obs_events(folder,idL):
 
   #Clean the events table
   #events = events.loc[events.Pulse.isin(pulses.index)]
-  print events
+
   #Store the events
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   store.append(idL,events,data_columns=['Pulse'])

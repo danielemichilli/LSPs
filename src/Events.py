@@ -106,19 +106,22 @@ def TimeAlign(Time,DM):
   
   # Quantifies the misalignment for a broad-band pulse
   # Only the extreme frequencies are taken into account
-  k = 4149. / 2  #s-1
-  delay1 = np.float32(k * (F_MIN**-2 - F_MAX**-2))
+  k = 4149. #s-1
+  delay = k * (F_MIN**-2 - F_MAX**-2)
+
+  DM_steps = np.array((2.52,5.05,7.58,10.11,12.64,15.17,17.7,20.23,22.76,25.29,27.82,30.35,32.88,35.41,37.94,40.47,65.81,91.11,116.41,141.71,242.96,344.16,445.36,546.56))
+
+  DM_n = np.digitize(DM, DM_steps) - 1
+    
+  a = 0.253 * DM_n[DM_n<15]
+  a[a==0.253*9] *= 2
+  b = 0.253 * 14 + 25.3 * delay * ( DM_n[(DM_n>=15)&(DM_n<19)] - 14 )
+  c = 0.253 * 14 + 25.3 * delay * 4 + 4 * 25.3 * delay * ( DM_n[DM_n>=19] - 18 )
   
   
-  delay2 = np.float32( 0.50833285845243015 * np.digitize(DM, np.arange(2.53*2, 546.48, 2.53)) )
+  DM_n = np.concatenate((a,b,c))
   
-  
-  #delay2 = delay1 * 2.53 * np.digitize(DM, np.arange(2.53*2, 546.48, 2.53))
-  
-  #bin=(F_MAX-F_MIN)/288  #288 subbands
-  #f_range = F_MAX-F_MIN
-  #delay2 = np.float32(((F_MIN+f_range/2)**-2 - (F_MIN+f_range*145/288)**-2) / k)
-  
-  Time += DM * delay1 + delay2
+  Time += np.float32( delay * DM / 2 + DM_n )
   
   return Time
+

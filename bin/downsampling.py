@@ -141,6 +141,8 @@ if filenm != 'DM0.00':
   
   #Apply the time delay
   timeserie = np.roll(timeserie,didx)
+  
+  #PROBLEMI: 1) Downsampling e' tenuto in considerazione? 2) Timeserie inizia un fattore 1.6667 rispetto a quanto aspettato
 
 #Downsample to 36s time resloution
 if timeserie.size == 7392000:  down_fact = 73920
