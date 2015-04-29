@@ -111,26 +111,14 @@ def obs_events(folder,idL):
       #ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
 
 
-
-
- 
-  
-  #Generate best_puls table
-  #best_puls = RFIexcision.best_pulses(pulses,events)
-  
-  #Generate strongest table
-  #strongest = RFIexcision.strongest(pulses,best_puls)
-  
   #Store the pulses
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append(idL+'_pulses',pulses,data_columns=['Pulse'])
   store.append('meta_data',meta_data)
-  #if not best_puls.empty: store.append('best_pulses',best_puls)
-  #if not strongest.empty: store.append('strongest',strongest)
   store.close()
   
   #Produce the output
-  #output(folder,idL,pulses,best_puls,strongest,events,meta_data)
+  output(folder,idL,pulses,events,meta_data)
   
   return
 
@@ -171,12 +159,11 @@ def lists_creation((folder,idL,sap,beam)):
 
 
 
-def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
+def output(folder,idL,pulses,events,meta_data):
   
   store = '{}{}'.format(folder,idL)
   
   pulses.sort('Sigma',ascending=False,inplace=True)
-  best_puls.sort('Sigma',ascending=False,inplace=True)
   
   gb_rfi = pulses.loc[pulses.Pulse==1].groupby(['SAP','BEAM'],sort=False)
   
@@ -187,17 +174,8 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
   for n in gb_puls.indices.iterkeys():
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
     os.makedirs('{}/sp/files'.format(store)+name)
-  
-  if not strongest.empty:
-    os.makedirs('{}/sp/files/strongest'.format(store))
-    for i in range(strongest.shape[0]/10+1):
-      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/files/strongest/strongest_pulses({}).png'.format(store,i),idL)
-      
-  gb_best = best_puls.groupby(['SAP','BEAM'],sort=False)
-  
-  gb_strong = strongest.groupby(['SAP','BEAM'],sort=False)
 
-  gb_event = events.loc[(events.Pulse.isin(gb_puls.head(30).index))|(events.Pulse.isin(gb_best.head(30).index))].groupby(['SAP','BEAM'],sort=False)
+  gb_event = events.loc[events.Pulse.isin(gb_puls.head(30).index)].groupby(['SAP','BEAM'],sort=False)
   events = 0  
   
   gb_md = meta_data.groupby(['SAP','BEAM'],sort=False)
@@ -212,35 +190,15 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
   
   
   pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),Group_Clean(gb_best,n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
+  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
   
   
   #for n in gb_puls.indices.iterkeys():
-    #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_best.get_group(n),gb_event.get_group(n),store))
+    #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store))
   
-  if not best_puls.empty:
-    best_puls.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
-    best_puls['code'] = best_puls.index
-    a = best_puls.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
-    b = [val for sublist in a for val in sublist]
-    best_puls.index = b
-    best_puls.Duration *= 1000
-    best_puls['void'] = ''
-    best_puls.to_csv('{}{}/sp/files/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
-      columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
-      header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
-  
-  if not strongest.empty:
-    strongest['code'] = strongest.index
-    strongest.reset_index(drop=True,inplace=True)
-    strongest.Duration *= 1000
-    strongest['void'] = ''
-    strongest.to_csv('{}{}/sp/files/strongest/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
-      columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','Pulse','code'],\
-      header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','#RFI','code','','',''],index_label='rank',encoding='utf-8')
-  
+
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
   top_candidates = top_candidates.append(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
   top_candidates.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
@@ -256,45 +214,14 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],strongest[strongest.BEAM==12],\
+  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),\
                              store='{}{}/sp/files/inc_top_candidates.png'.format(folder,idL),incoherent=True)
 
   for sap in pulses.SAP.unique():
-    LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),best_puls[(best_puls.SAP==sap)&(best_puls.BEAM>12)],strongest[(strongest.SAP==sap)&(strongest.BEAM>12)],\
+    LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),\
                                store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
     
 
   pulses = 0
 
-  
-  #LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
-  
-  #for n in gb.indices.iterkeys():
-    #puls_plot = gb.get_group(n)
-    #if not puls_plot.empty:
-      #name = 'SAP{}_BEAM{}'.format(n[0],n[1])
-      #os.makedirs('{}{}/sp/'.format(folder,idL)+name)
-      ##Pulse_min = puls_plot.Pulse.unique().min()
-      #astro = puls_plot[puls_plot.Pulse==0]
-      #rfi = puls_plot[puls_plot.Pulse==1]
-      #data_plot = data[data.Pulse.isin(astro.index)]
-      #meta_data_plot = meta_data[(meta_data.SAP==str(n[0]))&(meta_data.BEAM==str(n[1]))]
-      #best_puls_plot = best_puls[(best_puls.SAP==n[1])&(best_puls.BEAM==n[1])]
-      #if n[1] == 12: 
-        #LSPplot.plot(astro.iloc[30:],rfi,meta_data_plot,astro.iloc[:30],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
-        #LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(0-9).png'.format(folder,idL,name))
-        #LSPplot.sp(astro.iloc[10:20],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(10-19).png'.format(folder,idL,name))
-        #LSPplot.sp(astro.iloc[20:30],data,meta_data_plot,store='{}{}/sp/{}/top_candidates(20-29).png'.format(folder,idL,name))
-        #LSPplot.sp(best_puls_plot.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(0-9).png'.format(folder,idL,name))
-        #LSPplot.sp(best_puls_plot.iloc[10:20],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(10-19).png'.format(folder,idL,name))
-        #LSPplot.sp(best_puls_plot.iloc[20:30],data,meta_data_plot,store='{}{}/sp/{}/best_pulses(20-29).png'.format(folder,idL,name))
-      #else:
-        #LSPplot.plot(astro.iloc[10:],rfi,meta_data_plot,astro.iloc[:10],best_puls_plot,store='{}{}/sp/{}/{}_{}.png'.format(folder,idL,name,idL,name))
-        #LSPplot.sp(astro.iloc[:10],data,meta_data_plot,store='{}{}/sp/{}/top_candidates.png'.format(folder,idL,name))
-        #LSPplot.sp(best_puls_plot,data,meta_data_plot,store='{}{}/sp/{}/best_pulses.png'.format(folder,idL,name))
-
-   
-    #print puls[(puls.Pulse==0)].groupby(['SAP','BEAM'],sort=False).head(10)
-    #print puls[(puls.Pulse==0)].groupby(['SAP','BEAM'],sort=False).max()
-    
   return
