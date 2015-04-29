@@ -153,7 +153,8 @@ def lists_creation((folder,idL,sap,beam)):
     events = Events.Thresh(events)
     
     #Correct for the time misalignment of events
-    #events.Time = Events.TimeAlign(events.Time,events.DM)
+    events.sort('DM',inplace=True)
+    events.Time = Events.TimeAlign(events.Time,events.DM)
     
     #Group the events
     Events.Group(events)
@@ -185,12 +186,12 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
   
   for n in gb_puls.indices.iterkeys():
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
-    os.makedirs('{}/sp/'.format(store)+name)
+    os.makedirs('{}/sp/files'.format(store)+name)
   
   if not strongest.empty:
-    os.makedirs('{}/sp/strongest'.format(store))
+    os.makedirs('{}/sp/files/strongest'.format(store))
     for i in range(strongest.shape[0]/10+1):
-      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/strongest/strongest_pulses({}).png'.format(store,i),idL)
+      LSPplot.sp_shape(strongest.iloc[i:i+10],events,'{}/sp/files/strongest/strongest_pulses({}).png'.format(store,i),idL)
       
   gb_best = best_puls.groupby(['SAP','BEAM'],sort=False)
   
@@ -227,7 +228,7 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     best_puls.index = b
     best_puls.Duration *= 1000
     best_puls['void'] = ''
-    best_puls.to_csv('{}{}/sp/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+    best_puls.to_csv('{}{}/sp/files/best_pulses.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
       columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
       header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
@@ -236,7 +237,7 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     strongest.reset_index(drop=True,inplace=True)
     strongest.Duration *= 1000
     strongest['void'] = ''
-    strongest.to_csv('{}{}/sp/strongest/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+    strongest.to_csv('{}{}/sp/files/strongest/strongest.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
       columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','Pulse','code'],\
       header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','#RFI','code','','',''],index_label='rank',encoding='utf-8')
   
@@ -250,17 +251,17 @@ def output(folder,idL,pulses,best_puls,strongest,events,meta_data):
     top_candidates.index=b
   top_candidates.Duration *= 1000
   top_candidates['void'] = ''
-  top_candidates.to_csv('{}{}/sp/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+  top_candidates.to_csv('{}{}/sp/files/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
     columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
     header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   
   LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),best_puls[best_puls.BEAM==12],strongest[strongest.BEAM==12],\
-                             store='{}{}/sp/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+                             store='{}{}/sp/files/inc_top_candidates.png'.format(folder,idL),incoherent=True)
 
   for sap in pulses.SAP.unique():
     LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),best_puls[(best_puls.SAP==sap)&(best_puls.BEAM>12)],strongest[(strongest.SAP==sap)&(strongest.BEAM>12)],\
-                               store='{}{}/sp/top_candidates(SAP{}).png'.format(folder,idL,sap))
+                               store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
     
 
   pulses = 0

@@ -1,7 +1,7 @@
 idL = 'L204719'
-sap = 2
-dm_min = 77.1 #18.95 77.1
-dm_max = 77.7 #19.04 77.7
+sap = 1
+dm_min = 38.6 #18.95 77.1
+dm_max = 38.9 #19.04 77.7
 pulsar = 'J0301+20'
 
 import pandas as pd

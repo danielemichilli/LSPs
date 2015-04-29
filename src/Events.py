@@ -89,8 +89,6 @@ def Group(events):
   # Assigns a pulse-code to each event
   #-----------------------------------
 
-  events.sort('DM',inplace=True)
-     
   C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
   
   events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
@@ -117,7 +115,6 @@ def TimeAlign(Time,DM):
   a[a==0.253*9] *= 2
   b = 0.253 * 14 + 25.3 * delay * ( DM_n[(DM_n>=15)&(DM_n<19)] - 14 )
   c = 0.253 * 14 + 25.3 * delay * 4 + 4 * 25.3 * delay * ( DM_n[DM_n>=19] - 18 )
-  
   
   DM_n = np.concatenate((a,b,c))
   
