@@ -22,22 +22,22 @@ def plot(gb):
   events = gb[3]
   folder = gb[4]
   obs = os.path.basename(folder)
-  sap = gb[0].SAP.iloc[0]
-  beam = gb[0].BEAM.iloc[0]
+  sap = gb[5][0]
+  beam = gb[5][1]
   
   plt.clf()
 
   if beam == 12:
-    sp_shape(pulses.head(10),events,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
-    sp_shape(pulses.iloc[10:20],events,'{}/sp/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
-    sp_shape(pulses.iloc[20:30],events,'{}/sp/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.head(10),events,'{}/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[10:20],events,'{}/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[20:30],events,'{}/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
     plt.clf()
-    sp_plot(pulses.iloc[30:],rfi,meta_data,pulses.head(30),sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+    sp_plot(pulses.iloc[30:],rfi,meta_data,pulses.head(30),sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
     
   else:
-    sp_shape(pulses.head(10),events,'{}/sp/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.head(10),events,'{}/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
     plt.clf()
-    sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+    sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
   
   return
 

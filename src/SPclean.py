@@ -63,10 +63,10 @@ def obs_events(folder,idL):
   store.close()
   
   #Clean the events table
-  events = events.loc[events.Pulse.isin(pulses.index)]
+  events = events[events.Pulse.isin(pulses.index)]
   
   #Produce the output
-  output(folder,idL,pulses,events,meta_data)
+  #output(folder,idL,pulses,events,meta_data)
   #alerts()
   
   return
@@ -102,10 +102,10 @@ def lists_creation((folder,idL,sap,beam)):
 
 def output(folder,idL,pulses,events,meta_data):
   
-  store = '{}{}'.format(folder,idL)
+  store = '{}{}/sp/files'.format(folder,idL)
   
   pulses.sort('Sigma',ascending=False,inplace=True)
-  
+
   gb_rfi = pulses.loc[pulses.Pulse==1].groupby(['SAP','BEAM'],sort=False)
   
   pulses = pulses.loc[pulses.Pulse==0]
@@ -114,7 +114,7 @@ def output(folder,idL,pulses,events,meta_data):
   
   for n in gb_puls.indices.iterkeys():
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
-    os.makedirs('{}/sp/files'.format(store)+name)
+    os.makedirs('{}/{}'.format(store,name))
 
   gb_event = events.loc[events.Pulse.isin(gb_puls.head(30).index)].groupby(['SAP','BEAM'],sort=False)
   events = 0  
@@ -131,13 +131,13 @@ def output(folder,idL,pulses,events,meta_data):
   
   
   pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store) for n in gb_puls.indices.iterkeys()])
+  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store,n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
   
   
   #for n in gb_puls.indices.iterkeys():
-    #LSPplot.plot((gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store))
+    #LSPplot.plot((gb_puls.get_group(n),gb_puls.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store,n))
   
 
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
