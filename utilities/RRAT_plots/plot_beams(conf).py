@@ -1,42 +1,26 @@
-idL = 'L204719'
-sap = 1
-dm_min = 38.6 #18.95 77.1
-dm_max = 38.9 #19.04 77.7
-pulsar = 'J0301+20'
+idL = 'L339734'
+
+dm_min = 18.5 #18.95 77.1
+dm_max = 19.5 #19.04 77.7
+pulsar = ''
 
 import pandas as pd
 import os
 import numpy as np
 import tarfile
 import matplotlib as mpl
-mpl.use('Agg')
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 
+sap = 0
 
-#ra = np.array([ 
-        #499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
-        #742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
-        #873,  869,  865,  862,  740,  619,  499,  380,  259,  137,  134,
-        #129,  126,  249,  374,  499,  627,  752,  876, 1000,  995,  990,
-        #985,  981,  859,  738,  618,  499,  381,  261,  140,   18,   14,
-          #9,    4,    0,  123,  247,  372])
+folder = '/projects/0/lotaas/data/out/confirmations/'
 
- 
-#dec = np.array([ 
-        #500,  625,  562,  437,  375,  437,  562,  750,  687,  625,  500,
-        #375,  312,  250,  312,  375,  500,  625,  687,  875,  812,  750,
-        #687,  562,  437,  312,  250,  187,  125,  187,  250,  312,  437,
-        #562,  687,  750,  812, 1000,  937,  875,  812,  750,  625,  500,
-        #375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
-        #500,  625,  750,  812,  875,  937])
-
-folder = '/projects/0/lotaas/data/out/'
-
-ra = np.zeros(61)
-dec = np.zeros(61)
+ra = np.zeros(128)
+dec = np.zeros(128)
 
 k = 0
-for beam in range(13,74):
+for beam in range(0,128):
   try:
     name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
     path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
@@ -62,29 +46,21 @@ for beam in range(13,74):
 
     
   except IOError:
-    print 'Incomplete observation'
+    print 'SAP',sap,'BEAM',beam,' missing'
     ra[k] = np.nan
     dec[k] = np.nan
   
   k += 1
 
 
-  
-#ra = ra[~np.isnan(ra)]
-#dec = dec[~np.isnan(dec)]
-
-
-
 
 pulses = pd.read_hdf('SinglePulses.hdf5',idL+'_pulses')
 pulses = pulses[(pulses.SAP==sap)&(pulses.Pulse>0)&(pulses.Pulse<4)&(pulses.N_events>4)&(pulses.DM>dm_min)&(pulses.DM<dm_max)]
 
-beams = pulses[pulses.BEAM!=12].groupby('BEAM').Sigma.sum()
- 
-ind = pd.Series(np.zeros(61))
-ind.index += 13
+beams = pulses.groupby('BEAM').Sigma.sum()
+
+ind = pd.Series(np.zeros(128))
 beams = beams.reindex_like(ind)
-#beams.dropna(inplace=True)
 
 plt.clf()
 
@@ -93,12 +69,12 @@ bar = plt.colorbar()
 bar.set_label('Cumulative SNR')
 plt.xlabel('RA (h)')
 plt.ylabel('DEC (deg)')
-[plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
+[plt.annotate(str(i),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,128)]
 
 plt.annotate('DM: {} - {}'.format(dm_min,dm_max), xy=(np.nanmin(ra)-0.02,np.nanmax(dec)+0.1))
 
 plt.xlim(np.nanmin(ra)-0.025,np.nanmax(ra)+0.025)
 plt.ylim(np.nanmin(dec)-0.25,np.nanmax(dec)+0.25)
 
-plt.savefig('{}_beams.png'.format(pulsar),format='png',bbox_inches='tight',dpi=200)
+#plt.savefig('{}_beams.png'.format(pulsar),format='png',bbox_inches='tight',dpi=200)
 

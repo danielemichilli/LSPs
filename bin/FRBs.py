@@ -145,6 +145,7 @@ for sap in range(0,3):
       except IOError: pass
     
     except IOError: pass
+  
   #median value for each bin over all the beams
   med = np.nanmedian(signal,axis=0)  
   

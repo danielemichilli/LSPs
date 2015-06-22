@@ -22,6 +22,10 @@ def Generator(events):
   pulses.dDM=pulses.dDM.astype(np.float32)
   pulses['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
   pulses.dTime=pulses.dTime.astype(np.float32)
+  
+  pulses['dSample'] = (gb.Sample.max() - gb.Sample.min()) / 2.
+  pulses.dSample = pulses.dSample.astype(np.float32)  
+  
   pulses['DM_c'] = (gb.DM.max() + gb.DM.min()) / 2.
   pulses.DM_c=pulses.DM_c.astype(np.float32)
   pulses['Time_c'] = (gb.Time.max() + gb.Time.min()) / 2.

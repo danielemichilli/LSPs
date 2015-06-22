@@ -25,27 +25,34 @@ def obs_events(folder,idL):
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
 
+  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
+
   folders = zip(range(3)*74,range(74)*3)
   
   #folders = [(0,0),(0,68)]
   
   #Create events, meta_data and pulses lists
-  #pool = mp.Pool(mp.cpu_count()-1)
-  results = [lists_creation((folder,idL,sap,beam)) for (sap,beam) in folders]
-  #pool.close()
-  #pool.join()
+  pool = mp.Pool(mp.cpu_count()-1)
+  results = [lists_creation((folder,idL,sap,beam,store)) for (sap,beam) in folders]
+  pool.close()
+  pool.join()
   
-  meta_data = pd.DataFrame()
-  events = pd.DataFrame()
-  pulses = pd.DataFrame()
-  
-  for idx, (meta,event,puls) in enumerate(results):
-    meta_data = meta_data.append(meta,ignore_index=True)
-    events = events.append(event,ignore_index=True)
-    pulses = pulses.append(puls)
-    results[idx] = 0
+  pulses = pd.concat(results)
   results = 0
+  pulses.sort_index(inplace=True)
 
+  store.append('pulses',pulses,data_columns=['Pulse'])
+  store.close()
+  
+  #for idx, (meta,event,puls) in enumerate(results):
+    #meta_data = meta_data.append(meta,ignore_index=True)
+    #events = events.append(event,ignore_index=True)
+    #pulses = pulses.append(puls)
+    #results[idx] = 0
+  #results = 0
+  
+  
+  
   #Compares pulses in different beams
   #RFIexcision.Compare_Beams(pulses)
 
@@ -56,17 +63,13 @@ def obs_events(folder,idL):
   #events = events.loc[events.Pulse.isin(pulses.index)]
 
   #Store the data
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
-  store.append('events',events,data_columns=['Pulse'])
-  store.append('pulses',pulses,data_columns=['Pulse'])
-  store.append('meta_data',meta_data)
-  store.close()
-  
+ 
   #Clean the events table
-  events = events[events.Pulse.isin(pulses.index)]
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
+  meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
   
   #Produce the output
-  #output(folder,idL,pulses,events,meta_data)
+  output(folder,idL,pulses,events,meta_data)
   #alerts()
   
   return
@@ -74,33 +77,44 @@ def obs_events(folder,idL):
 
 
 
-def lists_creation((folder,idL,sap,beam)):
+def lists_creation((folder,idL,sap,beam,store)):
 
   #Import the events
   events, meta_data = Events.Loader(folder,idL,sap,beam)
+  store.append('meta_data',meta_data)
+  
   pulses = pd.DataFrame()
 
   if not events.empty:
     
-    #Apply the thresholds to the events
-    events = Events.Thresh(events)
-    
     #Correct for the time misalignment of events
-    events.sort('DM',inplace=True)
+    events.sort(['DM','Time'],inplace=True)
     events.Time = Events.TimeAlign(events.Time,events.DM)
     
     #Group the events
     Events.Group(events)
+    store.append('events',events,data_columns=['Pulse'])
+    
+    #Apply the thresholds to the events
+    events = Events.Thresh(events)
 
     #Generate the pulses
+    events = events[events.Pulse>=0]
     pulses = Pulses.Generator(events)
+    
+    #Apply RFI filters to the pulses
+    pulses = pulses[pulses.Sigma >= 6.5]
+    events = events[events.Pulse.isin(pulses.index)]
+    RFIexcision.Pulse_Thresh(pulses,events)
 
-  return (meta_data,events,pulses)
+  return pulses
 
 
 
 
 def output(folder,idL,pulses,events,meta_data):
+  
+  events = events[events.Pulse.isin(pulses.index)]
   
   store = '{}{}/sp/files'.format(folder,idL)
   

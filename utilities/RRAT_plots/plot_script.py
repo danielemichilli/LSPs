@@ -79,3 +79,13 @@ def plot_pulse(idx):
   plt.show()
    
    
+   
+def plot_pulse(idx):
+  event = events[events.Pulse==idx]
+  sig = (event.Sigma/event.Sigma.max()*10)**4
+  plt.figure(figsize=(20,20))
+  plt.xlim(event.Time.min()-0.5,event.Time.max()+0.5)
+  plt.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])
+  plt.show()
+  
+

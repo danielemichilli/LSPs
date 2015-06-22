@@ -1,6 +1,7 @@
 BUGS:
 - MemoryError: store events on the fly
 - High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
+- Sometime infinite loop in parallelization
 
 PLOT:
 - Cumulative SNR instead of counts/SNR
@@ -19,22 +20,28 @@ PLOT:
 
 OUTPUT:
 - Folder with general best plots
-- Same name to folders inside hdf5 to all observations
+- Save events for each beam and close them
 
 ANALYSIS:
-- Beam comparison: time rnage ~0.05s
-- Remove pulses at the end of tim
+- Going below DM5
+- Substitute time in alignment and grouping with sample
+- Beam comparison: time range ~0.05s
+- Remove pulses at the end of time
 - Parameter for time spans affected by RFI in the whole sap
 - Study better time alignment with high-DM pulsar
 - Modify filters for the aligned pulse shape
 - Study other possible filters: fit shape, pulse simmetry, pulse straight
-- Better study parameters of grouping
-  - Better study filter values
 - Substitute duration filter with downfact filter
 - Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
 - Pulse spectra
 - Maybe possible to consider only bright pulses that appear in more beams
+- Tollerance on DM steps in grouping relative to SNR of the event
+- Filters also in incoherent beams
 
 GENERAL
 - Write Readme
 - Re-write Installation
+
+FRB
+- Multimoment analysis: write out dynamic spectrum
+- Matched filtering: modify single_pulse_search.py
