@@ -23,7 +23,7 @@ DURAT_GROUP = 0.03  #Tollerance in seconds on the temporal shift of two consecut
 SIGMA_TOLL = 4
 SIGMA_TOLL_IB = 2
 
-RFI_percent = 3
+RFI_percent = 5
 PULS_LENGHT = 15
 
 
@@ -39,6 +39,7 @@ FILTERS = {
   'q': -60.86842105263156,
   'flat_SNR': 0.78,
   'flat_SNR_simmetric': 0.78,
+  'flat_SNR_extremes': 0.68,
   'DM_extremes': 0.9,
   'sigma_min': 0.95,
   'cum_scatter': 0.17,
@@ -47,6 +48,11 @@ FILTERS = {
   'sigma_scatter_max': 0.47,
   'sigma_std_largest': 0.55,
   'flat_fit0': 0.72,
-  'flat_fit1': 0.68}
+  'flat_fit1': 0.64,
+  'bright_extremes_abs': 0.88,
+  'bright_extremes_rel': 0.89,
+  'chi2': 0.1,
+  'number_events': 1.,
+  'monotonic': 0.0000001}
 
 

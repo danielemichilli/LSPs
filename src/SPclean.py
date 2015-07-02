@@ -52,7 +52,6 @@ def obs_events(folder,idL):
   #results = 0
   
   
-  
   #Compares pulses in different beams
   #RFIexcision.Compare_Beams(pulses)
 
@@ -106,6 +105,8 @@ def lists_creation((folder,idL,sap,beam,store)):
     pulses = pulses[pulses.Sigma >= 6.5]
     events = events[events.Pulse.isin(pulses.index)]
     RFIexcision.Pulse_Thresh(pulses,events)
+    pulses = pulses[pulses.Pulse<=RFI_percent]
+    events = events[events.Pulse.isin(pulses.index)]
 
   return pulses
 
@@ -113,9 +114,7 @@ def lists_creation((folder,idL,sap,beam,store)):
 
 
 def output(folder,idL,pulses,events,meta_data):
-  
-  events = events[events.Pulse.isin(pulses.index)]
-  
+    
   store = '{}{}/sp/files'.format(folder,idL)
   
   pulses.sort('Sigma',ascending=False,inplace=True)
