@@ -24,7 +24,7 @@ folder = '/projects/lotaas/test/Daniele/raw/'
 for beam in range(13,74):
   name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
   path = '{}{}_red/stokes/SAP{}/BEAM{}/'.format(folder,idL,sap,beam)
-  events_path = '{}{}.fits'.format(path,name)
+  file_name = '{}{}.fits'.format(path,name)
 
 
   fits = pyfits.open(file_name,memmap=True)
@@ -49,7 +49,7 @@ for beam in range(13,74):
   N_spectra /= downfactor
   subint = subint.reshape(N_spectra,downfactor,N_channels).mean(axis=1)
 
-  lim = np.partition(a,-20,axis=1)[:,-20]
+  lim = np.partition(subint,-20,axis=1)[:,-20]
   for idx,row in enumerate(subint):
     row[row>=lim[ind]] = np.median(row)
 

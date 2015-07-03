@@ -29,7 +29,7 @@ def Get_Group(float[::1] DM not None,
   cdef:
     unsigned int i, j, k, j_min, j_max, empty, SNR_max
     unsigned int n_steps = STEPS_GROUP
-    unsigned int durat = DURAT_GROUP
+    float durat = DURAT_GROUP
     unsigned int code = 0
     unsigned int dim = len(DM)
     float step, step_min, step_max, dDM, DM_min
@@ -38,21 +38,21 @@ def Get_Group(float[::1] DM not None,
 
 
   # Assign a code to each event.
-  # Events have been ordered in DM and then in Time
+  # Events must have been ordered in DM and then in Time
   for i in range(0,dim):
     
     #Remove close events at the same DM
     j = i+1
     if DM[i] == DM[j]:
     
-      if abs(Time[i]-Time[j]) < durat*(Duration[i]+Duration[j]):
+      if abs(Time[i]-Time[j]) < durat:
         
         if j < dim : 
         
           if Sigma[i] < Sigma[j] : Pulse[i] = -1
           else : Pulse[j] = -1
   
-    if Pulse[i]==-1: continue  #CONTROLLARE!!!
+    if Pulse[i]==-1: continue
     
     # Set a code to the events that aren't in a pulse
     if Pulse[i]==0: 
@@ -67,15 +67,15 @@ def Get_Group(float[::1] DM not None,
       
       DM_new = DM[i]
       
-      if DM_new < 40.5: step = 0.01
+      if DM_new < 40.49: step = 0.01
         
-      elif DM_new < 141.7: step = 0.05
+      elif DM_new < 141.69: step = 0.05
         
       else: step = 0.1
         
       step_min = step - float_err
       
-      step_max = step * n_steps + float_err
+      step_max = step * (n_steps + 1) + float_err
       
       
       #find the minimum and maximum event in the range
@@ -100,7 +100,7 @@ def Get_Group(float[::1] DM not None,
       # Gives a code to the next event in the pulse
       for j in range(j_min,j_max):
 
-        if abs(Time[i]-Time[j]) < durat*(Duration[i]+Duration[j]):
+        if abs(Time[i]-Time[j]) < durat:   #MAYBE add a condition on SNR (attention: dSNR depends on SNR!) 
           
           if Pulse[j] == -1: continue
           

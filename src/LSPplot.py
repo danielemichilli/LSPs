@@ -19,36 +19,31 @@ def plot(gb):
   pulses = gb[0]
   rfi = gb[1]
   meta_data = gb[2]
-  best_pulses = gb[3]
-  events = gb[4]
-  folder = gb[5]
+  events = gb[3]
+  folder = gb[4]
   obs = os.path.basename(folder)
-  sap = gb[0].SAP.iloc[0]
-  beam = gb[0].BEAM.iloc[0]
+  sap = gb[5][0]
+  beam = gb[5][1]
   
   plt.clf()
 
   if beam == 12:
-    sp_shape(pulses.head(10),events,'{}/sp/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
-    sp_shape(pulses.iloc[10:20],events,'{}/sp/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
-    sp_shape(pulses.iloc[20:30],events,'{}/sp/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
-    sp_shape(best_pulses.head(10),events,'{}/sp/SAP{}_BEAM{}/best_pulses(0-9).png'.format(folder,sap,beam),obs)
-    sp_shape(best_pulses.iloc[10:20],events,'{}/sp/SAP{}_BEAM{}/best_pulses(10-19).png'.format(folder,sap,beam),obs)
-    sp_shape(best_pulses.iloc[20:30],events,'{}/sp/SAP{}_BEAM{}/best_pulses(20-29).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.head(10),events,'{}/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[10:20],events,'{}/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.iloc[20:30],events,'{}/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
     plt.clf()
-    sp_plot(pulses.iloc[30:],rfi,meta_data,pulses.head(30),best_pulses,sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+    sp_plot(pulses.iloc[30:],rfi,meta_data,pulses.head(30),sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
     
   else:
-    sp_shape(pulses.head(10),events,'{}/sp/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
-    sp_shape(best_pulses,events,'{}/sp/SAP{}_BEAM{}/best_pulses.png'.format(folder,sap,beam),obs)
+    sp_shape(pulses.head(10),events,'{}/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
     plt.clf()
-    sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),best_pulses,sap,beam,'{}/sp/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+    sp_plot(pulses.iloc[10:],rfi,meta_data,pulses.head(10),sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
   
   return
 
 
 
-def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,events=pd.DataFrame()):
+def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFrame()):
 
   col = pulses.Sigma
   cmap = plt.get_cmap('gist_heat_r')
@@ -56,7 +51,6 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   square = u'g'
     
   sig_top = (top_candidates.Sigma/1.5)**3
-  sig_best = (top_candidates.Sigma/1.5)**3
 
   fig = plt.figure()
   
@@ -72,12 +66,10 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   if not events.empty: 
     ax1.scatter(events.Time, events.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,])
       
-    ax1.scatter(puls.Time, puls.DM, c=col, s=20., cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-    ax1.plot([0,3600],[40.48,40.48],'k--')
-    ax1.plot([0,3600],[141.68,141.68],'k--')
+  ax1.plot([0,3600],[40.48,40.48],'k--')
+  ax1.plot([0,3600],[141.68,141.68],'k--')
     
   if not top_candidates.empty: ax1.scatter(top_candidates.Time, top_candidates.DM, s=sig_top, linewidths=[0.,], c=fill, marker='*')
-  if not best_pulses.empty: ax1.scatter(best_pulses.Time, best_pulses.DM, s=sig_best, linewidths=[1.,], marker='s', facecolors='none', edgecolor=square)
 
   ax1.set_yscale('log')
   ax1.set_xlabel('Time (s)')
@@ -88,6 +80,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,best_pulses,sap,beam,store,event
   for i in range(0,top_candidates.shape[0]):
     if top_candidates.Time.iloc[i]>100:
       ax1.annotate(i,xy=(top_candidates.Time.iloc[i]-60,top_candidates.DM.iloc[i]),horizontalalignment='right',verticalalignment='center')
+
   for i in range(0,best_pulses.shape[0]):
     if best_pulses.Time.iloc[i]<3500:
       ax1.annotate(i,xy=(best_pulses.Time.iloc[i]+60,best_pulses.DM.iloc[i]),horizontalalignment='left',verticalalignment='center')
@@ -184,26 +177,18 @@ def sp_shape(pulses,events,store,obs):
 
 
 
-def obs_top_candidates(top_candidates,best_pulses,strongest,color=True,size=True,store=False,incoherent=False): #top_candidates di tutti i beams
+def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoherent=False): #top_candidates di tutti i beams
   
   if color:
     if incoherent:
       col_top = top_candidates.SAP
-      if not best_pulses.empty: col_best = best_pulses.SAP
-      if not strongest.empty: col_str = strongest.SAP
     else:
       col_top = top_candidates.BEAM
-      if not best_pulses.empty: col_best = best_pulses.BEAM
-      if not strongest.empty: col_str = strongest.BEAM
   else: 
     col_top = u'r' 
-    col_best = u'r'
-    col_str = u'r'
   
   if size: 
     sig_top = (top_candidates.Sigma/6.)**4
-    if not best_pulses.empty: sig_best = ((best_pulses.Sigma/6.)**4)/2
-    if not strongest.empty: sig_str = ((strongest.Sigma/6.)**4)/2
   else: sig=100.
     
   fig = plt.figure()
@@ -234,12 +219,6 @@ def obs_top_candidates(top_candidates,best_pulses,strongest,color=True,size=True
       bar.update_ticks
       bar.ax.xaxis.set_ticks_position('top')
     
-    
-  if not best_pulses.empty: 
-    ax1.scatter(best_pulses.Time,best_pulses.DM,s=sig_best,linewidths=[1.,],marker=u's',facecolors='none',c=col_best)
-  if not strongest.empty: 
-    ax1.scatter(strongest.Time,strongest.DM,s=sig_str,linewidths=[.5,],marker=u'^',facecolors='none',c=col_str)
-  
   ax1.plot([0,3600],[40.48,40.48],'k--')
   ax1.plot([0,3600],[141.68,141.68],'k--')
   ax1.set_xlabel('Time (s)')
