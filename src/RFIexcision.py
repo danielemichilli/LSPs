@@ -116,10 +116,12 @@ def Pulse_Thresh(pulses,events):
       monotonic(ev.Sigma) < FILTERS['monotonic']))
 
 
-  def monotonic_number(sigma):
-    sigma = sigma - sigma.shift(-1)
-    sigma = sigma * sigma.shift(-1)
-    return sigma[sigma<0].size/sigma.size
+  #def monotonic_number(sigma):
+    #if sigma.shape[0] < 15: return 0
+    #sigma = np.convolve(sigma, np.ones(10), mode='valid')/10.
+    #sigma = np.diff(sigma)
+    #sigma = np.multiply(sigma,np.roll(sigma,1))[1:]
+    #return sigma[sigma<0].size/np.float(sigma.size)
   
     
   def fit(ev):
