@@ -98,23 +98,29 @@ def Pulse_Thresh(pulses,events):
     
     #s = s[s>-5]
     #s = np.abs(s)/ev.Sigma
-    
-    s = np.fabs( ev.Sigma - ev.Sigma.shift(-1) ) / ev.Sigma
-    
+
     return np.sum((
-      #np.mean(s) < FILTERS['sigma_scatter'],
-      #np.mean(np.abs(ev.Time - ev.Time.shift(1))) > FILTERS['cum_scatter'], \  #mettere un filtro sullo scattering in tempo tipo a come fatto per la sigma
+      np.mean(np.fabs( ev.Sigma - ev.Sigma.shift(-1) ) / ev.Sigma) < FILTERS['sigma_scatter'],
+      np.mean(np.abs(ev.Time - ev.Time.shift(1))) > FILTERS['cum_scatter'],
+      np.std(ev.Time - ev.Time.shift(1)) > FILTERS['std_scatter'],
       np.std(ev.Sigma.nlargest(ev.Sigma.size*2/3)) < FILTERS['sigma_std_largest'], #OK  #Aggiungere altri cosi
-      fit0(ev.DM,ev.Sigma) < FILTERS['flat_fit0'],  #OK
-      fit1(ev.DM,ev.Sigma) < FILTERS['flat_fit1'],  #OK
-      SNR_simmetric(ev) / ev.Sigma.max() > FILTERS['flat_SNR_simmetric'],  #OK
+      fit0(ev.DM,ev.Sigma) < FILTERS['flat_fit0'],
+      fit1(ev.DM,ev.Sigma) < FILTERS['flat_fit1'],
+      SNR_simmetric(ev) / ev.Sigma.max() > FILTERS['flat_SNR_simmetric'],
       bright_events_abs(ev) > FILTERS['bright_extremes_abs'],
       bright_events_rel(ev) > FILTERS['bright_extremes_rel'],
       #fit(ev) < FILTERS['chi2'],
-      flat_SNR_extremes > FILTERS['flat_SNR_extremes'],
-      number_events(ev) > FILTERS['number_events'],
+      #duration > 2.,
+      flat_SNR_extremes < FILTERS['flat_SNR_extremes'],
+      #number_events(ev) > FILTERS['number_events'],
       monotonic(ev.Sigma) < FILTERS['monotonic']))
-      
+
+
+  def monotonic_number(sigma):
+    sigma = sigma - sigma.shift(-1)
+    sigma = sigma * sigma.shift(-1)
+    return sigma[sigma<0].size/sigma.size
+  
     
   def fit(ev):
     if ev.Sigma.max()>10: return 0
@@ -167,25 +173,66 @@ def Pulse_Thresh(pulses,events):
     return chi
   
   
-  #non funziona piu'!!!!
-  def number_events(ev):  #forse prendere punti interni invece che sopra soglia
+  def number_events(ev):  #forse prendere punti interni invece che sopra soglia e finestra piu' larga
     y1 = np.convolve(ev.Sigma, np.ones(10), mode='same')/10.
-    #try:
-      #l = np.where(y1[:y1.argmax()]<=6)[0][-1]
-      #r = (np.where(y1[y1.argmax():]<=6)[0]+y1.argmax())[0]
-    #except IndexError: return 0
-    
-    
-    l = y1[:sigma_max].size*2/3  #da provare
-    r = y1[sigma_max:].size*2/3    
-    
-    
+    try:
+      l = np.where(y1[:y1.argmax()]<=6)[0][-1]
+      r = (np.where(y1[y1.argmax():]<=6)[0]+y1.argmax())[0]
+    except IndexError: return 0
     dDM = ev.DM.iloc[r]-ev.DM.iloc[l]
-    return y1.max() / 6.*(np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3)*special.erf(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3))
+    return y1.max() / 6.*(np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/ev.Duration.iloc[y1.argmax()]/0.13525**3)*special.erf(0.00000691*dDM*31.64/ev.Duration.iloc[y1.argmax()]/0.13525**3))
 
 
-  def chi2(ev):
+  #def chi2(ev):
+    #y1 = np.convolve(ev.Sigma, np.ones(10), mode='same')/10.
+    #sigma_max = y1.argmax()
+    
+    #l = y1[:sigma_max].size*2/3
+    #r = y1[sigma_max:].size*2/3
+    
+    #y1 = y1[l:-r]
+    #if y1.shape[0] < 10: return 0
+    ##sigma_max = y1.argmax()
+    
+    #dDM = np.abs(ev.DM.iloc[l:-r]-ev.DM.iloc[sigma_max])
+    #x = 0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3+0.0000001
+    #y = y1.max()*np.sqrt(np.pi)/2/x*special.erf(x)
+    #return np.sum((y - y1) ** 2) / y.shape[0]
+  
+
+
+
+
+
+  ##fit su duration: 1.chi2 2.differenza con duration da pulses
+  #def chi2(ev):
+    #y1 = np.convolve(ev.Sigma, np.ones(10), mode='same')/10.
+    #sigma_max = y1.argmax()
+    
+    #l = y1[:sigma_max].size*2/3
+    #r = y1[sigma_max:].size*2/3
+    
+    #y1 = y1[l:-r]
+    #if y1.shape[0] < 10: return 0
+    #x1 = ev.DM.iloc[l:-r]
+    
+    #dDM = np.abs(ev.DM.iloc[l:-r]-ev.DM.iloc[sigma_max])
+
+    #p0 = ev.Duration.min()
+    #p1, var = curve_fit(f, x1, y1, p0=p0, maxfev=10000)
+    
+    #return np.sum((y - y1) ** 2) / y.shape[0]
+  
+  
+  #def f(x, *p):
+    #return np.sqrt(np.pi)/2/(p*x)*special.erf(x)
+
+  
+  #fit su x: chi2
+  def duration(ev):
     y1 = np.convolve(ev.Sigma, np.ones(10), mode='same')/10.
+    y1 /= y1.max()
+    
     sigma_max = y1.argmax()
     
     l = y1[:sigma_max].size*2/3
@@ -193,14 +240,27 @@ def Pulse_Thresh(pulses,events):
     
     y1 = y1[l:-r]
     if y1.shape[0] < 10: return 0
-    #sigma_max = y1.argmax()
+    x1 = ev.DM.iloc[l:-r]
     
-    dDM = np.abs(ev.DM.iloc[l:-r]-ev.DM.iloc[sigma_max])
-    x = 0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3+0.0000001
-    y = y1.max()*np.sqrt(np.pi)/2/x*special.erf(x)
-    return np.sum((y - y1) ** 2) / y.shape[0]
+    sigma_max = y1.argmax()
+    dDM = np.abs(x1-x1.iloc[sigma_max])
+    
+    p0 = ev.Duration.iloc[sigma_max]
+    #p1, var = curve_fit(lambda x, p0: f(x, p0, dDM), x1, y1, p0=p0, maxfev=10000)
+    [duration], var = curve_fit(f, dDM, y1, p0=p0, maxfev=10000)
+    
+    
+    #plt.plot(x1,f(dDM,duration))
+    #plt.plot(x1,y1,'kx')
+    #plt.show()
+    
+    
+    #return np.sum((f(dDM,duration) - y1) ** 2) / y1.shape[0]
+    return np.abs(duration/p0)
   
-  
+  def f(dDM, *duration):
+    x = 0.00000691*dDM*31.64/duration/0.13525**3+0.0000001
+    return np.sqrt(np.pi)/2/x*special.erf(x)
   
   
   #def monotonic(x):
@@ -219,7 +279,7 @@ def Pulse_Thresh(pulses,events):
     #else: return True
 
 
-  def monotonic(sigma):  #testare
+  def monotonic(sigma):
     sigma = np.convolve(sigma, np.ones(sigma.shape[0]/5), mode='same')/sigma.shape[0]*5
     sigma_max = sigma.argmax()
     
@@ -234,7 +294,6 @@ def Pulse_Thresh(pulses,events):
     sigma[sigma_max:] *= -1
     #return sigma.min()
     return np.partition(sigma,1)[1]
-
 
 
   def SNR_simmetric(ev):
