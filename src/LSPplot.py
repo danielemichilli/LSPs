@@ -80,11 +80,6 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   for i in range(0,top_candidates.shape[0]):
     if top_candidates.Time.iloc[i]>100:
       ax1.annotate(i,xy=(top_candidates.Time.iloc[i]-60,top_candidates.DM.iloc[i]),horizontalalignment='right',verticalalignment='center')
-
-  for i in range(0,best_pulses.shape[0]):
-    if best_pulses.Time.iloc[i]<3500:
-      ax1.annotate(i,xy=(best_pulses.Time.iloc[i]+60,best_pulses.DM.iloc[i]),horizontalalignment='left',verticalalignment='center')
-  
   hist = ax2.hist(pulses.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
   ax2.set_xscale('log')
   ax2.set_xlabel('DM (pc/cm3)')
@@ -95,19 +90,16 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   
   ax3.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
   ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=15.,linewidths=[0.,],c=fill,marker='*')
-  ax3.scatter(best_pulses.DM,best_pulses.Sigma,s=15.,linewidths=[1.,],c='b',marker=u's',facecolors='none',edgecolor=square)
   ax3.set_xscale('log')
   ax3.set_ylabel('SNR')
   ax3.set_xlabel('DM (pc/cm3)')
-  limit = max(pulses.Sigma.max(),top_candidates.Sigma.max(),best_pulses.Sigma.max())
+  limit = max(pulses.Sigma.max(),top_candidates.Sigma.max())
   ax3.axis([5,550,pulses.Sigma.min(),limit+3.])
   ax3.plot([40.5,40.5],[0,limit+3.],'k--')
   ax3.plot([141.7,141.7],[0,limit+3.],'k--')
   mpl.rc('font', size=3.5)
   for i in range(0,top_candidates.shape[0]):
     ax3.annotate(i,xy=(top_candidates.DM.iloc[i]/1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center')
-  for i in range(0,best_pulses.shape[0]):
-    ax3.annotate(i,xy=(best_pulses.DM.iloc[i]*1.15,best_pulses.Sigma.iloc[i]),horizontalalignment='left',verticalalignment='center')
     
   SNR = pulses.groupby('DM',sort=False).Sigma.sum()
   ax4.plot(SNR.index,SNR,'k',linewidth=3.)
