@@ -15,15 +15,17 @@ import matplotlib as mpl
 
 from Parameters import *
 
-def plot(gb):
-  pulses = gb[0]
-  rfi = gb[1]
-  meta_data = gb[2]
-  events = gb[3]
-  folder = gb[4]
+def plot(((pulses,rfi,meta_data,events),folder,(sap,beam))):
+  #pulses = gb[0]
+  #rfi = gb[1]
+  #meta_data = gb[2]
+  #events = gb[3]
+  #folder = gb[4]
   obs = os.path.basename(folder)
-  sap = gb[5][0]
-  beam = gb[5][1]
+  #sap = gb[5][0]
+  #beam = gb[5][1]
+  
+  if pulses.empty: return
   
   plt.clf()
 

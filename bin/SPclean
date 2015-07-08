@@ -34,6 +34,7 @@ def parser():
   parser.add_argument('folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
+  parser.add_argument('-load_DB', help="Load events from a DataBase instead than text files.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
   
