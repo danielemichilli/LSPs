@@ -54,6 +54,7 @@ FILTERS = {
   'bright_extremes_rel': 0.89,
   'chi2': 0.1,
   'number_events': 1.,
-  'monotonic': 0.0000001}
+  'monotonic': 0.0000001,
+  'sigma_jumps': 0.3}
 
 

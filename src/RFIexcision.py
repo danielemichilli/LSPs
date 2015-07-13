@@ -22,9 +22,13 @@ def Pulse_Thresh(pulses,events):
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
   
-  events.sort_index(inplace=True)
+  #events.sort_index(inplace=True)
+  events.sort(['Pulse','DM','Time'],inplace=True)
   gb = events.groupby('Pulse')
   pulses.sort_index(inplace=True)
+  
+  #Weak pulses
+  pulses.Pulse[pulses.Sigma - gb.Sigma.min() <= 1.5] += RFI_percent
     
   #Not scattered in time: dTime
   #pulses.Pulse[pulses.dTime > FILTERS['scattered']] += 1  #inutile
@@ -54,8 +58,7 @@ def Pulse_Thresh(pulses,events):
   pulses.Pulse[ gb.Duration.min() / gb.Duration.max() > FILTERS['flat_duration']] += 1 
 
   #Large weak pulses: N_events > Sigma *m+q
-  #pulses.Pulse[pulses.N_events > pulses.Sigma * FILTERS['m'] + FILTERS['q']] += 1
-  
+  #pulses.Pulse[pulses.N_events > pulses.Sigma * FILTERS['m'] + FILTERS['q']] += 1  #Add condition on duration!
   #dDM > Sigma *m+q
 
   #Flat SNR: SNR_min / SNR
@@ -109,32 +112,54 @@ def Pulse_Thresh(pulses,events):
       #fit(ev) < FILTERS['chi2'],
       #duration > 2.,
       flat_SNR_extremes < FILTERS['flat_SNR_extremes'],
-      #number_events(ev) > FILTERS['number_events'],
-      monotonic(ev.Sigma) < FILTERS['monotonic']))
+      #number_events(ev) < FILTERS['number_events'],
+      monotonic(ev.Sigma) < FILTERS['monotonic'],
+      sigma_jumps(ev.Sigma) > FILTERS['sigma_jumps']))
 
   def fit0(x,y):
-    if y.max()<8: return 0
+    #if y.max()<8: return 10
     p = np.polyfit(x, y, 0)
-    chi_squared = np.sum((np.polyval(p, x) - y) ** 2)
-    chi = chi_squared / x.size
-    return chi
+    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
 
   def fit1(x,y):
-    if y.max()<8: return 0
+    if y.max()<8: return 10
     p = np.polyfit(x, y, 1)
-    chi_squared = np.sum((np.polyval(p, x) - y) ** 2)
-    chi = chi_squared / (x.size-1)
-    return chi
+    return np.sum((np.polyval(p, x) - y) ** 2) / (x.size-1)
   
   
-  def number_events(ev):  #forse prendere punti interni invece che sopra soglia e finestra piu' larga
-    y1 = np.convolve(ev.Sigma, np.ones(10), mode='same')/10.
+  def number_events(ev):
+    dim = ev.shape[0]/5
+    y1 = np.convolve(ev.Sigma, np.ones(dim), mode='valid')/dim
+    #y1 /= y1.max()
+    x1 = ev.DM.iloc[(dim)/2:-int(dim-1.5)/2]
+    #s_l = ev.Sigma.loc[ev.DM.argmin()].tolist()
+    #s_r = ev.Sigma.loc[ev.DM.argmax()].tolist()
+    #y1 /= y1.max()
+    sigma_max = y1.argmax()
+    #l = y1[:sigma_max].size/3
+    #r = y1[sigma_max:].size/3
+    #y1 = y1[l:r]
+    #sigma = np.max((y1[0],y1[-1]))
+    try: lim_max = np.max((y1[:sigma_max].min(),y1[sigma_max:].min()))
+    except ValueError: return 100
+    sigma = lim_max+(y1.max()-lim_max)/3.
     try:
-      l = np.where(y1[:y1.argmax()]<=6)[0][-1]
-      r = (np.where(y1[y1.argmax():]<=6)[0]+y1.argmax())[0]
-    except IndexError: return 0
-    dDM = ev.DM.iloc[r]-ev.DM.iloc[l]
-    return y1.max() / 6.*(np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/ev.Duration.iloc[y1.argmax()]/0.13525**3)*special.erf(0.00000691*dDM*31.64/ev.Duration.iloc[y1.argmax()]/0.13525**3))
+      l = np.where(y1[:y1.argmax()]<=sigma)[0][-1]+1
+      r = (np.where(y1[y1.argmax():]<=sigma)[0]+y1.argmax())[0]-1
+      dDM = (x1.iloc[r]-x1.iloc[l])/2
+      #dDM = np.max((x1.iloc[sigma_max]-x1.iloc[l],x1.iloc[r]-x1.iloc[sigma_max]))
+    except IndexError: return 100
+    return sigma / (np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3)*special.erf(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3)) / ev.Sigma.max()
+
+
+
+  #def chi(ev):   #implementare con convolve!!!                         
+    #p = np.polyfit(ev.DM, ev.Sigma, 0)
+    #chi = np.sum((np.polyval(p, ev.DM) - ev.Sigma) ** 2) / ev.shape[0]
+    #pp = np.array([ 0.04843485, -0.64067645,  1.69930338])
+    #return chi-np.polyval(pp, ev.Sigma.max())
+
+
 
   #fit su x: chi2
   def duration(ev):
@@ -164,8 +189,8 @@ def Pulse_Thresh(pulses,events):
     return np.sqrt(np.pi)/2/x*special.erf(x)
 
 
-  def monotonic(sigma):
-    sigma = np.convolve(sigma, np.ones(sigma.shape[0]/5), mode='same')/sigma.shape[0]*5
+  def monotonic(y):
+    sigma = np.convolve(y, np.ones(y.shape[0]/5), mode='same')/y.shape[0]*5
     sigma_max = sigma.argmax()
     
     l = sigma[:sigma_max].size*2/3
@@ -181,6 +206,58 @@ def Pulse_Thresh(pulses,events):
     return np.partition(sigma,1)[1]
 
 
+  def sigma_jumps(sigma):
+    sigma = np.convolve(sigma, np.ones(5), mode='same')
+    sigma_max = sigma.argmax()
+    sigma = np.diff(sigma)
+    sigma[sigma_max:] *= -1
+    return sigma[sigma<0].size/float(sigma.size)
+  
+  
+  
+  
+  
+  #migliorare!
+  def sigma_jumps2(sigma):
+    if sigma.size<15: return 0
+    y1 = np.convolve(sigma, np.ones(10), mode='valid')
+    sigma_max = y1.argmax()
+    try: lim_max = np.max((y1[:sigma_max].min(),y1[sigma_max:].min()))
+    except ValueError: return 0  #forse si puo' implementare contro RFI
+    lim_max = lim_max+(y1.max()-lim_max)/3.   #probabilmente troppo!! porvare 5 o 10. o forse >6 o cose cosi
+    try:
+      l = np.where(y1[:y1.argmax()]<=lim_max)[0][-1]+1
+      r = (np.where(y1[y1.argmax():]<=lim_max)[0]+y1.argmax())[0]-1
+    except IndexError: return 0  #forse si puo' implementare contro RFI
+    y1 = y1[l:r]
+    if y1.size<3: return 0  #forse si puo' implementare contro RFI
+    sigma_max = y1.argmax()
+    y1 = np.diff(y1)
+    y1[sigma_max:] *= -1
+    return y1[y1<0].size/float(y1.size)
+  
+    
+    
+#:  def sigma_jumps2(sigma):
+#:    y1 = np.convolve(sigma, np.ones(10), mode='same')
+#:    sigma_max = y1.argmax()
+#:    try: lim_max = np.max((y1[:sigma_max].min(),y1[sigma_max:].min()))
+#:    except ValueError: return 100
+#:    sigma = lim_max+(y1.max()-lim_max)/3.
+#:    try:
+#:      l = np.where(y1[:y1.argmax()]<=sigma)[0][-1]+1
+#:      r = (np.where(y1[y1.argmax():]<=sigma)[0]+y1.argmax())[0]-1
+#:    except IndexError: return 100
+#:    y1 = y1[l:r]
+#:    sigma_max = y1.argmax()
+#:    y1 = np.diff(y1)
+#:    y1[sigma_max:] *= -1
+#:    return y1[y1<0].size/float(y1.size)
+#:  
+
+  
+  
+  
   def SNR_simmetric(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
     l = ev[ev.DM<=DM_c]
@@ -339,6 +416,17 @@ def Pulse_Thresh(pulses,events):
 
   
   return
+  
+  
+  #def SNR_simmetric(ev):
+    #DM_c = ev.DM.loc[ev.Sigma.idxmax()]
+    #l = ev.Sigma[ev.DM<=DM_c]
+    #r = ev.Sigma[ev.DM>=DM_c]
+    #l = l - l.shift(1)  #DM10-DM9
+    #r = r - r.shift(-1)
+    #l = l[l<=0]
+    #r = r[r<=0]
+    #return np.sum((l.sum(),r.sum()))/np.sum((l.size,r.size))
 
 #Meta' degli eventi piu' vicini al centro: chi2 e altre statistiche
 #Meta' degli eventi con sigma piu' alta: chi2
