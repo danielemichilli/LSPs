@@ -112,7 +112,7 @@ def Pulse_Thresh(pulses,events):
       #fit(ev) < FILTERS['chi2'],
       #duration > 2.,
       flat_SNR_extremes < FILTERS['flat_SNR_extremes'],
-      #number_events(ev) < FILTERS['number_events'],
+      number_events(ev) < FILTERS['number_events'],
       monotonic(ev.Sigma) < FILTERS['monotonic'],
       sigma_jumps(ev.Sigma) > FILTERS['sigma_jumps']))
 
@@ -129,27 +129,26 @@ def Pulse_Thresh(pulses,events):
   
   def number_events(ev):
     dim = ev.shape[0]/5
-    y1 = np.convolve(ev.Sigma, np.ones(dim), mode='valid')/dim
-    #y1 /= y1.max()
-    x1 = ev.DM.iloc[(dim)/2:-int(dim-1.5)/2]
-    #s_l = ev.Sigma.loc[ev.DM.argmin()].tolist()
-    #s_r = ev.Sigma.loc[ev.DM.argmax()].tolist()
-    #y1 /= y1.max()
-    sigma_max = y1.argmax()
-    #l = y1[:sigma_max].size/3
-    #r = y1[sigma_max:].size/3
-    #y1 = y1[l:r]
-    #sigma = np.max((y1[0],y1[-1]))
-    try: lim_max = np.max((y1[:sigma_max].min(),y1[sigma_max:].min()))
-    except ValueError: return 100
-    sigma = lim_max+(y1.max()-lim_max)/3.
-    try:
-      l = np.where(y1[:y1.argmax()]<=sigma)[0][-1]+1
-      r = (np.where(y1[y1.argmax():]<=sigma)[0]+y1.argmax())[0]-1
-      dDM = (x1.iloc[r]-x1.iloc[l])/2
-      #dDM = np.max((x1.iloc[sigma_max]-x1.iloc[l],x1.iloc[r]-x1.iloc[sigma_max]))
-    except IndexError: return 100
-    return sigma / (np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3)*special.erf(0.00000691*dDM*31.64/ev.Duration.min()/0.13525**3)) / ev.Sigma.max()
+    if dim < 3: return 10
+    sigma = np.convolve(ev.Sigma, np.ones(dim), mode='valid')/dim
+    dm = ev.DM.iloc[dim/2:-int(dim-1.5)/2]
+    sigma_argmax = sigma.argmax()
+    sigma_max = sigma.max()
+    try: lim_max = np.max((sigma[:sigma_argmax].min(),sigma[sigma_argmax:].min()))
+    except ValueError: return 0
+    sigma_min = lim_max+(sigma_max-lim_max)/5.
+    l = np.where(sigma[:sigma_argmax]<=sigma_min)[0][-1]+1
+    r = (np.where(sigma[sigma_argmax:]<=sigma_min)[0]+sigma_argmax)[0]-1
+    if (sigma_argmax - l < 5) & (r - sigma_argmax < 5): return 10
+    duration = np.convolve(ev.Duration, np.ones(dim), mode='valid')/dim
+    duration = duration[sigma_argmax]
+    dDM = dm.iloc[sigma_argmax] - dm.iloc[l]
+    y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
+    diff_l = sigma_min/sigma_max/y
+    dDM = dm.iloc[r] - dm.iloc[sigma_argmax]
+    y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
+    diff_r = sigma_min/sigma_max/y
+    return np.nanmax((diff_l,diff_r))
 
 
 
