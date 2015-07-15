@@ -91,6 +91,7 @@ def lists_creation((folder,idL,sap,beam,store)):
     events.Time = Events.TimeAlign(events.Time,events.DM)
     
     #Group the events
+    events.sort(['DM','Time'],inplace=True)
     Events.Group(events)
     store.append('events',events,data_columns=['Pulse'])
     

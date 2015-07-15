@@ -42,19 +42,20 @@ FILTERS = {
   'flat_SNR_extremes': 0.68,
   'DM_extremes': 0.9,
   'sigma_min': 0.95,
-  'cum_scatter': 0.0039,
-  'std_scatter': 0.0058,
+  'cum_scatter': 0.0045,
+  'std_scatter': 0.0068,
   'sigma_std': 0.46,
   'sigma_scatter': 0.02,
   'sigma_scatter_max': 0.47,
   'sigma_std_largest': 0.55,
   'flat_fit0': 0.72,
   'flat_fit1': 0.64,
-  'bright_extremes_abs': 0.88,
+  'bright_extremes_abs': 0.9,
   'bright_extremes_rel': 0.89,
-  'chi2': 0.1,
+  'pulse_simmetric': 0.155,
   'number_events': 1.,
   'monotonic': 0.0000001,
-  'sigma_jumps': 0.3}
+  'sigma_jumps': 0.3,
+  'fit1_brightest': 0.09}
 
 

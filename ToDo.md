@@ -4,6 +4,7 @@ BUGS:
 - Sometime infinite loop in parallelization
 
 PLOT:
+- BUG: in beam plot: histograms don't include top_candidates (check also general plot)
 - Cumulative SNR instead of counts/SNR
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
@@ -17,12 +18,14 @@ PLOT:
 - General plot, top-right: y-axis limits accordingly to actual data values
 - Single pulses: plot DM and Time instead of DM_c and Time_c
 - In beam plot: plot only SNR>6
+- In beam plot: numbers in white over the stars
 
 OUTPUT:
 - Folder with general best plots
 - Save events for each beam and close them
 
 ANALYSIS:
+- Better removal of affected time bins
 - Going below DM5
 - Substitute time in alignment and grouping with sample
 - Beam comparison: time range ~0.05s
