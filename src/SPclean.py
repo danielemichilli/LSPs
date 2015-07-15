@@ -20,7 +20,7 @@ import RFIexcision
 import LSPplot
 from Parameters import *
 
-def obs_events(folder,idL):
+def obs_events(folder,idL,load_events=True):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
@@ -32,7 +32,7 @@ def obs_events(folder,idL):
   #folders = [(0,0),(0,68)]
   
   #Create events, meta_data and pulses lists
-  pool = mp.Pool(mp.cpu_count()-1)
+  pool = mp.Pool(mp.cpu_count())
   results = [lists_creation((folder,idL,sap,beam,store)) for (sap,beam) in folders]
   pool.close()
   pool.join()
@@ -91,6 +91,7 @@ def lists_creation((folder,idL,sap,beam,store)):
     events.Time = Events.TimeAlign(events.Time,events.DM)
     
     #Group the events
+    events.sort(['DM','Time'],inplace=True)
     Events.Group(events)
     store.append('events',events,data_columns=['Pulse'])
     
@@ -105,8 +106,6 @@ def lists_creation((folder,idL,sap,beam,store)):
     pulses = pulses[pulses.Sigma >= 6.5]
     events = events[events.Pulse.isin(pulses.index)]
     RFIexcision.Pulse_Thresh(pulses,events)
-    pulses = pulses[pulses.Pulse<=RFI_percent]
-    events = events[events.Pulse.isin(pulses.index)]
 
   return pulses
 
@@ -136,15 +135,24 @@ def output(folder,idL,pulses,events,meta_data):
   meta_data = 0
   
       
+  #def Group_Clean(gb,n):
+    #try:
+      #return gb.get_group(n)
+    #except:
+      #return pd.DataFrame()
+    
+    
   def Group_Clean(gb,n):
-    try:
-      return gb.get_group(n)
-    except:
-      return pd.DataFrame()
+    data = [pd.DataFrame()]*4
+    for group in range(4):
+      try:
+        data[group] = gb[group].get_group(n)
+      except KeyError: pass
+    return data
   
   
-  pool = mp.Pool(mp.cpu_count()-1)
-  pool.map(LSPplot.plot, [(gb_puls.get_group(n),gb_rfi.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store,n) for n in gb_puls.indices.iterkeys()])
+  pool = mp.Pool(mp.cpu_count())
+  pool.map(LSPplot.plot, [(Group_Clean((gb_puls,gb_rfi,gb_md,gb_event),n),store,n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
   
