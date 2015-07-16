@@ -82,7 +82,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   for i in range(0,top_candidates.shape[0]):
     if top_candidates.Time.iloc[i]>100:
       ax1.annotate(i,xy=(top_candidates.Time.iloc[i]-60,top_candidates.DM.iloc[i]),horizontalalignment='right',verticalalignment='center')
-  hist = ax2.hist(pulses.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+  hist = ax2.hist(pulses.DM.tolist()+top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k')
   ax2.set_xscale('log')
   ax2.set_xlabel('DM (pc/cm3)')
   ax2.set_ylabel('Counts')
@@ -103,8 +103,9 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   for i in range(0,top_candidates.shape[0]):
     ax3.annotate(i,xy=(top_candidates.DM.iloc[i]/1.15,top_candidates.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center')
     
-  SNR = pulses.groupby('DM',sort=False).Sigma.sum()
-  ax4.plot(SNR.index,SNR,'k',linewidth=3.)
+  #SNR = pulses.groupby('DM',sort=False).Sigma.sum()
+  #ax4.plot(SNR.index,SNR,'k',linewidth=3.)
+  hist = ax4.hist(pulses.DM.tolist()+top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist()+top_candidates.DM.tolist())
   ax4.set_xscale('log')
   ax4.set_xlabel('DM (pc/cm3)')
   ax4.set_ylabel('Cumulative SNR')
@@ -220,13 +221,15 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
   ax1.axis([0,3600,5,550])
   ax1.set_yscale('log')
 
-  if not top_candidates.empty:
+  if not top_candidates.empty:  #PROBLEMA!!
     if len(top_candidates.DM.unique())>1:
-      ax2.hist(top_candidates.DM.tolist(),bins=300,histtype='stepfilled',color=u'k')
+      hist = ax2.hist(top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k')
       ax2.set_xscale('log')
       ax2.set_xlabel('DM (pc/cm3)')
       ax2.set_ylabel('Counts')
       ax2.set_xlim(5,550)
+      ax2.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
+      ax2.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
       
       ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=3,linewidths=[0.,],c=col_top)
       ax3.set_xscale('log')
@@ -236,8 +239,8 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
       ax3.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
       ax3.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
 
-      SNR = pulses.groupby('DM',sort=False).Sigma.sum()
-      ax4.plot(SNR.index,SNR,'k',linewidth=3.)
+      hist = ax4.hist(top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k',weights=top_candidates.Sigma.tolist())
+      #ax4.plot(SNR.index,SNR,'k',linewidth=3.)
       ax4.set_xscale('log')
       ax4.set_xlabel('DM (pc/cm3)')
       ax4.set_ylabel('Cumulative SNR')

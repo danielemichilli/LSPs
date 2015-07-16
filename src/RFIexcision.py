@@ -98,9 +98,7 @@ def Pulse_Thresh(pulses,events):
       np.mean(np.fabs( ev.Sigma - ev.Sigma.shift(-1) ) / ev.Sigma) < FILTERS['sigma_scatter'],
       (np.mean(np.abs(ev.Time - ev.Time.shift(1))) > FILTERS['cum_scatter']) |
       (np.std(ev.Time - ev.Time.shift(1)) > FILTERS['std_scatter']),
-      #np.std(ev.Sigma.nlargest(ev.Sigma.size*2/3)) < FILTERS['sigma_std_largest'], #probabilmente meglio chi2 su retta  #CONTROLLARE
-      (fit0(ev.DM,ev.Sigma) < FILTERS['flat_fit0']) |
-      (fit1(ev.DM,ev.Sigma) < FILTERS['flat_fit1']),
+      sigma_std_largest(ev) | fit0(ev.DM,ev.Sigma) | fit1(ev.DM,ev.Sigma),
       SNR_simmetric(ev) / ev.Sigma.max() > FILTERS['flat_SNR_simmetric'],
       bright_events_abs(ev) > FILTERS['bright_extremes_abs'],
       bright_events_rel(ev) > FILTERS['bright_extremes_rel'],
@@ -112,17 +110,29 @@ def Pulse_Thresh(pulses,events):
       fit1_brightest(ev) < FILTERS['fit1_brightest']))
   
   
+
+
+
+
+  def sigma_std_largest(ev):
+    sigma = ev.Sigma.nlargest(ev.Sigma.size*2/3)
+    if sigma.size<20: return 0
+    if sigma.max()<8: return np.std(sigma) < FILTERS['sigma_std_largest_weak']
+    else: return np.std(sigma) < FILTERS['sigma_std_largest']
   
 
   def fit0(x,y):
-    if y.max()<8: return 10
+    if x.size<20: return 0
     p = np.polyfit(x, y, 0)
-    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
+    if y.max()<8: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit0_weak']
+    else: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit0']
   
   def fit1(x,y):
-    if y.max()<8: return 10
+    if x.size<20: return 0
     p = np.polyfit(x, y, 1)
-    return np.sum((np.polyval(p, x) - y) ** 2) / (x.size-1)
+    if y.max()<8: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit1_weak']
+    else: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit1']
+  
   
   def pulse_simmetric(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
