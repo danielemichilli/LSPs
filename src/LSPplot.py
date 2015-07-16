@@ -105,7 +105,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
     
   #SNR = pulses.groupby('DM',sort=False).Sigma.sum()
   #ax4.plot(SNR.index,SNR,'k',linewidth=3.)
-  hist = ax4.hist(pulses.DM.tolist()+top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist()+top_candidates.DM.tolist())
+  hist = ax4.hist(pulses.DM.tolist()+top_candidates.DM.tolist(),bins=545,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist()+top_candidates.Sigma.tolist())
   ax4.set_xscale('log')
   ax4.set_xlabel('DM (pc/cm3)')
   ax4.set_ylabel('Cumulative SNR')
