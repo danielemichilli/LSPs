@@ -65,7 +65,7 @@ def Loader(folder,idL,sap,beam):
     
   except (IOError,pd.parser.CParserError):
     #Handle missing beams
-    logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist!")
+    logging.warning("SAP "+str(sap)+" - BEAM "+str(beam)+" doesn't exist")
 
   return events,meta_data
 

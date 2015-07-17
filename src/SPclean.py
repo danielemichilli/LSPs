@@ -13,6 +13,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import multiprocessing as mp
 import matplotlib.pyplot as plt
+import logging
 
 import Events
 import Pulses
@@ -64,12 +65,14 @@ def obs_events(folder,idL,load_events=True):
   #Store the data
  
   #Clean the events table
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
-  meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
-  
-  #Produce the output
-  output(folder,idL,pulses,events,meta_data)
-  #alerts()
+  if pulses.empty: logging.warning("Any reliable pulse detected!")
+  else:  
+    events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
+    meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
+    
+    #Produce the output
+    output(folder,idL,pulses,events,meta_data)
+    #alerts()
   
   return
 
@@ -85,27 +88,34 @@ def lists_creation((folder,idL,sap,beam,store)):
   pulses = pd.DataFrame()
 
   if not events.empty:
-    
-    #Correct for the time misalignment of events
-    events.sort(['DM','Time'],inplace=True)
-    events.Time = Events.TimeAlign(events.Time,events.DM)
-    
-    #Group the events
-    events.sort(['DM','Time'],inplace=True)
-    Events.Group(events)
-    store.append('events',events,data_columns=['Pulse'])
-    
-    #Apply the thresholds to the events
-    events = Events.Thresh(events)
+    try:
+      #Correct for the time misalignment of events
+      events.sort(['DM','Time'],inplace=True)
+      events.Time = Events.TimeAlign(events.Time,events.DM)
+      
+      #Group the events
+      events.sort(['DM','Time'],inplace=True)
+      Events.Group(events)
+      store.append('events',events,data_columns=['Pulse'])
+      
+      #Apply the thresholds to the events
+      events = Events.Thresh(events)
 
-    #Generate the pulses
-    events = events[events.Pulse>=0]
-    pulses = Pulses.Generator(events)
-    
-    #Apply RFI filters to the pulses
-    pulses = pulses[pulses.Sigma >= 6.5]
-    events = events[events.Pulse.isin(pulses.index)]
-    RFIexcision.Pulse_Thresh(pulses,events)
+      #Generate the pulses
+      events = events[events.Pulse>=0]
+      pulses = Pulses.Generator(events)
+      
+      #Apply RFI filters to the pulses
+      pulses = pulses[pulses.Sigma >= 6.5]
+      events = events[events.Pulse.isin(pulses.index)]
+      RFIexcision.Pulse_Thresh(pulses,events)
+      
+      events = 0
+      #alerts(pulses[pulses.Pulse==0])
+      
+    except:
+      logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
+      return pd.DataFrame()
 
   return pulses
 
@@ -187,6 +197,19 @@ def output(folder,idL,pulses,events,meta_data):
   pulses = 0
 
   return
+
+
+
+
+
+def alerts():
+  pulses.sort('DM',inplace=True)
+  pulses['diff_dm']=pulses.DM-pulses.DM.shift(1)
+  pulses.diff_dm.iloc[0]=pulses.diff_dm.iloc[1]
+  pulses['ind'] = np.arange(pulses.shape[0])
+  
+
+
 
 
 #def alerts():
