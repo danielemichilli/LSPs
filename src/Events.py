@@ -19,7 +19,7 @@ def Loader(folder,idL,sap,beam):
   path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
   events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
   
-  #events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
+  events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
 
   try:
     #Open the file

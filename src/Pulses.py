@@ -18,13 +18,15 @@ def Generator(events):
   pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration']]
   pulses['Pulse'] = 0
   pulses.Pulse = pulses.Pulse.astype(np.int8)
+  pulses['Candidate'] = -1
+  pulses.Candidate = pulses.Candidate.astype(np.int8)
   pulses['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
   pulses.dDM=pulses.dDM.astype(np.float32)
   pulses['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
   pulses.dTime=pulses.dTime.astype(np.float32)
   
-  pulses['dSample'] = (gb.Sample.max() - gb.Sample.min()) / 2.
-  pulses.dSample = pulses.dSample.astype(np.float32)  
+  #pulses['dSample'] = (gb.Sample.max() - gb.Sample.min()) / 2.
+  #pulses.dSample = pulses.dSample.astype(np.float32)  
   
   pulses['DM_c'] = (gb.DM.max() + gb.DM.min()) / 2.
   pulses.DM_c=pulses.DM_c.astype(np.float32)
@@ -59,4 +61,18 @@ def Generator(events):
 
   return pulses
   
+
+def Candidates(pulses):
+  cand_num = 0
+  candidates = np.zeros(pulses.shape[0])-1
+  diff_DM = np.abs(pulses.DM-pulses.DM.shift())
+  diff_DM.iloc[0] = diff_DM.iloc[1]
+    
+  for idx,diff in np.ndenumerate(diff_DM):
+    if diff > 0.5: cand_num += 1
+    candidates[idx] = cand_num
+    
+  pulses.Candidate = candidates
   
+  return
+        

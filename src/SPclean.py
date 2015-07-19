@@ -72,7 +72,7 @@ def obs_events(folder,idL,load_events=True):
     
     #Produce the output
     output(folder,idL,pulses,events,meta_data)
-    #alerts()
+    alerts()
   
   return
 
@@ -111,7 +111,9 @@ def lists_creation((folder,idL,sap,beam,store)):
       RFIexcision.Pulse_Thresh(pulses,events)
       
       events = 0
-      #alerts(pulses[pulses.Pulse==0])
+      pulses = pulses[pulses.Pulse < RFI_percent]
+      pulses.sort('DM',inplace=True)
+      Pulses.Candidates(pulses)
       
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
@@ -202,62 +204,13 @@ def output(folder,idL,pulses,events,meta_data):
 
 
 
-def alerts():
-  pulses.sort('DM',inplace=True)
-  pulses['diff_dm']=pulses.DM-pulses.DM.shift(1)
-  pulses.diff_dm.iloc[0]=pulses.diff_dm.iloc[1]
-  pulses['ind'] = np.arange(pulses.shape[0])
+def alerts(pulses,folder,idL):
+  
+  
+  
+  store = '{}{}/sp/files'.format(folder,idL)
+  os.makedirs('{}'.format(store))
   
 
 
-
-
-#def alerts():
-    
-  #def ALERT(sap,beam,dm,limit,counts,s_max,s_mean):
-    #file = open('{}{}/sp/ALERTS'.format(folder,idL),'a+')
-    #if not file.readlines():
-      #file.write('Pulsar candidates\n\n')
-      #file.write('SAP\tBEAM\tDM\tLimit\tCounts\tS_Max\tS_Mean\n')
-    #file.write('{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4}\t{5:.2f}\t{6:.2f}\n'.format(sap,beam,dm,limit,counts,s_max,s_mean))
-    #file.close()
-    #return
-  
-  
-  
-  
-  #data = pulses.loc[pulses.BEAM>12,['SAP','BEAM','DM','Sigma','Pulse']]
-  #data.DM = data.DM.round(decimals=1)
-  #noise_level = data.groupby(['SAP','BEAM','DM'],sort=False).Pulse.count()
-  #noise_level = noise_level.mean(level=['SAP','DM']) + 5.* noise_level.std(level=['SAP','DM'])   #5 sigmas tollerance
-  #noise_level.dropna(inplace=True)
-    
-  #beams = data.groupby(['SAP','BEAM'],sort=False)
-  #for ind,beam in beams:
-    #counts = beam.groupby(['SAP','DM'],sort=False).Pulse.count()
-    #counts = counts[(counts>noise_level.loc[counts.index])&(counts>5)]
-    #if not counts.empty:
-      #for i in counts.index.get_level_values('DM'):
-        #Sigma = beams.get_group((ind[0],ind[1]))
-        #Sigma = Sigma.Sigma[Sigma.DM==i]
-        #ALERT(ind[0],ind[1],i,noise_level.loc[ind[0],i],counts.loc[ind[0],i],Sigma.max(),Sigma.mean())
-      
-
-
-
-        
-        
-  
-  # ALERT su incoherent beams rispetto a cosa? media dei tre? media di piu' osservazioni?
-  
-  #noise_level = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM','DM'],sort=False).count().Pulse
-  #noise_level = noise_level.mean(level='DM')# + 3.* noise_level.std(level='DM')   #3 sigmas tollerance
-  #noise_level.dropna(inplace=True)
-  
-  #beams = pulses.loc[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False)
-  #for ind,beam in beams:
-    #counts = beam.groupby('DM',sort=False).Pulse.count()
-    #counts = counts[counts>noise_level.loc[counts.index]]
-    #if not counts.empty:
-      #ALERT(beam.SAP.iloc[0],beam.BEAM.iloc[0],counts.index.values)
 
