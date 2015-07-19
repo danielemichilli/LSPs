@@ -72,7 +72,7 @@ def obs_events(folder,idL,load_events=True):
     
     #Produce the output
     output(folder,idL,pulses,events,meta_data)
-    alerts()
+    alerts(pulses,folder,idL)
   
   return
 
@@ -205,12 +205,14 @@ def output(folder,idL,pulses,events,meta_data):
 
 
 def alerts(pulses,folder,idL):
-  
-  
-  
-  store = '{}{}/sp/files'.format(folder,idL)
+  store = '{}{}/sp/candidates'.format(folder,idL)
   os.makedirs('{}'.format(store))
   
+  def c(n,k):
+    return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
 
-
-
+  def diff(n,k):              
+    return 550*(100*c(n,k))**-1./(k-1)
+  
+  def p(n,k):              
+    return c(n,k)/1100.**(k-1)
