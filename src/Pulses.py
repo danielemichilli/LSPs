@@ -19,7 +19,7 @@ def Generator(events):
   pulses['Pulse'] = 0
   pulses.Pulse = pulses.Pulse.astype(np.int8)
   pulses['Candidate'] = -1
-  pulses.Candidate = pulses.Candidate.astype(np.int8)
+  pulses.Candidate = pulses.Candidate.astype(np.int16)
   pulses['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
   pulses.dDM=pulses.dDM.astype(np.float32)
   pulses['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
@@ -38,7 +38,7 @@ def Generator(events):
   #####   MODIFICARE   #########
   
   pulses = pulses[pulses.N_events>4]
-  
+    
   # Reduce the RFI and corrects for the time misalignment
   
   #data_idxmax = data.loc[gb.DM.idxmax()]
@@ -72,7 +72,7 @@ def Candidates(pulses):
     if diff > 0.5: cand_num += 1
     candidates[idx] = cand_num
     
-  pulses.Candidate = candidates
+  pulses.Candidate = candidates.astype(np.int16)
   
   return
         

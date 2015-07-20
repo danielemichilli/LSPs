@@ -15,17 +15,28 @@ import matplotlib as mpl
 
 from Parameters import *
 
+
+
+def alerts(pulses,folder):
+  file_name = os.path.dirname(folder) + '/Candidates.log'
+  cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
+  cumSNR = cumSNR[cumSNR.Sigma>=10.]
+  cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand')  
+  return
+
 def plot(((pulses,rfi,meta_data,events),folder,(sap,beam))):
   #pulses = gb[0]
   #rfi = gb[1]
   #meta_data = gb[2]
   #events = gb[3]
   #folder = gb[4]
-  obs = os.path.basename(folder)
+  obs = os.path.basename(os.path.dirname(os.path.dirname(folder)))
   #sap = gb[5][0]
   #beam = gb[5][1]
   
   if pulses.empty: return
+
+  alerts(pulses,folder)
   
   plt.clf()
 

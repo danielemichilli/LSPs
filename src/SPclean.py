@@ -72,7 +72,6 @@ def obs_events(folder,idL,load_events=True):
     
     #Produce the output
     output(folder,idL,pulses,events,meta_data)
-    alerts()
   
   return
 
@@ -169,8 +168,9 @@ def output(folder,idL,pulses,events,meta_data):
   pool.join()
   
   
+  
   #for n in gb_puls.indices.iterkeys():
-    #LSPplot.plot((gb_puls.get_group(n),gb_puls.get_group(n),gb_md.get_group(n),gb_event.get_group(n),store,n))
+    #LSPplot.plot((Group_Clean((gb_puls,gb_rfi,gb_md,gb_event),n),store,n))
   
 
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
@@ -200,17 +200,6 @@ def output(folder,idL,pulses,events,meta_data):
 
   return
 
-
-
-
-
-def alerts(pulses,folder,idL):
-  
-  
-  
-  store = '{}{}/sp/files'.format(folder,idL)
-  os.makedirs('{}'.format(store))
-  
 
 
 
