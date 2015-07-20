@@ -64,13 +64,15 @@ def Generator(events):
 
 def Candidates(pulses):
   cand_num = 0
-  candidates = np.zeros(pulses.shape[0])-1
-  diff_DM = np.abs(pulses.DM-pulses.DM.shift())
+  candidates = pulses.N_events
+  candidates.iloc[:] = -1
+  pulses_clean = pulses[pulses.Pulse==0]
+  diff_DM = np.abs(pulses_clean.DM-pulses_clean.DM.shift())
   diff_DM.iloc[0] = diff_DM.iloc[1]
-    
-  for idx,diff in np.ndenumerate(diff_DM):
+  
+  for idx,diff in diff_DM.iteritems():
     if diff > 0.5: cand_num += 1
-    candidates[idx] = cand_num
+    candidates.loc[idx] = cand_num
     
   pulses.Candidate = candidates.astype(np.int16)
   
