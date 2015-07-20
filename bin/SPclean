@@ -34,6 +34,7 @@ def parser():
   parser.add_argument('folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
+  parser.add_argument('-conf', help="Run over confirmation observations.",action='store_true')
   parser.add_argument('-load_DB', help="Load events from a DataBase instead than text files.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
@@ -49,6 +50,7 @@ def parser():
 
 
 def create_DB(folder,idL,args):
+  conf = args.conf
   
   ALERTS = 0
   if os.path.exists('{}{}/sp'.format(folder,idL)): 
@@ -85,7 +87,7 @@ def create_DB(folder,idL,args):
   
   try:
     time0 = time.clock()
-    SPclean.obs_events(folder,idL)
+    SPclean.obs_events(folder,idL,conf)
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.clock() - time0))
     

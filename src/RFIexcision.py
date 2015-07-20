@@ -28,6 +28,9 @@ def Pulse_Thresh(pulses,events):
   
   #Weak pulses
   pulses.Pulse[pulses.Sigma - gb.Sigma.min() <= 1.5] += RFI_percent
+  
+  #Pulses peaked at low DM
+  pulses.Pulse[pulses.DM <= 3.2] += RFI_percent
 
   #Time-aligned: dTime / pulses.dDM
   pulses.Pulse[pulses.dTime / pulses.dDM > FILTERS['aligned']] += 1

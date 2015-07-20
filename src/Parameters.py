@@ -7,7 +7,7 @@
 #############################
 
 
-DM_MIN = 5.  #pc/cm3
+DM_MIN = 3.  #pc/cm3
 SNR_MIN = 6.5
 #DURATION_MAX = 0.049152  #s
 

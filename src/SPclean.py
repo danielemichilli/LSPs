@@ -21,16 +21,21 @@ import RFIexcision
 import LSPplot
 from Parameters import *
 
-def obs_events(folder,idL,load_events=True):
+def obs_events(folder,idL,load_events=False,conf=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
 
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
 
-  folders = zip(range(3)*74,range(74)*3)
-  
-  #folders = [(0,0),(0,68)]
+  if conf:
+    logging.warning("A confirmation observation will be processed.")
+    saps = 1
+    beams = 128
+  else: 
+    saps = 3
+    beams = 74
+  folders = zip(range(saps)*beams,range(beams)*saps)
   
   #Create events, meta_data and pulses lists
   pool = mp.Pool(mp.cpu_count())

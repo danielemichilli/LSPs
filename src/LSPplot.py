@@ -21,7 +21,7 @@ def alerts(pulses,folder):
   file_name = os.path.dirname(folder) + '/Candidates.log'
   cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
   cumSNR = cumSNR[cumSNR.Sigma>=10.]
-  cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand')  
+  cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
   return
 
 def plot(((pulses,rfi,meta_data,events),folder,(sap,beam))):
@@ -87,7 +87,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   ax1.set_yscale('log')
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,5,550])
+  ax1.axis([0,3600,DM_MIN,550])
   
   mpl.rc('font', size=5)
   for i in range(0,top_candidates.shape[0]):
@@ -97,7 +97,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   ax2.set_xscale('log')
   ax2.set_xlabel('DM (pc/cm3)')
   ax2.set_ylabel('Counts')
-  ax2.set_xlim(5,550)
+  ax2.set_xlim(DM_MIN,550)
   ax2.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
   ax2.plot([141.7,141.7],[0,hist[0].max()+10],'k--')
   
@@ -107,7 +107,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   ax3.set_ylabel('SNR')
   ax3.set_xlabel('DM (pc/cm3)')
   limit = max(pulses.Sigma.max(),top_candidates.Sigma.max())
-  ax3.axis([5,550,pulses.Sigma.min(),limit+3.])
+  ax3.axis([DM_MIN,550,pulses.Sigma.min(),limit+3.])
   ax3.plot([40.5,40.5],[0,limit+3.],'k--')
   ax3.plot([141.7,141.7],[0,limit+3.],'k--')
   mpl.rc('font', size=3.5)
@@ -120,7 +120,7 @@ def sp_plot(pulses,rfi,meta_data,top_candidates,sap,beam,store,events=pd.DataFra
   ax4.set_xscale('log')
   ax4.set_xlabel('DM (pc/cm3)')
   ax4.set_ylabel('Cumulative SNR')
-  ax4.set_xlim(5,550)
+  ax4.set_xlim(DM_MIN,550)
   ax4.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
   ax4.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
 
@@ -229,7 +229,7 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
   ax1.plot([0,3600],[141.68,141.68],'k--')
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,5,550])
+  ax1.axis([0,3600,DM_MIN,550])
   ax1.set_yscale('log')
 
   if not top_candidates.empty:  #PROBLEMA!!
@@ -238,7 +238,7 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
       ax2.set_xscale('log')
       ax2.set_xlabel('DM (pc/cm3)')
       ax2.set_ylabel('Counts')
-      ax2.set_xlim(5,550)
+      ax2.set_xlim(DM_MIN,550)
       ax2.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
       ax2.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
       
@@ -246,7 +246,7 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
       ax3.set_xscale('log')
       ax3.set_ylabel('SNR')
       ax3.set_xlabel('DM (pc/cm3)')
-      ax3.axis([5,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
+      ax3.axis([DM_MIN,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
       ax3.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
       ax3.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
 
@@ -255,7 +255,7 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
       ax4.set_xscale('log')
       ax4.set_xlabel('DM (pc/cm3)')
       ax4.set_ylabel('Cumulative SNR')
-      ax4.set_xlim(5,550)
+      ax4.set_xlim(DM_MIN,550)
       ax4.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
       ax4.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
   
