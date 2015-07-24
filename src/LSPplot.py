@@ -13,7 +13,10 @@ import tarfile
 import os
 import matplotlib as mpl
 
+import Utilities
 from Parameters import *
+import Paths
+import RFIexcision
 
 
 
@@ -21,7 +24,8 @@ def alerts(pulses,folder):
   file_name = os.path.dirname(folder) + '/Candidates.log'
   cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
   cumSNR = cumSNR[cumSNR.Sigma>=10.]
-  cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
+  if not cumSNR.empty:
+    cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
   return
 
 def plot(((pulses,rfi,meta_data,events),folder,(sap,beam))):
@@ -155,10 +159,9 @@ def sp_shape(pulses,events,store,obs):
 
   mpl.rc('font',size=5)
  
-  for i in range(0,pulses.shape[0]):
+  for i,(idx,puls) in enumerate(pulses.iterrows()):
   
-    puls = pulses.iloc[i]
-    event = events.loc[events.Pulse==puls.name]
+    event = events[events.Pulse==idx]
 
     sig = (event.Sigma/event.Sigma.max()*5)**4
   
@@ -178,7 +181,6 @@ def sp_shape(pulses,events,store,obs):
   
  
   return
-
 
 
 
@@ -276,4 +278,46 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
   plt.clf()
   return
     
-      
+
+
+
+
+
+def DynamicSpectrum(pulses,idL,sap,beam):
+  if beam==12: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return
+  
+  pulses.Sample += ((pulses.Sample-6044)/(6044*2-1)+1).astype(np.int)
+  
+  fig = plt.figure()
+  mpl.rc('font',size=5)
+  
+  freq = np.arange(151,119,-1,dtype=np.float)
+  
+  for i,(idx,puls) in enumerate(pulses.iterrows()):
+    spectrum = read_fits(filename,puls.DM,puls.Sample)
+    
+    if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
+      pulses.Pulse += 1
+      continue
+    
+    ax = plt.subplot2grid((2,5),(i/5,i%5))
+    ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest')#,extent=[t0,t0+total_duration,119,151])
+    time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
+    ax.plot(time,freq,'w-')
+
+    ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
+
+  
+  # Set common labels
+  fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
+  fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
+  fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
+  
+  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
+  
+  return 
+
+

@@ -23,6 +23,7 @@ import StringIO
 
 import SPclean
 import Parameters
+import Paths
 
 def parser():
   #---------------------
@@ -31,7 +32,7 @@ def parser():
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
   parser.add_argument('idL', nargs=1, help='Observation ID')
-  parser.add_argument('folder', nargs=1, help='Path of the folder containig the observation')
+  parser.add_argument('-folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
   parser.add_argument('-conf', help="Run over confirmation observations.",action='store_true')
@@ -105,7 +106,9 @@ def main():
   args = parser()
   if not args.debug: warnings.filterwarnings("ignore")
   
-  folder = args.folder[0]
+
+  if args.folder: folder = args.folder[0] + '/'
+  else: folder = Paths.OBS_FOLDER + '/'
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it

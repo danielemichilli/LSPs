@@ -38,6 +38,7 @@ def Loader(folder,idL,sap,beam):
         
     data['Duration'] = data.Sampling*data.Downfact
     data.Duration = data.Duration.astype(np.float32)
+    data.Sample = data.Sample.astype(np.int32)
     
     data = data.ix[:,['DM','Sigma','Time','Duration','Sample']]
     

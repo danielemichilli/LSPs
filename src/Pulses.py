@@ -12,10 +12,10 @@ def Generator(events):
   #-------------------------------
     
   gb = events.groupby('Pulse',sort=False)
-  pulses = events.loc[events.index.isin(gb.Sigma.idxmax())]
+  pulses = events.loc[gb.Sigma.idxmax()]  
   pulses.index = pulses.Pulse
   pulses.index.name = None
-  pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration']]
+  pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration','Sample']]
   pulses['Pulse'] = 0
   pulses.Pulse = pulses.Pulse.astype(np.int8)
   pulses['Candidate'] = -1
@@ -64,7 +64,7 @@ def Generator(events):
 
 def Candidates(pulses):
   cand_num = 0
-  candidates = pulses.N_events
+  candidates = pulses.N_events.copy()
   candidates.iloc[:] = -1
   pulses_clean = pulses[pulses.Pulse==0]
   diff_DM = np.abs(pulses_clean.DM-pulses_clean.DM.shift())

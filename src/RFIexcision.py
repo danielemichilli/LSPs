@@ -307,3 +307,17 @@ def Compare_Beams(puls):
     
   return
 
+
+
+def Multimoment(ds,DM,duration):
+  freq = np.linspace(F_MIN,F_MAX,2592)
+  time = (4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES + DS_OFFSET).round().astype(np.int)
+  
+  spectrum = ds[100:]
+  spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+  
+  I1 = spectrum.size * np.sum(spectrum**2)
+  I2 = np.sum(spectrum)**2
+  
+  return (I1 - I2) / I2
+

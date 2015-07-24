@@ -1,8 +1,8 @@
-idL = 'L204719'
-sap = 1
-dm_min = 38.6 #18.95 77.1
-dm_max = 38.9 #19.04 77.7
-pulsar = 'J0301+20'
+idL = 'L341466'
+sap = 2
+dm_min = 73.85
+dm_max = 74.25
+pulsar = 'J1937+15'
 
 import pandas as pd
 import os
@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
         #375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
         #500,  625,  750,  812,  875,  937])
 
-folder = '/projects/0/lotaas/data/out/'
+folder = '/projects/0/lotaas/data/out/new'
 
 ra = np.zeros(61)
 dec = np.zeros(61)
