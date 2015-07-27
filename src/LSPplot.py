@@ -283,7 +283,7 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
 
 
 
-def DynamicSpectrum(pulses,idL,sap,beam):
+def DynamicSpectrum(pulses,idL,sap,beam,store):
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
@@ -316,7 +316,7 @@ def DynamicSpectrum(pulses,idL,sap,beam):
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
   fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
   
-  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   
   return 
 
