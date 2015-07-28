@@ -96,66 +96,66 @@ def Candidates(pulses):
 
 
 
-from scipy.optimize import curve_fit
+#from scipy.optimize import curve_fit
 
-# Define some test data which is close to Gaussian
-data = pulses.Sigma
+## Define some test data which is close to Gaussian
+#data = pulses.Sigma
 
-hist, bin_edges = numpy.histogram(data, density=True, bins=100)
-bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+#hist, bin_edges = numpy.histogram(data, density=True, bins=100)
+#bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
-# Define model function to be used to fit to the data above:
-def gauss(x, *p):
-    A, sigma = p
-    return A*numpy.exp(-x**2/(2.*sigma**2))
+## Define model function to be used to fit to the data above:
+#def gauss(x, *p):
+    #A, sigma = p
+    #return A*numpy.exp(-x**2/(2.*sigma**2))
 
-# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
-p0 = [7., 3.]
+## p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+#p0 = [7., 3.]
 
-coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
+#coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
 
-pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
+#pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
 
-norm.cdf(data,loc=0,scale=coeff[2])   #IMPROVE
-
-
-
-from scipy.optimize import curve_fit
-
-# Define some test data which is close to Gaussian
-data = pulses.DM
-
-hist, bin_edges = numpy.histogram(data, density=True, bins=1000)
-bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
-
-# Define model function to be used to fit to the data above:
-def gauss(x, *p):
-    A, sigma = p
-    return A*numpy.exp(-x**2/(2.*sigma**2))
-
-# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
-p0 = [0.3, 10.]
-
-coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
-
-pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
+#norm.cdf(data,loc=0,scale=coeff[2])   #IMPROVE
 
 
+
+#from scipy.optimize import curve_fit
+
+## Define some test data which is close to Gaussian
+#data = pulses.DM
+
+#hist, bin_edges = numpy.histogram(data, density=True, bins=1000)
+#bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+
+## Define model function to be used to fit to the data above:
+#def gauss(x, *p):
+    #A, sigma = p
+    #return A*numpy.exp(-x**2/(2.*sigma**2))
+
+## p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+#p0 = [0.3, 10.]
+
+#coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
+
+#pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
 
 
 
 
 
 
-# Get the fitted curve
-hist_fit = gauss(bin_centres, *coeff)
 
-plt.plot(bin_centres, hist, label='Test data')
-plt.plot(bin_centres, hist_fit, label='Fitted data')
 
-# Finally, lets get the fitting parameters, i.e. the mean and standard deviation:
-print 'Fitted mean = ', coeff[1]
-print 'Fitted standard deviation = ', coeff[2]
+## Get the fitted curve
+#hist_fit = gauss(bin_centres, *coeff)
 
-plt.show()
+#plt.plot(bin_centres, hist, label='Test data')
+#plt.plot(bin_centres, hist_fit, label='Fitted data')
+
+## Finally, lets get the fitting parameters, i.e. the mean and standard deviation:
+#print 'Fitted mean = ', coeff[1]
+#print 'Fitted standard deviation = ', coeff[2]
+
+#plt.show()
 

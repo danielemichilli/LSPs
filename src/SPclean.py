@@ -210,8 +210,19 @@ def alerts(pulses,folder,idL):
   def c(n,k):
     return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
 
-  def diff(n,k):              
-    return 550*(100*c(n,k))**-1./(k-1)
+  #def diff(n,k):              
+    #return 550*(100*c(n,k))**-1./(k-1)
   
   def p(n,k):              
-    return c(n,k)/1100.**(k-1)
+    return c(n,k)/(9000./span)**(k-1)  #span: number of DMs
+  
+  def span(n,k):
+    return 9000.*(p/c(n,k)**(1./(k-1)))  #span: number of DMs
+  
+  
+  
+  
+  
+  
+  
+  
