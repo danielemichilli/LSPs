@@ -63,16 +63,99 @@ def Generator(events):
   
 
 def Candidates(pulses):
-  cand_num = 0
-  candidates = np.zeros(pulses.shape[0])-1
-  diff_DM = np.abs(pulses.DM-pulses.DM.shift())
-  diff_DM.iloc[0] = diff_DM.iloc[1]
-    
-  for idx,diff in np.ndenumerate(diff_DM):
-    if diff > 0.5: cand_num += 1
-    candidates[idx] = cand_num
-    
-  pulses.Candidate = candidates
+  pulses.sort('Sigma',inplace=True)
+  pulses.DM = pulses.DM.astype(np.float64).round(2)
   
-  return
-        
+  
+  
+  #Excellent
+  top_count = pulses.groupby('DM')['Sigma'].count()
+  top_sum = pulses.groupby('DM')['Sigma'].sum()
+
+  cand = pd.DataFrame(columns=['DM','Sigma','N_pulses'])
+  i = 0
+
+  while not top_sum[top_sum!=0].empty:
+    DM = top_sum.argmax()
+    Sigma = top_sum.loc[DM-0.5:DM+0.5].sum()
+    N_pulses = top_count.loc[DM-0.5:DM+0.5].count()
+    cand.loc[i] = ([DM,Sigma,N_pulses])
+    pulses.Candidate[(pulses.DM>=DM-0.5)&(pulses.DM<=DM-0.5)] = i
+    top_count.loc[DM-0.5:DM+0.5] = 0
+    top_sum.loc[DM-0.5:DM+0.5] = 0
+    i += 1
+    
+  return 
+
+
+  #Poor
+  
+
+
+
+
+
+
+from scipy.optimize import curve_fit
+
+# Define some test data which is close to Gaussian
+data = pulses.Sigma
+
+hist, bin_edges = numpy.histogram(data, density=True, bins=100)
+bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, sigma = p
+    return A*numpy.exp(-x**2/(2.*sigma**2))
+
+# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+p0 = [7., 3.]
+
+coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
+
+pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
+
+norm.cdf(data,loc=0,scale=coeff[2])   #IMPROVE
+
+
+
+from scipy.optimize import curve_fit
+
+# Define some test data which is close to Gaussian
+data = pulses.DM
+
+hist, bin_edges = numpy.histogram(data, density=True, bins=1000)
+bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, sigma = p
+    return A*numpy.exp(-x**2/(2.*sigma**2))
+
+# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+p0 = [0.3, 10.]
+
+coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0, maxfev=100000)
+
+pr = norm.ppf(1-1./(100*data.size),loc=0,scale=coeff[1])
+
+
+
+
+
+
+
+
+# Get the fitted curve
+hist_fit = gauss(bin_centres, *coeff)
+
+plt.plot(bin_centres, hist, label='Test data')
+plt.plot(bin_centres, hist_fit, label='Fitted data')
+
+# Finally, lets get the fitting parameters, i.e. the mean and standard deviation:
+print 'Fitted mean = ', coeff[1]
+print 'Fitted standard deviation = ', coeff[2]
+
+plt.show()
+

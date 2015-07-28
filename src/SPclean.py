@@ -112,7 +112,6 @@ def lists_creation((folder,idL,sap,beam,store)):
       
       events = 0
       pulses = pulses[pulses.Pulse < RFI_percent]
-      pulses.sort('DM',inplace=True)
       Pulses.Candidates(pulses)
       
     except:
