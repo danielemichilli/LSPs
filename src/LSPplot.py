@@ -12,6 +12,7 @@ import numpy as np
 import tarfile
 import os
 import matplotlib as mpl
+#import presto
 
 import Utilities
 from Parameters import *
@@ -283,13 +284,19 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
 
 
 
-def DynamicSpectrum(pulses,idL,sap,beam,store):
+def DynamicSpectrum(pulses,idL,sap,beam,metadata,store):
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return
   
-  pulses.Sample += ((pulses.Sample-6044)/(6044*2-1)+1).astype(np.int)
+    
+  v1 = presto.get_baryv(metadata.ra,metadata.dec,metadata.mjd,0,obs='LF')
+  v2 = presto.get_baryv(metadata.ra,metadata.dec,metadata.mjd,0,obs='LF')
+  v = (v1 + v2) / 2.
+  bin_idx = np.int(np.round(1./v))
+  sample = pulses.Sample + pulses.Sample/bin_idx
+  
   
   fig = plt.figure()
   mpl.rc('font',size=5)
@@ -297,7 +304,7 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):
   freq = np.arange(151,119,-1,dtype=np.float)
   
   for i,(idx,puls) in enumerate(pulses.iterrows()):
-    spectrum = read_fits(filename,puls.DM,puls.Sample)
+    spectrum = read_fits(filename,puls.DM,sample)
     
     if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
       pulses.Pulse += 1
@@ -316,7 +323,7 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
   fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
   
-  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+  #plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   
   return 
 
