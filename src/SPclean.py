@@ -14,6 +14,7 @@ mpl.use('Agg')
 import multiprocessing as mp
 import matplotlib.pyplot as plt
 import logging
+import math
 
 import Events
 import Pulses
@@ -207,6 +208,12 @@ def alerts(pulses,folder,idL):
   store = '{}{}/sp/candidates'.format(folder,idL)
   os.makedirs('{}'.format(store))
   
+  num = pulses.groupby(['SAP','BEAM'])['Pulse'].count().groupby(level=0).mean()
+  span = 10000.*p/c(num,2)
+  
+  p=1/20 #check!
+  
+  
   def c(n,k):
     return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
 
@@ -219,7 +226,7 @@ def alerts(pulses,folder,idL):
   def span(n,k):
     return 9000.*(p/c(n,k)**(1./(k-1)))  #span: number of DMs
   
-  
+  return
   
   
   

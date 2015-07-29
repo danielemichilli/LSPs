@@ -63,6 +63,9 @@ def Generator(events):
   
 
 def Candidates(pulses):
+  pulses.groupby(['SAP','BEAM'])['Pulse'].count().groupby(level=0).mean()
+  
+  
   pulses.sort('Sigma',inplace=True)
   pulses.DM = pulses.DM.astype(np.float64).round(2)
   
