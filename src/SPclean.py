@@ -209,7 +209,7 @@ def alerts(pulses,folder,idL):
   os.makedirs('{}'.format(store))
   
   num = pulses.groupby(['SAP','BEAM'])['Pulse'].count().groupby(level=0).mean()
-  span = 10000.*p/c(num,2)
+  span = 54500.*0.05/c(num,2)
   
   p=1/20 #check!
   
@@ -224,7 +224,7 @@ def alerts(pulses,folder,idL):
     return c(n,k)/(9000./span)**(k-1)  #span: number of DMs
   
   def span(n,k):
-    return 9000.*(p/c(n,k)**(1./(k-1)))  #span: number of DMs
+    return 54500.*(10./222./c(n,k)**(1./(k-1)))  #span: number of DMs
   
   return
   
