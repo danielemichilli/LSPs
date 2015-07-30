@@ -284,44 +284,61 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
 
 
 
-def DynamicSpectrum(pulses,idL,sap,beam,metadata,store):
+def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses quando si chiama la funzione!
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return
   
-    
-  v1 = presto.get_baryv(metadata.ra,metadata.dec,metadata.mjd,0,obs='LF')
-  v2 = presto.get_baryv(metadata.ra,metadata.dec,metadata.mjd,0,obs='LF')
-  v = (v1 + v2) / 2.
+  
+  pulses.Sample[pulses.DM>141.71] *= 4
+  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
+  
+  #controllare che questo vada dopo downsampling correction!
+  header = Utilities.read_header(filename)
+  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   bin_idx = np.int(np.round(1./v))
-  sample = pulses.Sample + pulses.Sample/bin_idx
+  pulses.Sample += pulses.Sample/bin_idx
   
   
-  fig = plt.figure()
-  mpl.rc('font',size=5)
   
-  freq = np.arange(151,119,-1,dtype=np.float)
+  #fig = plt.figure()
+  #mpl.rc('font',size=5)
   
-  for i,(idx,puls) in enumerate(pulses.iterrows()):
-    spectrum = read_fits(filename,puls.DM,sample)
-    
-    if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
-      pulses.Pulse += 1
-      continue
-    
-    ax = plt.subplot2grid((2,5),(i/5,i%5))
-    ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest')#,extent=[t0,t0+total_duration,119,151])
-    time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
-    ax.plot(time,freq,'w-')
+  freq = np.arange(151,118,-1,dtype=np.float)
+  offset = 300
+  
+  #for i,(idx,puls) in enumerate(pulses.iterrows()):
+    #spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+    ##if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
+      ##pulses.Pulse += 1
+      ##continue
+    #extent = [bin_start*RES,bin_end*RES,119,151]
+    #ax = plt.subplot2grid((2,5),(i/5,i%5))
+    #ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+    #time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
+    #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+    ##ax.plot((time[0],time[0]+puls.Sample*RES),(freq[0],freq[0]),'r',(time[-1],time[-1]+puls.Sample*RES),(freq[-1],freq[-1]),'r')
+    #ax.axis(extent)
+    #ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
 
-    ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
+
+
+  puls = pulses
+  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+  extent = [bin_start*RES,bin_end*RES,119,151]
+  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
+  plt.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+  plt.axis(extent)
+  
 
   
   # Set common labels
-  fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
-  fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
-  fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
+  #fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
+  #fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
+  #fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
   
   #plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   

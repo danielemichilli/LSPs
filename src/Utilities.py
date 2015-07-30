@@ -1,8 +1,8 @@
-#import filterbank
-#import os
-#import numpy as np
-#import sigproc
-#import pyfits
+import filterbank
+import os
+import numpy as np
+import sigproc
+import pyfits
 
 from Parameters import *
 
@@ -42,19 +42,23 @@ def read_filterbank(filename,DM,bin_start):
  
 
 
-def read_fits(filename,DM,bin_start):
-  bin_start = int(bin_start)
+def read_fits(filename,DM,bin_start,offset):
+  bin_start = np.int(bin_start)
   fits = pyfits.open(filename,memmap=True)
   
-  N_channels = fits['SUBINT'].header['NCHAN']
-  N_spectra = fits['SUBINT'].header['NSBLK']
+  header = fits['SUBINT'].header
+  
+  N_channels = header['NCHAN']
+  N_spectra = header['NSBLK']
 
-  bin_start -= 100
-  bin_end = bin_start + DM2delay(DM) + 100
+  bin_start -= offset
+  bin_end = bin_start + DM2delay(DM) + offset
   
   subint_start = bin_start/N_spectra
   subint_end = bin_end/N_spectra+1
   subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
+  
+  fits.close()
 
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
   
@@ -62,9 +66,20 @@ def read_fits(filename,DM,bin_start):
   ind = np.arange(0,2592,16)
   subint = np.delete(subint,ind,axis=1)
   
-  return subint
+  return subint, bin_start, bin_end
  
  
+
+def read_header(filename):
+  name, ext = os.path.splitext(filename)
+  if ext == '.fits': 
+    fits = pyfits.open(filename,memmap=True)
+    header = fits['SUBINT'].header + fits['PRIMARY'].header
+    fits.close()
+    return header
+  elif ext == '.fil':
+    return filterbank.read_header(filename)[0]
+  else: return None
 
 
 
