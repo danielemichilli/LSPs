@@ -14,6 +14,7 @@ mpl.use('Agg')
 import multiprocessing as mp
 import matplotlib.pyplot as plt
 import logging
+import math
 
 import Events
 import Pulses
@@ -104,7 +105,6 @@ def lists_creation((folder,idL,sap,beam,store)):
       
       events = 0
       pulses = pulses[pulses.Pulse < RFI_percent]
-      pulses.sort('DM',inplace=True)
       Pulses.Candidates(pulses)
       
     except:
@@ -187,4 +187,41 @@ def output_pointing(pulses,folder,idL):
                                store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
 
   return
+
+
+
+
+
+
+
+
+def alerts(pulses,folder,idL):
+  store = '{}{}/sp/candidates'.format(folder,idL)
+  os.makedirs('{}'.format(store))
+  
+  num = pulses.groupby(['SAP','BEAM'])['Pulse'].count().groupby(level=0).mean()
+  span = 54500.*0.05/c(num,2)
+  
+  p=1/20 #check!
+  
+  
+  def c(n,k):
+    return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
+
+  #def diff(n,k):              
+    #return 550*(100*c(n,k))**-1./(k-1)
+  
+  def p(n,k):              
+    return c(n,k)/(9000./span)**(k-1)  #span: number of DMs
+  
+  def span(n,k):
+    return 54500.*(10./222./c(n,k)**(1./(k-1)))  #span: number of DMs
+  
+  return
+  
+  
+  
+  
+  
+  
 

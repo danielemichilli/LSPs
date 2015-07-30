@@ -16,6 +16,7 @@ F_MIN = 119.43  #MHz
 F_MAX = F_MIN + 31.64  #MHz
 RES = 491.52e-6  #s
 
+
 #Grouping
 ERR_FLOAT = 0.001  #Error on float numbers
 STEPS_GROUP = 20  #Tollerance on the number of DM steps without a candidate
