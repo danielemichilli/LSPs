@@ -18,8 +18,8 @@ def Generator(events):
   pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration','Sample']]
   pulses['Pulse'] = 0
   pulses.Pulse = pulses.Pulse.astype(np.int8)
-  pulses['Candidate'] = -1
-  pulses.Candidate = pulses.Candidate.astype(np.int16)
+  #pulses['Candidate'] = -1
+  #pulses.Candidate = pulses.Candidate.astype(np.int16)
   pulses['dDM'] = (gb.DM.max() - gb.DM.min()) / 2.
   pulses.dDM=pulses.dDM.astype(np.float32)
   pulses['dTime'] = (gb.Time.max() - gb.Time.min()) / 2.
@@ -35,30 +35,8 @@ def Generator(events):
   pulses['N_events'] = gb.DM.count()
   pulses.N_events = pulses.N_events.astype(np.int16)
 
-  #####   MODIFICARE   #########
-  
   pulses = pulses[pulses.N_events>4]
-    
-  # Reduce the RFI and corrects for the time misalignment
   
-  #data_idxmax = data.loc[gb.DM.idxmax()]
-  #data_idxmax.index = data_idxmax.Pulse
-  #data_idxmin = data.loc[gb.DM.idxmin()]
-  #data_idxmin.index = data_idxmin.Pulse  
-  #Sigma_DM_max = data_idxmax.Sigma
-  #Sigma_DM_min = data_idxmin.Sigma
-  #Time_DM_max = data_idxmax.Time
-  #Time_DM_min = data_idxmin.Time
-  
-  #Sigma_min = gb.Sigma.min()
-  
-
-  #RFIexcision.IB_Pulse_Thresh(pulses,gb,events,Sigma_min)
-  #RFIexcision.Pulse_Thresh(pulses,gb,events,Sigma_min)
-  
-  #Clean the pulses table
-  #pulses = pulses[pulses.Pulse <= RFI_percent]
-
   return pulses
   
 
