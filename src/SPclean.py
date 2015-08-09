@@ -27,8 +27,6 @@ def obs_events(folder,idL,load_events=False,conf=False):
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
 
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
-
   if conf:
     logging.warning("A confirmation observation will be processed.")
     saps = 1
@@ -40,15 +38,42 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   #Create events, meta_data and pulses lists
   pool = mp.Pool()
-  results = [lists_creation((folder,idL,sap,beam,store)) for (sap,beam) in folders]
+  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
   pool.close()
   pool.join()
-  
+
   pulses = pd.concat(results)
   results = 0
+  
+  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
+  for file in os.listdir('{}{}/sp'.format(folder,idL)):
+    if file.endswith('.tmp'):
+      events = pd.read_hdf('{}{}/sp/{}'.format(folder,idL,file),'events')
+      store.append('events',events,data_columns=['Pulse'])
+      events = 0
+      meta_data = pd.read_hdf('{}{}/sp/{}'.format(folder,idL,file),'meta_data')
+      store.append('meta_data',meta_data)
+      meta_data = 0
+      os.remove('{}{}/sp/{}'.format(folder,idL,file))
+  store.close()
+  
+      
+  #store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
+  #store.append('meta_data',meta_data)
+  #store.append('events',events,data_columns=['Pulse'])
+  #store.close()
+  
+  
+  if pulses.empty: 
+    logging.warning("No pulse detected!")
+    return
   pulses.sort_index(inplace=True)
 
+  #cands = candidates(pulses,folders)
+
+  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
+  #store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
     
   #Compares pulses in different beams
@@ -56,10 +81,12 @@ def obs_events(folder,idL,load_events=False,conf=False):
 
   #Clean the pulses table
   #pulses = pulses[pulses.Pulse <= RFI_percent]
- 
-  #Clean the events table
+  
+  
+  
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
-  else:  
+  else:
+    
     events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     
@@ -72,16 +99,14 @@ def obs_events(folder,idL,load_events=False,conf=False):
 
 
 
-def lists_creation((folder,idL,sap,beam,store)):
+def lists_creation((folder,idL,sap,beam)):
 
   #Import the events
   events, meta_data = Events.Loader(folder,idL,sap,beam)
-  store.append('meta_data',meta_data)
-  
   pulses = pd.DataFrame()
-
+  
   if not events.empty:
-    try:
+    #try:
       #Correct for the time misalignment of events
       events.sort(['DM','Time'],inplace=True)
       events.Time = Events.TimeAlign(events.Time,events.DM)
@@ -89,27 +114,32 @@ def lists_creation((folder,idL,sap,beam,store)):
       #Group the events
       events.sort(['DM','Time'],inplace=True)
       Events.Group(events)
-      store.append('events',events,data_columns=['Pulse'])
       
+      events.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'events',mode='w')
+      meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
+      
+      #store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
+      #store.append('meta_data',meta_data)
+      #store.append('events',events,data_columns=['Pulse'])
+      #store.close()
+
       #Apply the thresholds to the events
       events = Events.Thresh(events)
 
       #Generate the pulses
       events = events[events.Pulse>=0]
       pulses = Pulses.Generator(events)
-      
+
       #Apply RFI filters to the pulses
       pulses = pulses[pulses.Sigma >= 6.5]
       events = events[events.Pulse.isin(pulses.index)]
       RFIexcision.Pulse_Thresh(pulses,events)
-      
+
       events = 0
       pulses = pulses[pulses.Pulse < RFI_percent]
-      Pulses.Candidates(pulses)
-      
-    except:
+
+    #except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
-      return pd.DataFrame()
 
   return pulses
 
@@ -120,7 +150,7 @@ def lists_creation((folder,idL,sap,beam,store)):
 
 def output(folder,idL,pulses,events,meta_data):
   pulses.sort('Sigma',ascending=False,inplace=True)
-
+  
   store = '{}{}/sp/beam_plots'.format(folder,idL)
   
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
@@ -129,21 +159,22 @@ def output(folder,idL,pulses,events,meta_data):
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
     os.makedirs('{}/{}'.format(store,name))
     
-  pool = mp.Pool()
-  pool.map(output_beams, [(pulses,events,meta_data,store,n) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()  
+  #pool = mp.Pool()
+  #pool.map(output_beams, [(pulses,events,meta_data,store,idL,n) for n in gb_puls.indices.iterkeys()])
+  #pool.close()
+  #pool.join()  
   
-  #for n in gb_puls.indices.iterkeys():
-    #LSPplot.plot((Group_Clean((gb_puls,gb_rfi,gb_md,gb_event),n),store,n))
+  for n in gb_puls.indices.iterkeys():
+    output_beams((pulses,events,meta_data,store,idL,n))
   
+  pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
   
   return
 
 
 
-def output_beams((pulses,meta_data,store,(sap,beam))):
+def output_beams((pulses,events,meta_data,folder,obs,(sap,beam))):
   
   top = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==0)]
   good = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==1)]
@@ -156,7 +187,7 @@ def output_beams((pulses,meta_data,store,(sap,beam))):
     
   else:
     LSPplot.sp_shape(top.head(10),events,'{}/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
-    LSPplot.sp_plot(top,rfi,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+    LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
   
   return
   
@@ -178,13 +209,12 @@ def output_pointing(pulses,folder,idL):
     columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
     header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
+  puls = pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30)
+  if not puls.empty: LSPplot.obs_top_candidates(puls,store='{}{}/sp/files/inc_top_candidates.png'.format(folder,idL),incoherent=True)
   
-  LSPplot.obs_top_candidates(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),\
-                             store='{}{}/sp/files/inc_top_candidates.png'.format(folder,idL),incoherent=True)
-
   for sap in pulses.SAP.unique():
-    LSPplot.obs_top_candidates(pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10),\
-                               store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
+    puls = pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10)
+    if not puls.empty: LSPplot.obs_top_candidates(puls,store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
 
   return
 
@@ -193,35 +223,49 @@ def output_pointing(pulses,folder,idL):
 
 
 
+def candidates(pulses,folders):
+  #Create candidates lists
+  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  pool = mp.Pool()
+  results = pool.map(Pulses.Repeated_candidates, [(pulses,sap,beam) for (sap,beam) in folders])
+  pool.close()
+  pool.join()
+  #Pulses.Repeated_candidates(pulses)
+  
+  pulses.Candidate = pd.concat(results)
+  results = 0
+  
+  #Unify the same repeated candidates in different beams
+  pulses.sort('DM',inplace=True)
+  for sap in range(3):
+    cands_SAP = pulses[(pulses.SAP==sap)&(pulses.Candidate>0)]
+    diff_DM = np.abs(cands_SAP.DM-cands_SAP.DM.shift())
+    diff_DM.iloc[0] = diff_DM.iloc[1]
+    diff_DM -= 0.5
+    diff_DM = diff_DM.round()
+    cands_SAP = cands_SAP.Candidate
+    cands_SAP[diff_DM<.1] = np.nan
+    cands_SAP.fillna(method='pad',inplace=True)
+    pulses.Candidate.loc[cands_SAP.index] = cands_SAP
+    
+    
+  
+  
+  
+  #si puo' aggiungere una funzione per non avere lo stesso unique candidate in beams differenti
+  pulses.sort('Sigma',ascending=False,inplace=True)
+  cands_unique = pulses[(pulses.Pulse==0)&(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby('N_events')['Sigma'].nlargest(4)
+  pulses.Candidate.loc[cands_unique.index.get_level_values(1)] = np.arange(cands_unique.shape[0])
+  
+  cands = candidates_generator(pulses[pulses.Candidate>=0])
+  
+  return cands
 
 
-def alerts(pulses,folder,idL):
-  store = '{}{}/sp/candidates'.format(folder,idL)
-  os.makedirs('{}'.format(store))
-  
-  num = pulses.groupby(['SAP','BEAM'])['Pulse'].count().groupby(level=0).mean()
-  span = 54500.*0.05/c(num,2)
-  
-  p=1/20 #check!
-  
-  
-  def c(n,k):
-    return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
+def candidates_generator(pulses):
+  #Prende max N_pulses e mean DM tra tutti i beams, non so se sia l'opzione migliore
+  cands = pulses.groupby(['Candidate','BEAM']).agg({'Sigma':np.sum,'SAP':np.size,'DM':np.mean}).groupby(level=0).agg({'Sigma':np.max,'SAP':np.max,'DM':np.mean})
+  cands.index.name = None
+  cands.rename(columns={'SAP': 'N_pulses'}, inplace=True)
 
-  #def diff(n,k):              
-    #return 550*(100*c(n,k))**-1./(k-1)
-  
-  def p(n,k):              
-    return c(n,k)/(9000./span)**(k-1)  #span: number of DMs
-  
-  def span(n,k):
-    return 54500.*(10./222./c(n,k)**(1./(k-1)))  #span: number of DMs
-  
-  return
-  
-  
-  
-  
-  
-  
 

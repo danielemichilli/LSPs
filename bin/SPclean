@@ -88,7 +88,7 @@ def create_DB(folder,idL,args):
   
   try:
     time0 = time.clock()
-    SPclean.obs_events(folder,idL,conf)
+    SPclean.obs_events(folder,idL,conf=conf)
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.clock() - time0))
     

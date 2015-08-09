@@ -28,7 +28,7 @@ SIGMA_TOLL_IB = 2
 RFI_percent = 5
 PULS_LENGHT = 15
 
-DS_OFFSET = 100 #bins
+DS_OFFSET = 100000 #bins
 
 
 FILTERS = {

@@ -1,8 +1,8 @@
-import filterbank
-import os
-import numpy as np
-import sigproc
-import pyfits
+#import filterbank
+#import os
+#import numpy as np
+#import sigproc
+#import pyfits
 
 from Parameters import *
 
@@ -112,3 +112,18 @@ def time2bin(time,DM):
   return time/RES
 
 
+def span(n,k):
+  return 54500.*(10./222./c(n,k)**(1./(k-1)))  #span: number of DMs
+  
+def c(n,k):
+  return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
+
+
+def color_range(data):
+  #Define the color range
+  clean = data[data>0]
+  min_element = clean.size/20
+  max_element = clean.size*9/10
+  vmin = np.partition(clean, min_element, axis=None)[min_element]   #invece di subint[subint>0] possibile subint[:-(num_rows/down_fact)]
+  vmax = np.partition(clean, max_element, axis=None)[max_element]
+  return vmin,vmax

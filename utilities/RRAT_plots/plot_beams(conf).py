@@ -1,8 +1,8 @@
 idL = 'L339734'
 
-dm_min = 18.5 #18.95 77.1
-dm_max = 19.5 #19.04 77.7
-pulsar = ''
+dm_min = 15.61 #18.95 77.1
+dm_max = 15.71 #19.04 77.7
+pulsar = 'J0301+20'
 
 import pandas as pd
 import os
@@ -54,8 +54,8 @@ for beam in range(0,128):
 
 
 
-pulses = pd.read_hdf('SinglePulses.hdf5',idL+'_pulses')
-pulses = pulses[(pulses.SAP==sap)&(pulses.Pulse>0)&(pulses.Pulse<4)&(pulses.N_events>4)&(pulses.DM>dm_min)&(pulses.DM<dm_max)]
+pulses = pd.read_hdf('SinglePulses.hdf5','pulses')
+pulses = pulses[(pulses.SAP==sap)&(pulses.Pulse>=0)&(pulses.Pulse<=2)&(pulses.DM>dm_min)&(pulses.DM<dm_max)]
 
 beams = pulses.groupby('BEAM').Sigma.sum()
 

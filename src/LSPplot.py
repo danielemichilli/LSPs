@@ -31,9 +31,7 @@ def alerts(pulses,folder):
 
 
 
-
-
-def sp_plot(pulses,rfi,meta_data,sap,beam,store,events=pd.DataFrame()):
+def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   plt.clf()
 
   col = pulses.Sigma
@@ -41,8 +39,6 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store,events=pd.DataFrame()):
   fill = u'b'
   square = u'g'
     
-  sig = (pulses.Sigma/1.5)**3
-
   fig = plt.figure()
   
   ax1 = plt.subplot2grid((3,4),(1,0),colspan=4,rowspan=2)
@@ -51,120 +47,51 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store,events=pd.DataFrame()):
   ax4 = plt.subplot2grid((3,4),(0,2))
   ax5 = plt.subplot2grid((3,4),(0,3))
 
-  ax1.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,], vmin=5, vmax=10)    
-  ax1.scatter(rfi.Time, rfi.DM, s=5., c=u'k', marker='+', linewidths=[0.4,])
-      
-  ax1.plot([0,3600],[40.48,40.48],'k--')
-  ax1.plot([0,3600],[141.68,141.68],'k--')
-    
-  ax1.set_yscale('log')
-  ax1.set_xlabel('Time (s)')
-  ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,DM_MIN,550])
-  
-  top = pulses.iloc[:10]
-  mpl.rc('font', size=5)
-  for i in range(0,top.shape[0]):
-    ax1.annotate(i,xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='w')
-  hist = ax2.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550))
-  ax2.set_xscale('log')
-  ax2.set_xlabel('DM (pc/cm3)')
-  ax2.set_ylabel('Counts')
-  ax2.set_xlim(DM_MIN,550)
-  ax2.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
-  ax2.plot([141.7,141.7],[0,hist[0].max()+10],'k--')
-  
-  ax3.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=5,vmax=10)
-  ax3.set_xscale('log')
-  ax3.set_ylabel('SNR')
-  ax3.set_xlabel('DM (pc/cm3)')
-  ax3.plot([40.5,40.5],[0,limit+3.],'k--')
-  ax3.plot([141.7,141.7],[0,limit+3.],'k--')
-  mpl.rc('font', size=3.5)
-  for i in range(0,top.shape[0]):
-    ax3.annotate(i,xy=(top.DM.iloc[i]/1.15,top.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center')
-  
-  hist = ax4.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550))
-  ax4.set_xscale('log')
-  ax4.set_xlabel('DM (pc/cm3)')
-  ax4.set_ylabel('Cumulative SNR')
-  ax4.set_xlim(DM_MIN,550)
-  ax4.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
-  ax4.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
-
-  mpl.rc('font', size=5)
-  ax5.axis([0,10,0,7])
-  ax5.annotate('File: '+meta_data.File.iloc[0], xy=(0,6))
-  ax5.annotate('Telescope: '+meta_data.Telescope.iloc[0], xy=(0,5))
-  ax5.annotate('Instrument: '+meta_data.Instrument.iloc[0], xy=(0,4))
-  ax5.annotate('RA: '+meta_data.RA.iloc[0], xy=(0,3))
-  ax5.annotate('DEC: '+meta_data.DEC.iloc[0], xy=(0,2))
-  ax5.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,1))
-  ax5.axis('off')
-
-  ax1.tick_params(which='both',direction='out')
-  ax2.tick_params(which='both',direction='out')
-  ax3.tick_params(which='both',direction='out')
-  ax4.tick_params(which='both',direction='out')
-  ax5.tick_params(which='both',direction='out')
+  scatter_beam(ax1,pulses,col,cmap,rfi=rfi)
+  try: hist_DM(ax2,pulses)
+  except ValueError: pass
+  scatter_SNR(ax3,pulses,col,cmap)
+  try: hist_SNR(ax4,pulses)
+  except ValueError: pass
+  meta_data_plot(ax5,meta_data)
   
   fig.tight_layout()
-  mpl.rc('font',size=5)
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
-  
   return
-
-
 
 
 def sp_shape(pulses,events,store,obs):
   plt.clf()
-
   fig = plt.figure()
-
-  mpl.rc('font',size=5)
- 
+  
   for i,(idx,puls) in enumerate(pulses.iterrows()):
-  
     event = events[events.Pulse==idx]
-
-    sig = (event.Sigma/event.Sigma.max()*5)**4
-  
     ax = plt.subplot2grid((2,5),(i/5,i%5))
-    ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
-    ax.errorbar(puls.Time_c, puls.DM_c, xerr=puls.dTime, yerr=puls.dDM, fmt='none', ecolor='r')
+    puls_DM_Time(ax,event,puls)
+    ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
     
-    ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(event.Sigma.max(),i))
-    
-  
   # Set common labels
   fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
-  fig.text(0.5, 0.95, obs, ha='center', va='center', fontsize=12)
+  fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(obs,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
   
+  mpl.rc('font',size=5)
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
-  
- 
   return
 
 
-
-
-def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoherent=False): #top_candidates di tutti i beams
+def obs_top_candidates(top_candidates,store,incoherent=False):
   plt.clf()
   
-  if color:
-    if incoherent:
-      col_top = top_candidates.SAP
-    else:
-      col_top = top_candidates.BEAM
-  else: 
-    col_top = u'r' 
-  
-  if size: 
-    sig_top = (top_candidates.Sigma/6.)**4
-  else: sig=100.
-    
+  if incoherent:
+    col = top_candidates.SAP
+    num = top_candidates.SAP.unique().size
+  else:
+    col = top_candidates.BEAM
+    num = top_candidates.BEAM.unique().size
+  sig = (top_candidates.Sigma/6.)**4
+  if num > 1: cmap = discrete_cmap(num, 'spectral')
+  else: cmap = plt.get_cmap('gist_heat_r')
   fig = plt.figure()
   plt.title("Best Candidates")
   
@@ -172,83 +99,23 @@ def obs_top_candidates(top_candidates,color=True,size=True,store=False,incoheren
   ax2 = plt.subplot2grid((3,4),(0,0))
   ax3 = plt.subplot2grid((3,4),(0,1))
   ax4 = plt.subplot2grid((3,4),(0,2))
-
-  main_plt = ax1.scatter(top_candidates.Time,top_candidates.DM,s=sig_top,linewidths=[0.,],c=col_top)
   
-  dim = len(top_candidates.SAP.unique())+len(top_candidates.BEAM.unique())-1
+  scatter_beam(ax1,top_candidates,col,cmap,legend=num)
   
-  if color & (dim>1):
-    if incoherent:
-      ticks = np.linspace(col_top.min(),col_top.max(),num=3)
-      bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
-      bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
-      bar.ax.set_xlabel('sap',ha='left',labelpad=10)
-      bar.update_ticks
-      bar.ax.xaxis.set_ticks_position('top')      
-    else:
-      ticks = np.linspace(col_top.min(),col_top.max(),num=10)
-      bar = plt.colorbar(mappable=main_plt,ticks=ticks,ax=ax1)
-      bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
-      bar.ax.set_xlabel('beam',ha='left',labelpad=10)
-      bar.update_ticks
-      bar.ax.xaxis.set_ticks_position('top')
-    
-  ax1.plot([0,3600],[40.48,40.48],'k--')
-  ax1.plot([0,3600],[141.68,141.68],'k--')
-  ax1.set_xlabel('Time (s)')
-  ax1.set_ylabel('DM (pc/cm3)')
-  ax1.axis([0,3600,DM_MIN,550])
-  ax1.set_yscale('log')
-
-  if not top_candidates.empty:  #PROBLEMA!!
-    if len(top_candidates.DM.unique())>1:
-      hist = ax2.hist(top_candidates.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550))
-      ax2.set_xscale('log')
-      ax2.set_xlabel('DM (pc/cm3)')
-      ax2.set_ylabel('Counts')
-      ax2.set_xlim(DM_MIN,550)
-      ax2.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
-      ax2.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
-      
-      ax3.scatter(top_candidates.DM,top_candidates.Sigma,s=3,linewidths=[0.,],c=col_top)
-      ax3.set_xscale('log')
-      ax3.set_ylabel('SNR')
-      ax3.set_xlabel('DM (pc/cm3)')
-      ax3.axis([DM_MIN,550,top_candidates.Sigma.min(),top_candidates.Sigma.max()+3.])
-      ax3.plot([40.5,40.5],[0,top_candidates.Sigma.max()+3.],'k--')
-      ax3.plot([141.7,141.7],[0,top_candidates.Sigma.max()+3.],'k--')
-
-      hist = ax4.hist(top_candidates.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=top_candidates.Sigma.tolist(),range=(DM_MIN,550))
-      #ax4.plot(SNR.index,SNR,'k',linewidth=3.)
-      ax4.set_xscale('log')
-      ax4.set_xlabel('DM (pc/cm3)')
-      ax4.set_ylabel('Cumulative SNR')
-      ax4.set_xlim(DM_MIN,550)
-      ax4.plot([40.5,40.5],[0,hist[0].max()+10],'k--')
-      ax4.plot([141.7,141.7],[0,hist[0].max()+10],'k--')  
-  
-  ax1.tick_params(which='both',direction='out')
-  ax2.tick_params(which='both',direction='out')
-  ax3.tick_params(which='both',direction='out')
-  ax4.tick_params(which='both',direction='out')
+  try: hist_DM(ax2,top_candidates)
+  except ValueError: pass
+  scatter_SNR(ax3,top_candidates,col,cmap,with_legend=True)
+  try: hist_SNR(ax4,top_candidates)
+  except ValueError: pass
   
   fig.tight_layout()
+  mpl.rc('font',size=7)
+  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
-  if store:
-    mpl.rc('font',size=5)
-    plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
-  
-  else: 
-    plt.show()
-  
-  plt.clf()
   return
-    
 
 
-
-
-
+#DA RIMUOVERE (o spostare in utilities)
 def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses quando si chiama la funzione!
   plt.clf()
   
@@ -295,12 +162,29 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
   puls = pulses
   spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
   extent = [bin_start*RES,bin_end*RES,119,151]
-  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+  
+  vmin,vmax = Utilities.color_range(spectrum)
+  
+  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)     #provare anche pcolormesh
   time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
   plt.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
   plt.axis(extent)
   
+  
+  
+  
+  
+  #allineamento perfetto
+  #problema di contrasto: provare a diminuire range di colori, azzerare minori di soglia, mediare in duration del pulse, etc
+  #prova di de-dispersione (forse inutile):
+  freq = np.linspace(F_MIN,F_MAX,2430)
+  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  for i in range(a.shape[1]):
+    a[:,i] = np.roll(a[:,i], time[i])
 
+  
+  
+  
   
   # Set common labels
   #fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
@@ -312,3 +196,159 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
   return 
 
 
+
+
+
+def top_pulses():
+  plt.clf()
+  
+  ax1 = plt.subplot2grid((2,2),(0,0))
+  ax2 = plt.subplot2grid((2,2),(0,1))
+  ax3 = plt.subplot2grid((3,4),(1,0))
+  ax4 = plt.subplot2grid((3,4),(1,1))
+  
+  
+  
+  ax1.plot(event.DM, event.SNR, 'k')
+  puls_DM_Time(ax2,event,puls)
+  DynamicSpectrum(ax3,pulses.copy(),idL,sap,beam,store)
+  scatter_beam(ax4,top_candidates,col,'gist_heat_r')
+
+  
+  return
+
+
+
+
+
+def scatter_beam(ax,pulses,col,cmap,rfi=False,legend=False):
+  sig = (pulses.Sigma/1.5)**3
+  if legend:
+    main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
+    ticks = np.linspace(col.min(),col.max(),num=legend)
+    bar = plt.colorbar(main_plt,ticks=ticks,ax=ax)
+    bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
+    bar.ax.set_xlabel('sap',ha='left',labelpad=10)
+    bar.update_ticks
+    bar.ax.xaxis.set_ticks_position('top')
+  else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,], vmin=SNR_MIN, vmax=15)
+  if isinstance(rfi,pd.DataFrame): ax.scatter(rfi.Time, rfi.DM, s=5., c=u'k', marker='+', linewidths=[0.4,])
+  
+  ax.axhline(40.48,c='k',ls='--',lw=.1)
+  ax.axhline(141.68,c='k',ls='--',lw=.1)
+  ax.set_yscale('log')
+  ax.set_xlabel('Time (s)')
+  ax.set_ylabel('DM (pc/cm3)')
+  ax.axis([0,3600,DM_MIN,550])
+  
+  top = pulses.iloc[:10]
+  for i in range(top.shape[0]):
+    ax.annotate(i,xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=7,weight='bold')
+  ax.tick_params(which='both',direction='out')
+  
+  return
+
+
+def hist_DM(ax,pulses):
+  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550))
+  ax.set_xscale('log')
+  ax.set_xlabel('DM (pc/cm3)')
+  ax.set_ylabel('Counts')
+  ax.set_xlim(DM_MIN,550)
+  ax.axvline(40.48,c='k',ls='--',lw=.1)
+  ax.axvline(141.68,c='k',ls='--',lw=.1)
+  ax.tick_params(which='both',direction='out')
+  ax.yaxis.set_ticks_position('left')
+  return
+
+
+def scatter_SNR(ax,pulses,col,cmap,with_legend=False):
+  if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,])
+  else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=SNR_MIN,vmax=15)
+  ax.set_xscale('log')
+  ax.set_ylabel('SNR')
+  ax.set_xlabel('DM (pc/cm3)')
+  ax.axvline(40.48,c='k',ls='--',lw=.1)
+  ax.axvline(141.68,c='k',ls='--',lw=.1)
+  top = pulses.iloc[:10]
+  for i in range(0,top.shape[0]):
+    ax.annotate(i,xy=(top.DM.iloc[i]/1.15,top.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center',size=4,weight='medium')
+  ax.tick_params(which='both',direction='out')
+  ax.yaxis.set_ticks_position('left')
+  return
+
+
+def hist_SNR(ax,pulses):
+  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550))
+  ax.set_xscale('log')
+  ax.set_xlabel('DM (pc/cm3)')
+  ax.set_ylabel('Cumulative SNR')
+  ax.set_xlim(DM_MIN,550)
+  ax.axvline(40.48,c='k',ls='--',lw=.1)
+  ax.axvline(141.68,c='k',ls='--',lw=.1)
+  ax.tick_params(which='both',direction='out')
+  ax.yaxis.set_ticks_position('left')
+  return
+
+
+def meta_data_plot(ax,meta_data):
+  ax.axis([0,10,0,7])
+  ax.annotate('File: '+meta_data.File.iloc[0], xy=(0,6))
+  ax.annotate('Telescope: '+meta_data.Telescope.iloc[0], xy=(0,5))
+  ax.annotate('Instrument: '+meta_data.Instrument.iloc[0], xy=(0,4))
+  ax.annotate('RA: '+meta_data.RA.iloc[0], xy=(0,3))
+  ax.annotate('DEC: '+meta_data.DEC.iloc[0], xy=(0,2))
+  ax.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,1))
+  ax.axis('off')
+  return
+
+
+def puls_DM_Time(ax,event,puls):
+  sig = (event.Sigma/event.Sigma.max()*5)**4
+  ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
+  ax.errorbar(puls.Time, puls.DM, xerr=puls.dTime/2, yerr=puls.dDM/2, fmt='none', ecolor='r')
+  return
+
+
+def discrete_cmap(N, base_cmap):
+    base = plt.cm.get_cmap(base_cmap)
+    color_list = base(np.linspace(0, 1, N))
+    cmap_name = base.name + str(N)
+    return base.from_list(cmap_name, color_list, N)  
+  
+  
+
+def DynamicSpectrum(ax,pulses,idL,sap,beam,store):
+  plt.clf()
+  
+  if beam==12: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return
+  
+  
+  pulses.Sample[pulses.DM>141.71] *= 4
+  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
+  
+  #controllare che questo vada dopo downsampling correction!
+  header = Utilities.read_header(filename)
+  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  bin_idx = np.int(np.round(1./v))
+  pulses.Sample += pulses.Sample/bin_idx
+  
+  freq = np.arange(151,118,-1,dtype=np.float)
+  offset = 300
+
+  puls = pulses
+  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+  extent = [bin_start*RES,bin_end*RES,119,151]
+  
+  vmin,vmax = Utilities.color_range(spectrum)
+  
+  ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
+  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
+  ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+  ax.axis(extent)
+  
+  return 
