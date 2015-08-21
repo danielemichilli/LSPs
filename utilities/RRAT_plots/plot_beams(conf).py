@@ -1,7 +1,7 @@
-idL = 'L339734'
+idL = 'L352194'
 
-dm_min = 15.61 #18.95 77.1
-dm_max = 15.71 #19.04 77.7
+dm_min = 18 #18.95 77.1
+dm_max = 20 #19.04 77.7
 pulsar = 'J0301+20'
 
 import pandas as pd
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 sap = 0
 
-folder = '/projects/0/lotaas/data/out/confirmations/'
+folder = '/projects/0/lotaas/data/out/confirmations/new/'
 
 ra = np.zeros(128)
 dec = np.zeros(128)
@@ -64,7 +64,7 @@ beams = beams.reindex_like(ind)
 
 plt.clf()
 
-plt.scatter(ra,dec,s=800,edgecolor='none',c=beams,cmap=mpl.cm.hot_r)
+plt.scatter(ra,dec,s=80,edgecolor='none',c=beams,cmap=mpl.cm.hot_r)
 bar = plt.colorbar()
 bar.set_label('Cumulative SNR')
 plt.xlabel('RA (h)')

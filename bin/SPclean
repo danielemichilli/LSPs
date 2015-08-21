@@ -17,7 +17,6 @@ import pandas as pd
 import logging
 import sys
 import shutil
-import traceback
 import subprocess
 import StringIO
 

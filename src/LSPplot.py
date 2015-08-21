@@ -19,6 +19,7 @@ from Parameters import *
 import Paths
 import RFIexcision
 
+mpl.rc('font',size=5)
 
 
 def alerts(pulses,folder):
@@ -75,7 +76,6 @@ def sp_shape(pulses,events,store,obs):
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
   fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(obs,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
   
-  mpl.rc('font',size=5)
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   return
 
@@ -89,7 +89,7 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   else:
     col = top_candidates.BEAM
     num = top_candidates.BEAM.unique().size
-  sig = (top_candidates.Sigma/6.)**4
+  
   if num > 1: cmap = discrete_cmap(num, 'spectral')
   else: cmap = plt.get_cmap('gist_heat_r')
   fig = plt.figure()
@@ -109,10 +109,12 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   except ValueError: pass
   
   fig.tight_layout()
-  mpl.rc('font',size=7)
   plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
   
   return
+
+
+
 
 
 #DA RIMUOVERE (o spostare in utilities)
@@ -138,7 +140,6 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
   
   
   #fig = plt.figure()
-  #mpl.rc('font',size=5)
   
   freq = np.arange(151,118,-1,dtype=np.float)
   offset = 300
@@ -221,8 +222,11 @@ def top_pulses():
 
 
 
+
+
 def scatter_beam(ax,pulses,col,cmap,rfi=False,legend=False):
-  sig = (pulses.Sigma/1.5)**3
+  sig = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
+
   if legend:
     main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
     ticks = np.linspace(col.min(),col.max(),num=legend)
@@ -304,7 +308,12 @@ def meta_data_plot(ax,meta_data):
 
 
 def puls_DM_Time(ax,event,puls):
-  sig = (event.Sigma/event.Sigma.max()*5)**4
+  #sig = (event.Sigma/event.Sigma.max()*5)**4
+  #print sig
+  #sig = np.clip(np.log(event.Sigma-5.5)*400+100,100,1200)
+  #sig = event.Sigma/event.Sigma.max()*1000
+  sig = np.clip(event.Sigma/event.Sigma.max()*1427-427,1,1000)
+  print sig
   ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
   ax.errorbar(puls.Time, puls.DM, xerr=puls.dTime/2, yerr=puls.dDM/2, fmt='none', ecolor='r')
   return
