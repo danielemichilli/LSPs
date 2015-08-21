@@ -25,6 +25,13 @@ def output(folder,idL,pulses,events,meta_data):
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
   
+  
+  
+  #Repeated candidates
+  
+  #Single candidates
+  #LSPplot.top_pulses(events,
+  
   return
 
 

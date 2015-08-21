@@ -35,7 +35,6 @@ def alerts(pulses,folder):
 def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   plt.clf()
 
-  col = pulses.Sigma
   cmap = plt.get_cmap('gist_heat_r')
   fill = u'b'
   square = u'g'
@@ -48,10 +47,10 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   ax4 = plt.subplot2grid((3,4),(0,2))
   ax5 = plt.subplot2grid((3,4),(0,3))
 
-  scatter_beam(ax1,pulses,col,cmap,rfi=rfi)
+  scatter_beam(ax1,pulses,cmap,rfi=rfi)
   try: hist_DM(ax2,pulses)
   except ValueError: pass
-  scatter_SNR(ax3,pulses,col,cmap)
+  scatter_SNR(ax3,pulses,cmap)
   try: hist_SNR(ax4,pulses)
   except ValueError: pass
   meta_data_plot(ax5,meta_data)
@@ -100,11 +99,11 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   ax3 = plt.subplot2grid((3,4),(0,1))
   ax4 = plt.subplot2grid((3,4),(0,2))
   
-  scatter_beam(ax1,top_candidates,col,cmap,legend=num)
+  scatter_beam(ax1,top_candidates,cmap,col=col,legend=num)
   
   try: hist_DM(ax2,top_candidates)
   except ValueError: pass
-  scatter_SNR(ax3,top_candidates,col,cmap,with_legend=True)
+  scatter_SNR(ax3,top_candidates,cmap,col=col,with_legend=True)
   try: hist_SNR(ax4,top_candidates)
   except ValueError: pass
   
@@ -200,7 +199,7 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
 
 
 
-def top_pulses():
+def top_pulses(event,puls,idL,sap,beam,pulses,col):
   plt.clf()
   
   ax1 = plt.subplot2grid((2,2),(0,0))
@@ -212,8 +211,8 @@ def top_pulses():
   
   ax1.plot(event.DM, event.SNR, 'k')
   puls_DM_Time(ax2,event,puls)
-  DynamicSpectrum(ax3,pulses.copy(),idL,sap,beam,store)
-  scatter_beam(ax4,top_candidates,col,'gist_heat_r')
+  DynamicSpectrum(ax3,pulses.copy(),idL,sap,beam)
+  scatter_beam(ax4,pulses,'gist_heat_r')
 
   
   return
@@ -224,8 +223,9 @@ def top_pulses():
 
 
 
-def scatter_beam(ax,pulses,col,cmap,rfi=False,legend=False):
+def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
   sig = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
+  if isinstance(col,type(None)): col = sig
 
   if legend:
     main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
@@ -266,7 +266,8 @@ def hist_DM(ax,pulses):
   return
 
 
-def scatter_SNR(ax,pulses,col,cmap,with_legend=False):
+def scatter_SNR(ax,pulses,cmap,col=None,with_legend=False):
+  if isinstance(col,type(None)): col = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
   if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,])
   else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=SNR_MIN,vmax=15)
   ax.set_xscale('log')
@@ -309,11 +310,9 @@ def meta_data_plot(ax,meta_data):
 
 def puls_DM_Time(ax,event,puls):
   #sig = (event.Sigma/event.Sigma.max()*5)**4
-  #print sig
   #sig = np.clip(np.log(event.Sigma-5.5)*400+100,100,1200)
   #sig = event.Sigma/event.Sigma.max()*1000
   sig = np.clip(event.Sigma/event.Sigma.max()*1427-427,1,1000)
-  print sig
   ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k',linewidths=[0.5,])  
   ax.errorbar(puls.Time, puls.DM, xerr=puls.dTime/2, yerr=puls.dDM/2, fmt='none', ecolor='r')
   return
@@ -327,7 +326,7 @@ def discrete_cmap(N, base_cmap):
   
   
 
-def DynamicSpectrum(ax,pulses,idL,sap,beam,store):
+def DynamicSpectrum(ax,pulses,idL,sap,beam):
   plt.clf()
   
   if beam==12: stokes = 'incoherentstokes'

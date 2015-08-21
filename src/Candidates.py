@@ -5,31 +5,33 @@ import multiprocessing as mp
 import Pulses
 
 
-def candidates(pulses,folders):
+def candidates(pulses):
   #Create candidates lists
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
-  pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses,sap,beam) for (sap,beam) in folders])
-  pool.close()
-  pool.join()
-  #Pulses.Repeated_candidates(pulses)
+  #gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  #pool = mp.Pool()
+  #results = pool.map(Repeated_candidates_beam, [(pulses,n) for n in gb_puls.indices.iterkeys()])
+  #pool.close()
+  #pool.join()
+  #pulses.Candidate = pd.concat(results)
+  #results = 0
   
-  pulses.Candidate = pd.concat(results)
-  results = 0
+  pulses.Candidate = Repeated_candidates_beam((pulses,(2,56)))
+
   
-  #Unify the same repeated candidates in different beams
-  pulses.sort('DM',inplace=True)
-  for sap in range(3):
-    cands_SAP = pulses[(pulses.SAP==sap)&(pulses.Candidate>0)]
-    if not cands_SAP.empty:
-      diff_DM = np.abs(cands_SAP.DM-cands_SAP.DM.shift())
-      diff_DM.iloc[0] = diff_DM.iloc[1]
-      diff_DM -= 0.5
-      diff_DM = diff_DM.round()
-      cands_SAP = cands_SAP.Candidate
-      cands_SAP[diff_DM<.1] = np.nan
-      cands_SAP.fillna(method='pad',inplace=True)
-      pulses.Candidate.loc[cands_SAP.index] = cands_SAP
+  #ATTENZIONE! Serve condizione per ignorare pulses nello stesso beam
+  ##Unify the same repeated candidates in different beams
+  #pulses.sort('DM',inplace=True)
+  #for sap in range(3):
+    #cands_SAP = pulses[(pulses.SAP==sap)&(pulses.Candidate>0)]
+    #if not cands_SAP.empty:
+        #diff_DM = np.abs(cands_SAP.DM-cands_SAP.DM.shift())
+        #diff_DM.iloc[0] = diff_DM.iloc[1]
+        #diff_DM -= 0.5
+        #diff_DM = diff_DM.round()
+        #cands_SAP = cands_SAP.Candidate
+      #cands_SAP[diff_DM<.1] = np.nan
+      #cands_SAP.fillna(method='pad',inplace=True)
+      #pulses.Candidate.loc[cands_SAP.index] = cands_SAP
     
     
   
@@ -50,33 +52,33 @@ def candidates_generator(pulses):
   cands = pulses.groupby(['Candidate','BEAM']).agg({'Sigma':np.sum,'SAP':np.size,'DM':np.mean}).groupby(level=0).agg({'Sigma':np.max,'SAP':np.max,'DM':np.mean})
   cands.index.name = None
   cands.rename(columns={'SAP': 'N_pulses'}, inplace=True)
-
+  return cands
 
 
 
  
 
 
-def Repeated_candidates_beam((pulses,sap,beam)):
+def Repeated_candidates_beam((pulses,(sap,beam))):
   pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)&(pulses.Pulse<=2)]
   pulses.sort('Sigma',inplace=True)
   pulses.DM = pulses.DM.astype(np.float64).round(2)
   
   n_pulses = pulses.shape[0]
-  if n_pulses < 32: min_elements = 2
-  elif n_pulses < 115: min_elements = 3
-  elif n_pulses < 233: min_elements = 4
-  elif n_pulses < 373: min_elements = 5
-  elif n_pulses < 526: min_elements = 6
-  else: min_elements = 7
+  #Values calculated imposing Utilities.p(n,k) < 10./222 (10 events per observation)
+  if n_pulses < 23: min_elements = 2
+  elif n_pulses < 202: min_elements = 3
+  elif n_pulses < 649: min_elements = 4
+  elif n_pulses < 1369: min_elements = 5
+  else: min_elements = 6
   
   span = 0.05
   
   top_count = pulses.groupby('DM')['Sigma'].count()
   top_sum = pulses.groupby('DM')['Sigma'].sum()
   
+  top_sum = top_sum[top_count >= min_elements]
   top_count = top_count[top_count >= min_elements]
-  top_sum = top_sum[top_sum >= min_elements]
 
   cand = pulses.N_events
   cand[:] = -1
@@ -85,7 +87,7 @@ def Repeated_candidates_beam((pulses,sap,beam)):
   while not top_sum[top_sum!=0].empty:
     DM = top_sum.argmax()
     Sigma = top_sum.loc[DM-span:DM+span].sum()
-    N_pulses = top_count.loc[DM-span:DM+span].count()
+    N_pulses = top_count.loc[DM-span:DM+span].sum()
     cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = (i * np.int16(10) + sap) * np.int16(100) + beam
     top_count.loc[DM-span:DM+span] = 0
     top_sum.loc[DM-span:DM+span] = 0

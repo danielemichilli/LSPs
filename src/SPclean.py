@@ -85,20 +85,16 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   
   
-  cands = Candidates.candidates(pulses,folders)
-  print cands
-  
-  
+  cands = Candidates.candidates(pulses[pulses.Pulse<=2])
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
     
+    pulses = pulses[pulses.Pulse <= 2]
     events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     
     #Produce the output
-    pulses = pulses[pulses.Pulse <= 2]
-    events = events[events.Pulse.isin(pulses.index)]
     Output.output(folder,idL,pulses,events,meta_data)
   
   return
@@ -112,7 +108,7 @@ def lists_creation((folder,idL,sap,beam)):
   pulses = pd.DataFrame()
   
   if not events.empty:
-    #try:
+    try:
       #Correct for the time misalignment of events
       events.sort(['DM','Time'],inplace=True)
       events.Time = Events.TimeAlign(events.Time,events.DM)
@@ -144,7 +140,7 @@ def lists_creation((folder,idL,sap,beam)):
       events = 0
       pulses = pulses[pulses.Pulse < RFI_percent]
 
-    #except:
+    except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
 
   return pulses

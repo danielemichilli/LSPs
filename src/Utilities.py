@@ -119,6 +119,10 @@ def span(n,k):
 def c(n,k):
   return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
 
+#Probability that k elements of an ensamble n will group together in a space with n dimensions
+def p(n,k):
+  dim = 5450.
+  return c(n,k)/dim**(k-1)
 
 def color_range(data):
   #Define the color range
@@ -128,3 +132,4 @@ def color_range(data):
   vmin = np.partition(clean, min_element, axis=None)[min_element]   #invece di subint[subint>0] possibile subint[:-(num_rows/down_fact)]
   vmax = np.partition(clean, max_element, axis=None)[max_element]
   return vmin,vmax
+
