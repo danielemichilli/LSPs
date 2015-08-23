@@ -53,6 +53,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
       store.append('events',events,data_columns=['Pulse'])
       events = 0
       meta_data = pd.read_hdf('{}{}/sp/{}'.format(folder,idL,file),'meta_data')
+      meta_data.reset_index(inplace=True,drop=True)
       store.append('meta_data',meta_data)
       meta_data = 0
       os.remove('{}{}/sp/{}'.format(folder,idL,file))
@@ -70,11 +71,11 @@ def obs_events(folder,idL,load_events=False,conf=False):
     return
   pulses.sort_index(inplace=True)
 
-  #cands = candidates(pulses,folders)
+  cands = Candidates.candidates(pulses)
 
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
-  #store.append('candidates',cands,data_columns=['Candidate'])
+  store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
     
   #Compares pulses in different beams
@@ -82,11 +83,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
 
   #Clean the pulses table
   #pulses = pulses[pulses.Pulse <= RFI_percent]
-  
-  
-  
-  cands = Candidates.candidates(pulses[pulses.Pulse<=2])
-  
+    
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
     
@@ -95,7 +92,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     
     #Produce the output
-    Output.output(folder,idL,pulses,events,meta_data)
+    Output.output(folder,idL,pulses,events,meta_data,cands)
   
   return
 
@@ -119,11 +116,6 @@ def lists_creation((folder,idL,sap,beam)):
       
       events.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'events',mode='w')
       meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
-      
-      #store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
-      #store.append('meta_data',meta_data)
-      #store.append('events',events,data_columns=['Pulse'])
-      #store.close()
 
       #Apply the thresholds to the events
       events = Events.Thresh(events)
@@ -131,11 +123,10 @@ def lists_creation((folder,idL,sap,beam)):
       #Generate the pulses
       events = events[events.Pulse>=0]
       pulses = Pulses.Generator(events)
-
+      
       #Apply RFI filters to the pulses
-      pulses = pulses[pulses.Sigma >= 6.5]
       events = events[events.Pulse.isin(pulses.index)]
-      RFIexcision.Pulse_Thresh(pulses,events)
+      pulses.Pulse[pulses.Sigma >= 6.5] += RFIexcision.Pulse_Thresh(pulses[pulses.Sigma >= 6.5],events)
 
       events = 0
       pulses = pulses[pulses.Pulse < RFI_percent]

@@ -35,7 +35,7 @@ def parser():
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
   parser.add_argument('-conf', help="Run over confirmation observations.",action='store_true')
-  parser.add_argument('-load_DB', help="Load events from a DataBase instead than text files.",action='store_true')
+  parser.add_argument('-load_DB', help="Load events from a DataBase instead of text files.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
   
@@ -59,14 +59,15 @@ def create_DB(folder,idL,args):
        ALERTS = 1
     shutil.rmtree('{}{}/sp'.format(folder,idL))
 
-  os.makedirs('{}{}/sp/files'.format(folder,idL))
+  os.makedirs('{}{}/sp/diagnostics'.format(folder,idL))
+  os.makedirs('{}{}/sp/candidates'.format(folder,idL))
   if ALERTS == 1:
     shutil.move('{}{}/ALERTS','{}{}/sp')
   
   TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'
   formatter = logging.Formatter(fmt=logformat, datefmt=TIME_FORMAT) 
-  fh = logging.FileHandler('{}{}/sp/files/processing.log'.format(folder,idL))
+  fh = logging.FileHandler('{}{}/sp/processing.log'.format(folder,idL))
   fh.setLevel(logging.WARNING)
   fh.setFormatter(formatter)
   logging.getLogger('').addHandler(fh)

@@ -1,14 +1,25 @@
-#import filterbank
-#import sigproc
-#import pyfits
 import numpy as np
 import os
 import math
+import logging
+
+try:
+  import filterbank
+  import sigproc
+  import pyfits
+except ImportError: pass
 
 from Parameters import *
 
 
 def read_filterbank(filename,DM,bin_start):
+  try:  #provare metodi migliori
+    id(filterbank)
+    id(sigproc)
+  except NameError: 
+    logging.warning("Additional modules missing")
+    return
+  
   #Read data from filterbank file
   head = filterbank.read_header(filename)[0]
 
@@ -44,6 +55,12 @@ def read_filterbank(filename,DM,bin_start):
 
 
 def read_fits(filename,DM,bin_start,offset):
+  try:  #provare metodi migliori
+    id(pyfits)
+  except NameError: 
+    logging.warning("Additional modules missing")
+    return
+
   bin_start = np.int(bin_start)
   fits = pyfits.open(filename,memmap=True)
   
@@ -133,3 +150,19 @@ def color_range(data):
   vmax = np.partition(clean, max_element, axis=None)[max_element]
   return vmin,vmax
 
+
+def rrat_period(times, numperiods=20000):
+    #Modified version of PRESTO
+    ts = np.asarray(sorted(times))
+    ps = (ts[1]-ts[0])/np.arange(1, numperiods+1)
+    dts = np.diff(ts)
+    xs = dts / ps[:,np.newaxis]
+    metric = np.sum(np.fabs((xs - xs.round())), axis=1)
+    pnum = metric.argmin()
+    numrots = xs.round()[pnum].sum()
+    p = (ts[-1] - ts[0]) / numrots
+    rotations = dts / p
+    diff_max = np.max(np.abs(np.round(rotations) - rotations))
+    return p, diff_max
+  
+  

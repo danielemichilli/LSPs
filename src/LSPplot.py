@@ -56,7 +56,7 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   meta_data_plot(ax5,meta_data)
   
   fig.tight_layout()
-  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   return
 
 
@@ -75,7 +75,7 @@ def sp_shape(pulses,events,store,obs):
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
   fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(obs,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
   
-  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   return
 
 
@@ -108,7 +108,7 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   except ValueError: pass
   
   fig.tight_layout()
-  plt.savefig('{}'.format(store),format='png',bbox_inches='tight',dpi=200)
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   
   return
 
@@ -199,24 +199,66 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
 
 
 
-def top_pulses(event,puls,idL,sap,beam,pulses,col):
-  plt.clf()
-  
-  ax1 = plt.subplot2grid((2,2),(0,0))
-  ax2 = plt.subplot2grid((2,2),(0,1))
-  ax3 = plt.subplot2grid((3,4),(1,0))
-  ax4 = plt.subplot2grid((3,4),(1,1))
-  
-  
-  
-  ax1.plot(event.DM, event.SNR, 'k')
-  puls_DM_Time(ax2,event,puls)
-  DynamicSpectrum(ax3,pulses.copy(),idL,sap,beam)
-  scatter_beam(ax4,pulses,'gist_heat_r')
+def single_candidates(events,pulses,cands,meta_data,idL,folder):
+  for i,(idx,cand) in enumerate(cands.iterrows()):
+    #print cand
+    #print pulses
+    puls = pulses[pulses.Candidate==idx]
+    #print puls
+    #print events
+    event = events[events.Pulse==puls.index[0]]
+    sap = puls.SAP.iloc[0]
+    beam = puls.BEAM.iloc[0]
+    
+    plt.clf()
+    fig = plt.figure()
+    
+    ax1 = plt.subplot2grid((2,3),(0,0),colspan=2)
+    ax2 = plt.subplot2grid((2,3),(0,2))
+    ax3 = plt.subplot2grid((2,3),(1,0))
+    ax4 = plt.subplot2grid((2,3),(1,1))
+    ax5 = plt.subplot2grid((2,3),(1,2))
+    
+    scatter_beam(ax1,pulses,'gist_heat_r')
+    ax1.scatter(puls.Time, puls.DM, s=100, linewidths=[0.,], marker='*')
+    meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls)
+    ax3.plot(event.DM, event.SNR, 'k')
+    puls_DM_Time(ax4,event,puls)
+    DynamicSpectrum(ax5,pulses.copy(),idL,sap,beam)
+    
+    fig.tight_layout()
+    plt.savefig('{}{}/sp/files/prova_{}.png'.format(folder,idL,i),format='png',bbox_inches='tight',dpi=200)
 
-  
   return
 
+
+
+#FINIRE!!
+def repeated_candidates(events,pulses,cands,idL,folder):
+  for i,(idx,cand) in enumerate(cands):
+    puls = pulses[pulses.Candidate==cand.index]
+    event = events[events.Pulse==puls.index[0]]
+    
+    plt.clf()
+    fig = plt.figure()
+    
+    ax1 = plt.subplot2grid((2,3),(0,0),colspan=2)
+    ax2 = plt.subplot2grid((2,3),(0,2))
+    ax3 = plt.subplot2grid((2,3),(1,0))
+    ax4 = plt.subplot2grid((2,3),(1,1))
+    ax5 = plt.subplot2grid((2,3),(1,2))
+    
+    scatter_beam(ax1,pulses,'gist_heat_r')
+    ax1.axhline(puls.DM,ls='--')
+    meta_data_puls(ax2,meta_data,puls)
+    ax3.plot(event.DM, event.SNR, 'k')
+    puls_DM_Time(ax4,event,puls)
+    DynamicSpectrum(ax5,pulses.copy(),idL,puls.SAP.iloc[0],puls.BEAM.iloc[0])
+    
+    fig.tight_layout()
+    plt.savefig('{}{}/sp/files/prova_{}.png'.format(folder,idL,i),format='png',bbox_inches='tight',dpi=200)
+
+  return
 
 
 
@@ -307,6 +349,18 @@ def meta_data_plot(ax,meta_data):
   ax.axis('off')
   return
 
+def meta_data_puls(ax,meta_data,puls):
+  ax.axis([0,10,0,9])
+  ax.annotate('File: '+meta_data.File.iloc[0], xy=(0,8))
+  ax.annotate('RA, DEC: '+meta_data.RA.iloc[0]+', '+meta_data.DEC.iloc[0], xy=(0,7))
+  ax.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,6))
+  ax.annotate('DM (pc/cm2): '+puls.DM.iloc[0].astype(str), xy=(0,5))
+  ax.annotate('Time (s): '+puls.Time.iloc[0].astype(str), xy=(0,4))
+  ax.annotate('Sigma: '+puls.Sigma.iloc[0].astype(str), xy=(0,3))
+  ax.annotate('Duration (ms): '+str(puls.Sigma.iloc[0]*1000), xy=(0,2))
+  ax.annotate('N_events: '+puls.N_events.iloc[0].astype(str), xy=(0,1))
+  ax.axis('off')
+  return
 
 def puls_DM_Time(ax,event,puls):
   #sig = (event.Sigma/event.Sigma.max()*5)**4

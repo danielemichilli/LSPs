@@ -3,10 +3,10 @@ import os
 import LSPplot
 
 
-def output(folder,idL,pulses,events,meta_data):
+def output(folder,idL,pulses,events,meta_data,candidates):
   pulses.sort('Sigma',ascending=False,inplace=True)
   
-  store = '{}{}/sp/beam_plots'.format(folder,idL)
+  store = '{}{}/sp/diagnostics'.format(folder,idL)
   
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
@@ -22,15 +22,16 @@ def output(folder,idL,pulses,events,meta_data):
   for n in gb_puls.indices.iterkeys():
     output_beams((pulses,events,meta_data,store,idL,n))
   
+  candidates.sort('Sigma',ascending=False,inplace=True)
+  
+  #Repeated candidates
+  #LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),idL,folder)
+  
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
   
-  
-  
-  #Repeated candidates
-  
   #Single candidates
-  #LSPplot.top_pulses(events,
+  LSPplot.single_candidates(events,pulses,candidates[candidates.N_pulses==1].head(10),meta_data,idL,folder)
   
   return
 
@@ -71,16 +72,16 @@ def output_pointing(pulses,folder,idL):
     top_candidates.index = b
   top_candidates.Duration *= 1000
   top_candidates['void'] = ''
-  top_candidates.to_csv('{}{}/sp/files/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+  top_candidates.to_csv('{}{}/sp/diagnostics/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
     columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
     header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   puls = pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30)
-  if not puls.empty: LSPplot.obs_top_candidates(puls,store='{}{}/sp/files/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+  if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/inc_top_candidates.png'.format(folder,idL),incoherent=True)
   
   for sap in pulses.SAP.unique():
     puls = pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10)
-    if not puls.empty: LSPplot.obs_top_candidates(puls,store='{}{}/sp/files/top_candidates(SAP{}).png'.format(folder,idL,sap))
+    if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/top_candidates(SAP{}).png'.format(folder,idL,sap))
 
   return
 

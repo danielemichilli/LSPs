@@ -241,7 +241,7 @@ def Pulse_Thresh(pulses,events):
   #gb = events.groupby('Pulse')
   pulses.Pulse += gb.apply(lambda x: pulses_apply(x))
   
-  return
+  return pulses.Pulse
 
 
 

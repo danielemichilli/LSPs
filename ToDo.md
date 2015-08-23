@@ -34,3 +34,8 @@ GENERAL
 FRB
 - Multimoment analysis: write out dynamic spectrum
 - Matched filtering: modify single_pulse_search.py
+
+
+
+Dynamic spectrum
+plot repeated_canidates

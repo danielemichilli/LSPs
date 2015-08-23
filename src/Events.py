@@ -19,7 +19,7 @@ def Loader(folder,idL,sap,beam):
   path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
   events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
   
-  events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
+  #events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
 
   try:
     #Open the file
@@ -41,6 +41,7 @@ def Loader(folder,idL,sap,beam):
     data.Sample = data.Sample.astype(np.int32)
     
     data = data.ix[:,['DM','Sigma','Time','Duration','Sample']]
+    data.index.name = 'idx'
     
     data.insert(0,'BEAM',beam)
     data.insert(0,'SAP',sap)
