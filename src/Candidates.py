@@ -9,34 +9,31 @@ import Utilities
 
 
 def candidates(pulses):
+  pulses.sort('Sigma',ascending=False,inplace=True)
+
   #Create candidates lists
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   pool = mp.Pool()
   results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Sigma>=6.5)],n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
-  pulses.Candidate = pd.concat(results)
-  results = 0
+  pulses.Candidate[(pulses.Pulse==0)&(pulses.Sigma>=6.5)] = pd.concat(results)
 
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   pool = mp.Pool()
   results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
-  pulses.Candidate = pd.concat(results)
-  results = 0
+  pulses.Candidate[(pulses.Pulse==0)&(pulses.Candidate<0)] = pd.concat(results)
 
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   pool = mp.Pool()
   results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
-  pulses.Candidate = pd.concat(results)
+  pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
   results = 0
   
   #pulses.Candidate = Repeated_candidates_beam((pulses,(2,56)))
 
-  pulses.sort('Sigma',ascending=False,inplace=True)
   cands_unique = pulses[(pulses.Pulse==0)&(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(3)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
 
@@ -81,8 +78,7 @@ def candidates_generator(pulses):
 
 
 def Repeated_candidates_beam((pulses,(sap,beam))):
-  pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)&(pulses.Pulse<=2)]
-  pulses.sort('Sigma',inplace=True)
+  pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
   pulses.DM = pulses.DM.astype(np.float64).round(2)
   
   n_pulses = pulses.shape[0]

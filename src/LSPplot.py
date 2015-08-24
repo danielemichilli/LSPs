@@ -22,13 +22,13 @@ import RFIexcision
 mpl.rc('font',size=5)
 
 
-def alerts(pulses,folder):
-  file_name = os.path.dirname(folder) + '/Candidates.log'
-  cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
-  cumSNR = cumSNR[cumSNR.Sigma>=10.]
-  if not cumSNR.empty:
-    cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
-  return
+#def alerts(pulses,folder):
+  #file_name = os.path.dirname(folder) + '/Candidates.log'
+  #cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
+  #cumSNR = cumSNR[cumSNR.Sigma>=10.]
+  #if not cumSNR.empty:
+    #cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
+  #return
 
 
 
@@ -211,7 +211,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     beam = puls.BEAM.iloc[0]
     
     plt.clf()
-    fig = plt.figure()
+    #fig = plt.figure()
     
     ax1 = plt.subplot2grid((2,3),(0,0),colspan=2)
     ax2 = plt.subplot2grid((2,3),(0,2))
@@ -222,41 +222,53 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     scatter_beam(ax1,pulses,'gist_heat_r')
     ax1.scatter(puls.Time, puls.DM, s=100, linewidths=[0.,], marker='*')
     meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls)
-    ax3.plot(event.DM, event.SNR, 'k')
+    ax3.plot(event.DM, event.Sigma, 'k')
     puls_DM_Time(ax4,event,puls)
     DynamicSpectrum(ax5,pulses.copy(),idL,sap,beam)
     
-    fig.tight_layout()
-    plt.savefig('{}{}/sp/files/prova_{}.png'.format(folder,idL,i),format='png',bbox_inches='tight',dpi=200)
+    plt.tight_layout()
+    plt.savefig('{}{}/sp/candidates/SP_SAP{}BEAM{}_{}.png'.format(folder,idL,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
 
   return
 
 
 
-#FINIRE!!
-def repeated_candidates(events,pulses,cands,idL,folder):
-  for i,(idx,cand) in enumerate(cands):
-    puls = pulses[pulses.Candidate==cand.index]
-    event = events[events.Pulse==puls.index[0]]
+def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
+  for i,(idx,cand) in enumerate(cands.iterrows()):
+    puls1 = pulses[pulses.Candidate==idx].iloc[0]
+    puls2 = pulses[pulses.Candidate==idx].iloc[1]
+    event1 = events[events.Pulse==puls1.name]
+    event2 = events[events.Pulse==puls2.name]
     
     plt.clf()
-    fig = plt.figure()
+    #fig = plt.figure()
     
-    ax1 = plt.subplot2grid((2,3),(0,0),colspan=2)
-    ax2 = plt.subplot2grid((2,3),(0,2))
-    ax3 = plt.subplot2grid((2,3),(1,0))
-    ax4 = plt.subplot2grid((2,3),(1,1))
-    ax5 = plt.subplot2grid((2,3),(1,2))
+    axA1 = plt.subplot2grid((4,5),(0,0))
+    axA2 = plt.subplot2grid((4,5),(1,0))
+    axB1 = plt.subplot2grid((4,5),(0,1))
+    axB2 = plt.subplot2grid((4,5),(1,1))
+    axC1 = plt.subplot2grid((4,5),(0,2))
+    axC2 = plt.subplot2grid((4,5),(1,2))
+    ax2 = plt.subplot2grid((4,5),(0,3),colspan=2,rowspan=2)
+    ax3 = plt.subplot2grid((4,5),(2,0),colspan=4,rowspan=2)
+    ax4A = plt.subplot2grid((4,5),(2,4))
+    ax4B = plt.subplot2grid((4,5),(3,4))
     
-    scatter_beam(ax1,pulses,'gist_heat_r')
-    ax1.axhline(puls.DM,ls='--')
-    meta_data_puls(ax2,meta_data,puls)
-    ax3.plot(event.DM, event.SNR, 'k')
-    puls_DM_Time(ax4,event,puls)
-    DynamicSpectrum(ax5,pulses.copy(),idL,puls.SAP.iloc[0],puls.BEAM.iloc[0])
+    puls_DM_Time(axA1,event1,puls1)
+    puls_DM_Time(axA2,event2,puls2)
+    axB1.plot(event1.DM, event1.Sigma, 'k')
+    axB2.plot(event2.DM, event2.Sigma, 'k')
+    DynamicSpectrum(axC1,pulses.copy(),idL,puls1.SAP,puls1.BEAM)
+    DynamicSpectrum(axC2,pulses.copy(),idL,puls2.SAP,puls2.BEAM)
+    meta_data_repeat(ax2,meta_data,cand)
+    scatter_beam(ax3,pulses,'gist_heat_r')
+    ax3.axhline(puls1.DM,ls='--')
+    scatter_SNR(ax4A,pulses,'gist_heat_r')
+    try: hist_SNR(ax4B,pulses)
+    except ValueError: pass  
     
-    fig.tight_layout()
-    plt.savefig('{}{}/sp/files/prova_{}.png'.format(folder,idL,i),format='png',bbox_inches='tight',dpi=200)
+    plt.tight_layout()
+    plt.savefig('{}{}/sp/candidates/RC_SAP{}BEAM{}_{}.png'.format(folder,idL,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
 
   return
 
@@ -277,7 +289,7 @@ def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
     bar.ax.set_xlabel('sap',ha='left',labelpad=10)
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
-  else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,], vmin=SNR_MIN, vmax=15)
+  else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
   if isinstance(rfi,pd.DataFrame): ax.scatter(rfi.Time, rfi.DM, s=5., c=u'k', marker='+', linewidths=[0.4,])
   
   ax.axhline(40.48,c='k',ls='--',lw=.1)
@@ -311,7 +323,7 @@ def hist_DM(ax,pulses):
 def scatter_SNR(ax,pulses,cmap,col=None,with_legend=False):
   if isinstance(col,type(None)): col = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
   if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,])
-  else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=SNR_MIN,vmax=15)
+  else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,])
   ax.set_xscale('log')
   ax.set_ylabel('SNR')
   ax.set_xlabel('DM (pc/cm3)')
@@ -358,7 +370,20 @@ def meta_data_puls(ax,meta_data,puls):
   ax.annotate('Time (s): '+puls.Time.iloc[0].astype(str), xy=(0,4))
   ax.annotate('Sigma: '+puls.Sigma.iloc[0].astype(str), xy=(0,3))
   ax.annotate('Duration (ms): '+str(puls.Sigma.iloc[0]*1000), xy=(0,2))
-  ax.annotate('N_events: '+puls.N_events.iloc[0].astype(str), xy=(0,1))
+  ax.annotate('N. events: '+puls.N_events.iloc[0].astype(str), xy=(0,1))
+  ax.axis('off')
+  return
+
+def meta_data_repeat(ax,meta_data,cand):
+  ax.axis([0,10,0,9])
+  ax.annotate('File: '+meta_data.File.iloc[0], xy=(0,8))
+  ax.annotate('RA, DEC: '+meta_data.RA.iloc[0]+', '+meta_data.DEC.iloc[0], xy=(0,7))
+  ax.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,6))
+  ax.annotate('DM (pc/cm2): '+cand.DM.astype(str), xy=(0,5))
+  ax.annotate('Period (s): '+cand.Time.astype(str), xy=(0,4))
+  ax.annotate('Period err. (s): '+cand.Period_err.astype(str), xy=(0,3))
+  ax.annotate('Sigma (cum.): '+cand.Sigma.astype(str), xy=(0,2))
+  ax.annotate('N. pulses: '+cand.N_pulses.astype(str), xy=(0,1))
   ax.axis('off')
   return
 
@@ -381,8 +406,6 @@ def discrete_cmap(N, base_cmap):
   
 
 def DynamicSpectrum(ax,pulses,idL,sap,beam):
-  plt.clf()
-  
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)

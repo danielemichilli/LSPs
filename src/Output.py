@@ -25,7 +25,7 @@ def output(folder,idL,pulses,events,meta_data,candidates):
   candidates.sort('Sigma',ascending=False,inplace=True)
   
   #Repeated candidates
-  #LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),idL,folder)
+  LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),meta_data,idL,folder)
   
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
