@@ -25,15 +25,13 @@ def candidates(pulses):
   pool.join()
   pulses.Candidate[(pulses.Pulse==0)&(pulses.Candidate<0)] = pd.concat(results)
 
-  pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()
-  pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
-  results = 0
+  #pool = mp.Pool()
+  #results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
+  #pool.close()
+  #pool.join()
+  #pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
+  #results = 0
   
-  #pulses.Candidate = Repeated_candidates_beam((pulses,(2,56)))
-
   cands_unique = pulses[(pulses.Pulse==0)&(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(3)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
 
@@ -42,9 +40,9 @@ def candidates(pulses):
   cands['main_cand'] = 0
   
   #Unify the same repeated candidates in different beams
-  #controllare!!
   cands.sort('Sigma',inplace=True)
-  C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)
+  new_cand = cands.index
+  C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)  
   
   return cands
 
@@ -62,7 +60,6 @@ def candidates_generator(pulses):
   pulses['Period'] = pulses.Time
   pulses['Period_err'] = pulses.Time
   
-  #Prende max N_pulses e mean DM tra tutti i beams, non so se sia l'opzione migliore
   cands = pulses.groupby(['Candidate','SAP','BEAM'],as_index=False).agg({'Sigma':np.sum,'N_events':np.size,'DM':np.mean,'Time':np.min,'Period':period,'Period_err':period_err})
 
   cands.index = cands.Candidate.astype(int)
@@ -89,7 +86,7 @@ def Repeated_candidates_beam((pulses,(sap,beam))):
   elif n_pulses < 1369: min_elements = 5
   else: min_elements = 6
   
-  span = 0.05
+  span = 0.5
   
   top_count = pulses.groupby('DM')['Sigma'].count()
   top_sum = pulses.groupby('DM')['Sigma'].sum()

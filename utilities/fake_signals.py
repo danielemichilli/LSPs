@@ -13,7 +13,7 @@ from Parameters import *
 #filterbank file
 freq = np.linspace(F_MIN,F_MAX,2592)
 time = 4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES + t0
- 
+
 spectra[time.astype(np.int),np.arange(2591,-1,-1)] = 255
 
 

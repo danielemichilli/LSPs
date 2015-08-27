@@ -38,13 +38,15 @@ def obs_events(folder,idL,load_events=False,conf=False):
   folders = zip(range(saps)*beams,range(beams)*saps)
   
   #Create events, meta_data and pulses lists
-  pool = mp.Pool()
-  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
-  pool.close()
-  pool.join()
-
-  pulses = pd.concat(results)
-  results = 0
+  #pool = mp.Pool()
+  #results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
+  #pool.close()
+  #pool.join()
+  #pulses = pd.concat(results)
+  #results = 0
+  
+  pulses = lists_creation((folder,idL,2,56))
+  
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   for file in os.listdir('{}{}/sp'.format(folder,idL)):
@@ -58,13 +60,6 @@ def obs_events(folder,idL,load_events=False,conf=False):
       meta_data = 0
       os.remove('{}{}/sp/{}'.format(folder,idL,file))
   store.close()
-  
-      
-  #store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
-  #store.append('meta_data',meta_data)
-  #store.append('events',events,data_columns=['Pulse'])
-  #store.close()
-  
   
   if pulses.empty: 
     logging.warning("No pulse detected!")
@@ -126,12 +121,14 @@ def lists_creation((folder,idL,sap,beam)):
       
       #Apply RFI filters to the pulses
       events = events[events.Pulse.isin(pulses.index)]
-      pulses.Pulse[pulses.Sigma >= 6.5] += RFIexcision.Pulse_Thresh(pulses[pulses.Sigma >= 6.5],events)
-
-      events = 0
+      bright_puls = pulses[pulses.Sigma >= 6.5]
+      
+      pulses.Pulse[pulses.Sigma >= 6.5] += RFIexcision.Pulse_Thresh(bright_puls,events[events.Pulse.isin(bright_puls.index)])
+      
       pulses = pulses[pulses.Pulse < RFI_percent]
 
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
-
+      pulses = pd.DataFrame()
+      
   return pulses

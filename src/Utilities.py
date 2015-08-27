@@ -70,7 +70,7 @@ def read_fits(filename,DM,bin_start,offset):
   N_spectra = header['NSBLK']
 
   bin_start -= offset
-  bin_end = bin_start + DM2delay(DM) + offset
+  bin_end = bin_start + DM2delay(DM) + 2*offset
   
   subint_start = bin_start/N_spectra
   subint_end = bin_end/N_spectra+1
@@ -84,7 +84,7 @@ def read_fits(filename,DM,bin_start,offset):
   ind = np.arange(0,2592,16)
   subint = np.delete(subint,ind,axis=1)
   
-  return subint, bin_start, bin_end
+  return subint
  
  
 
@@ -141,6 +141,15 @@ def p(n,k):
   dim = 5450.
   return c(n,k)/dim**(k-1)
 
+#test of the probability formula
+def test_p(n,k):
+  fav = 0
+  for i in range(tot):
+    test = pd.Series(np.random.randint(0,dim,n))
+    test = test.groupby(by=test).size().max()
+    fav += test>=k 
+  return np.float(fav)/tot
+
 def color_range(data):
   #Define the color range
   clean = data[data>0]
@@ -152,17 +161,107 @@ def color_range(data):
 
 
 def rrat_period(times, numperiods=20000):
-    #Modified version of PRESTO
-    ts = np.asarray(sorted(times))
-    ps = (ts[1]-ts[0])/np.arange(1, numperiods+1)
-    dts = np.diff(ts)
-    xs = dts / ps[:,np.newaxis]
-    metric = np.sum(np.fabs((xs - xs.round())), axis=1)
-    pnum = metric.argmin()
-    numrots = xs.round()[pnum].sum()
-    p = (ts[-1] - ts[0]) / numrots
-    rotations = dts / p
-    diff_max = np.max(np.abs(np.round(rotations) - rotations))
-    return p, diff_max
+  #Modified version of PRESTO
+  ts = np.asarray(sorted(times))
+  ps = (ts[1]-ts[0])/np.arange(1, numperiods+1)
+  dts = np.diff(ts)
+  xs = dts / ps[:,np.newaxis]
+  metric = np.sum(np.fabs((xs - xs.round())), axis=1)
+  pnum = metric.argmin()
+  numrots = xs.round()[pnum].sum()
+  p = (ts[-1] - ts[0]) / numrots
+  rotations = dts / p
+  diff_max = np.max(np.abs(np.round(rotations) - rotations))
+  return p, diff_max
+  
+  
+def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses quando si chiama la funzione!
+  plt.clf()
+  
+  if beam==12: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return
+  
+  
+  pulses.Sample[pulses.DM>141.71] *= 4
+  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
+  
+  #controllare che questo vada dopo downsampling correction!
+  header = Utilities.read_header(filename)
+  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  bin_idx = np.int(np.round(1./v))
+  pulses.Sample += pulses.Sample/bin_idx
+  
+  
+  
+  #fig = plt.figure()
+  
+  freq = np.arange(151,118,-1,dtype=np.float)
+  offset = 300
+  
+  #for i,(idx,puls) in enumerate(pulses.iterrows()):
+    #spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+    ##if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
+      ##pulses.Pulse += 1
+      ##continue
+    #extent = [bin_start*RES,bin_end*RES,119,151]
+    #ax = plt.subplot2grid((2,5),(i/5,i%5))
+    #ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+    #time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
+    #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+    ##ax.plot((time[0],time[0]+puls.Sample*RES),(freq[0],freq[0]),'r',(time[-1],time[-1]+puls.Sample*RES),(freq[-1],freq[-1]),'r')
+    #ax.axis(extent)
+    #ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
+
+
+
+  puls = pulses
+  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+  extent = [bin_start*RES,bin_end*RES,119,151]
+  
+  vmin,vmax = Utilities.color_range(spectrum)
+  
+  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)     #provare anche pcolormesh
+  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
+  plt.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+  plt.axis(extent)
+  
+  
+  
+  
+  
+  #allineamento perfetto
+  #problema di contrasto: provare a diminuire range di colori, azzerare minori di soglia, mediare in duration del pulse, etc
+  #prova di de-dispersione (forse inutile):
+  freq = np.linspace(F_MIN,F_MAX,2430)
+  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  for i in range(spectrum.shape[1]):
+    spectrum[:,i] = np.roll(spectrum[:,i], time[i])
+
+  
+  
+  
+  
+  # Set common labels
+  #fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
+  #fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
+  #fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
+  
+  #plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+  
+  return 
+
+
+
+
+
+def dedisp(spectrum,DM,duration):
+  freq = np.linspace(F_MIN,F_MAX,spectrum.shape[1])
+  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  for i in range(spectrum.shape[1]):
+    spectrum[:,i] = np.roll(spectrum[:,i], time[i])
+  duration = np.int(np.round(duration/RES))
   
   

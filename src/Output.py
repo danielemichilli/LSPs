@@ -1,11 +1,21 @@
 import os
+import multiprocessing as mp
 
 import LSPplot
 
 
 def output(folder,idL,pulses,events,meta_data,candidates):
   pulses.sort('Sigma',ascending=False,inplace=True)
+  candidates.sort('Sigma',ascending=False,inplace=True)
+
+  #Repeated candidates
+  LSPplot.repeated_candidates(events,pulses,candidates[(candidates.N_pulses>1)&(candidates.main_cand==0)].head(10),meta_data,idL,folder)
   
+  pulses = pulses[pulses.Sigma > 6.5]
+
+  #Single candidates
+  LSPplot.single_candidates(events,pulses[pulses.Pulse==0],candidates[(candidates.N_pulses==1)&(candidates.main_cand==0)].head(10),meta_data,idL,folder)
+    
   store = '{}{}/sp/diagnostics'.format(folder,idL)
   
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
@@ -14,24 +24,16 @@ def output(folder,idL,pulses,events,meta_data,candidates):
     name = 'SAP{}_BEAM{}'.format(n[0],n[1])
     os.makedirs('{}/{}'.format(store,name))
     
-  #pool = mp.Pool()
-  #pool.map(output_beams, [(pulses,events,meta_data,store,idL,n) for n in gb_puls.indices.iterkeys()])
-  #pool.close()
-  #pool.join()  
+  pool = mp.Pool()
+  pool.map(output_beams, [(pulses,events,meta_data,store,idL,n) for n in gb_puls.indices.iterkeys()])
+  pool.close()
+  pool.join()  
   
-  for n in gb_puls.indices.iterkeys():
-    output_beams((pulses,events,meta_data,store,idL,n))
-  
-  candidates.sort('Sigma',ascending=False,inplace=True)
-  
-  #Repeated candidates
-  LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),meta_data,idL,folder)
+  #for n in gb_puls.indices.iterkeys():
+    #output_beams((pulses,events,meta_data,store,idL,n))
   
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
-  
-  #Single candidates
-  LSPplot.single_candidates(events,pulses,candidates[candidates.N_pulses==1].head(10),meta_data,idL,folder)
   
   return
 

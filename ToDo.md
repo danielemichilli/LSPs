@@ -6,14 +6,10 @@ PLOT:
 - Highlight time spans affected by RFI in general plot
 - General plot: obs and sap names
 - Pulses shape: name of sap and beam
-- Change dim/SNR scaling of points
 
 OUTPUT:
-- Folder with general best plots
-- Save events for each beam and close them
 
 ANALYSIS:
-- Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
 - Multimoment analysis
 - Better removal of affected time bins
 - Substitute time in alignment and grouping with sample
@@ -38,4 +34,3 @@ FRB
 
 
 Dynamic spectrum
-plot repeated_canidates

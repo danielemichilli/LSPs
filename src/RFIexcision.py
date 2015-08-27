@@ -21,6 +21,8 @@ def Pulse_Thresh(pulses,events):
   #-----------------------------------------------------
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
+  events.DM = events.DM.astype(np.float64)
+  events.Sigma = events.Sigma.astype(np.float64)
   
   events.sort_index(inplace=True)
   gb = events.groupby('Pulse')

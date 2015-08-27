@@ -113,102 +113,12 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   return
 
 
-
-
-
-#DA RIMUOVERE (o spostare in utilities)
-def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses quando si chiama la funzione!
-  plt.clf()
-  
-  if beam==12: stokes = 'incoherentstokes'
-  else: stokes = 'stokes'
-  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  if not os.path.isfile(filename): return
-  
-  
-  pulses.Sample[pulses.DM>141.71] *= 4
-  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
-  
-  #controllare che questo vada dopo downsampling correction!
-  header = Utilities.read_header(filename)
-  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-  bin_idx = np.int(np.round(1./v))
-  pulses.Sample += pulses.Sample/bin_idx
-  
-  
-  
-  #fig = plt.figure()
-  
-  freq = np.arange(151,118,-1,dtype=np.float)
-  offset = 300
-  
-  #for i,(idx,puls) in enumerate(pulses.iterrows()):
-    #spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
-    ##if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
-      ##pulses.Pulse += 1
-      ##continue
-    #extent = [bin_start*RES,bin_end*RES,119,151]
-    #ax = plt.subplot2grid((2,5),(i/5,i%5))
-    #ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-    #time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
-    #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
-    ##ax.plot((time[0],time[0]+puls.Sample*RES),(freq[0],freq[0]),'r',(time[-1],time[-1]+puls.Sample*RES),(freq[-1],freq[-1]),'r')
-    #ax.axis(extent)
-    #ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
-
-
-
-  puls = pulses
-  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
-  extent = [bin_start*RES,bin_end*RES,119,151]
-  
-  vmin,vmax = Utilities.color_range(spectrum)
-  
-  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)     #provare anche pcolormesh
-  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
-  plt.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
-  plt.axis(extent)
-  
-  
-  
-  
-  
-  #allineamento perfetto
-  #problema di contrasto: provare a diminuire range di colori, azzerare minori di soglia, mediare in duration del pulse, etc
-  #prova di de-dispersione (forse inutile):
-  freq = np.linspace(F_MIN,F_MAX,2430)
-  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
-  for i in range(a.shape[1]):
-    a[:,i] = np.roll(a[:,i], time[i])
-
-  
-  
-  
-  
-  # Set common labels
-  #fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
-  #fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
-  #fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
-  
-  #plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
-  
-  return 
-
-
-
-
-
 def single_candidates(events,pulses,cands,meta_data,idL,folder):
   for i,(idx,cand) in enumerate(cands.iterrows()):
-    #print cand
-    #print pulses
     puls = pulses[pulses.Candidate==idx]
-    #print puls
-    #print events
     event = events[events.Pulse==puls.index[0]]
-    sap = puls.SAP.iloc[0]
-    beam = puls.BEAM.iloc[0]
+    sap = cand.SAP
+    beam = cand.BEAM
     
     plt.clf()
     #fig = plt.figure()
@@ -239,6 +149,8 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
     event1 = events[events.Pulse==puls1.name]
     event2 = events[events.Pulse==puls2.name]
+    sap = cand.SAP
+    beam = cand.BEAM
     
     plt.clf()
     #fig = plt.figure()
@@ -261,11 +173,16 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     DynamicSpectrum(axC1,pulses.copy(),idL,puls1.SAP,puls1.BEAM)
     DynamicSpectrum(axC2,pulses.copy(),idL,puls2.SAP,puls2.BEAM)
     meta_data_repeat(ax2,meta_data,cand)
+    
+    pulses_cand = pulses[(pulses.Sigma<6.5)&(pulses.Pulse>0)&(pulses.Candidate==idx)]
+    pulses = pulses[(pulses.Sigma>=6.5)&(pulses.Pulse==0)]
+    
     scatter_beam(ax3,pulses,'gist_heat_r')
+    scatter_beam(ax3,pulses_cand,'gist_heat_r')
     ax3.axhline(puls1.DM,ls='--')
     scatter_SNR(ax4A,pulses,'gist_heat_r')
     try: hist_SNR(ax4B,pulses)
-    except ValueError: pass  
+    except ValueError: pass
     
     plt.tight_layout()
     plt.savefig('{}{}/sp/candidates/RC_SAP{}BEAM{}_{}.png'.format(folder,idL,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
@@ -280,16 +197,16 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
 def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
   sig = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
   if isinstance(col,type(None)): col = sig
-
+  vmin = col.min()/10.
   if legend:
-    main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
+    main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,],vmin=vmin)
     ticks = np.linspace(col.min(),col.max(),num=legend)
     bar = plt.colorbar(main_plt,ticks=ticks,ax=ax)
     bar.set_ticklabels(['{0:.0f}'.format(int(t)) for t in ticks])
     bar.ax.set_xlabel('sap',ha='left',labelpad=10)
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
-  else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,])
+  else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,],vmin=vmin)
   if isinstance(rfi,pd.DataFrame): ax.scatter(rfi.Time, rfi.DM, s=5., c=u'k', marker='+', linewidths=[0.4,])
   
   ax.axhline(40.48,c='k',ls='--',lw=.1)
@@ -322,8 +239,9 @@ def hist_DM(ax,pulses):
 
 def scatter_SNR(ax,pulses,cmap,col=None,with_legend=False):
   if isinstance(col,type(None)): col = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
-  if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,])
-  else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,])
+  vmin = col.min()/10.
+  if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,],vmin=vmin)
+  else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=vmin)
   ax.set_xscale('log')
   ax.set_ylabel('SNR')
   ax.set_xlabel('DM (pc/cm3)')
@@ -380,7 +298,7 @@ def meta_data_repeat(ax,meta_data,cand):
   ax.annotate('RA, DEC: '+meta_data.RA.iloc[0]+', '+meta_data.DEC.iloc[0], xy=(0,7))
   ax.annotate('Epoch (MJD): '+meta_data.Epoch.iloc[0], xy=(0,6))
   ax.annotate('DM (pc/cm2): '+cand.DM.astype(str), xy=(0,5))
-  ax.annotate('Period (s): '+cand.Time.astype(str), xy=(0,4))
+  ax.annotate('Period (s): '+cand.Period.astype(str), xy=(0,4))
   ax.annotate('Period err. (s): '+cand.Period_err.astype(str), xy=(0,3))
   ax.annotate('Sigma (cum.): '+cand.Sigma.astype(str), xy=(0,2))
   ax.annotate('N. pulses: '+cand.N_pulses.astype(str), xy=(0,1))
@@ -398,41 +316,53 @@ def puls_DM_Time(ax,event,puls):
 
 
 def discrete_cmap(N, base_cmap):
-    base = plt.cm.get_cmap(base_cmap)
-    color_list = base(np.linspace(0, 1, N))
-    cmap_name = base.name + str(N)
-    return base.from_list(cmap_name, color_list, N)  
+  base = plt.cm.get_cmap(base_cmap)
+  color_list = base(np.linspace(0, 1, N))
+  cmap_name = base.name + str(N)
+  return base.from_list(cmap_name, color_list, N)  
   
   
 
-def DynamicSpectrum(ax,pulses,idL,sap,beam):
+def DynamicSpectrum(ax,puls,idL,sap,beam):
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return
   
-  
-  pulses.Sample[pulses.DM>141.71] *= 4
-  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
+  puls.Sample[puls.DM>141.71] *= 4
+  puls.Sample[(puls.DM>40.47)&(puls.DM<=141.71)] *= 2
   
   #controllare che questo vada dopo downsampling correction!
   header = Utilities.read_header(filename)
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   bin_idx = np.int(np.round(1./v))
-  pulses.Sample += pulses.Sample/bin_idx
+  puls.Sample += puls.Sample/bin_idx
   
-  freq = np.arange(151,118,-1,dtype=np.float)
-  offset = 300
-
-  puls = pulses
-  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
-  extent = [bin_start*RES,bin_end*RES,119,151]
+  duration = np.int(np.round(puls.Duration/RES))
+  spectra_border = 15
+  offset = duration*spectra_border
   
-  vmin,vmax = Utilities.color_range(spectrum)
+  #Load the spectrum
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),puls.Sample.copy(),offset)
+  
+  #De-dispersion
+  freq = np.linspace(F_MIN,F_MAX,2430)
+  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  for i in range(spectrum.shape[1]):
+    spectrum[:,i] = np.roll(spectrum[:,i], time[i])
+  spectrum = spectrum[:2*offset+duration]
+  
+  spectrum_min = np.min(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  
+  extent = [(puls.Sample-offset)*RES,(puls.Sample+duration+offset)*RES,F_MIN,F_MAX]
+  
+  #vmin,vmax = Utilities.color_range(spectrum)
   
   ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
-  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
+  freq = np.arange(F_MAX,F_MIN-1,-1,dtype=np.float)
+  time = 4149. * puls.DM * (np.power(freq,-2) - F_MAX**-2) + bin_start*RES
   ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
   ax.axis(extent)
   
