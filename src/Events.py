@@ -77,7 +77,10 @@ def Thresh(events):
   #---------------------------------
   # Applies thresholds to the events
   #---------------------------------
-
+  
+  #Remove non-grouped events
+  events = events[events.Pulse > 0]
+  
   #Remove low-DM events
   events = events[events.DM > DM_MIN]
   

@@ -274,6 +274,33 @@ def Compare_Beams(puls):
   #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
   #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
   
+  
+  
+  #TESTARE
+  
+  def min_puls(x):                  
+    if x.size <= 1: return 0
+    else: return np.min(np.abs(np.diff(x)))
+  
+  puls_time = puls.Time.astype(int)
+  puls.groupby(puls_time).agg({'DM':np.size,'Time':min_puls})
+  puls_time = puls.groupby(puls_time).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)]
+  a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
+  
+  puls_time = (puls.Time+0.5).astype(int)
+  puls.groupby(puls_time).agg({'DM':np.size,'Time':min_puls})
+  puls_time = puls.groupby(puls_time).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)]
+  b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
+  
+  puls_time = pd.concat((a,b)).index.unique()
+  puls.Pulse.loc[puls_time] += 1
+  
+  
+  
+  
+  
   sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
@@ -307,7 +334,7 @@ def Compare_Beams(puls):
   
   puls.Pulse.loc[(puls.SAP==2)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap2.Pulse
     
-  return
+  return puls.Pulse
 
 
 

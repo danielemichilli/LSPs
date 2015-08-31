@@ -130,7 +130,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax5 = plt.subplot2grid((2,3),(1,2))
     
     scatter_beam(ax1,pulses,'gist_heat_r')
-    ax1.scatter(puls.Time, puls.DM, s=100, linewidths=[0.,], marker='*')
+    ax1.scatter(puls.Time, puls.DM, s=300, linewidths=[0.,], marker='*', c='w')
     meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls)
     ax3.plot(event.DM, event.Sigma, 'k')
     puls_DM_Time(ax4,event,puls)
@@ -144,6 +144,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
 
 
 def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
+  pulses_top = pulses[(pulses.Sigma>=6.5)&(pulses.Pulse==0)]
   for i,(idx,cand) in enumerate(cands.iterrows()):
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
@@ -175,13 +176,12 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     meta_data_repeat(ax2,meta_data,cand)
     
     pulses_cand = pulses[(pulses.Sigma<6.5)&(pulses.Pulse>0)&(pulses.Candidate==idx)]
-    pulses = pulses[(pulses.Sigma>=6.5)&(pulses.Pulse==0)]
     
-    scatter_beam(ax3,pulses,'gist_heat_r')
+    scatter_beam(ax3,pulses_top,'gist_heat_r')
     scatter_beam(ax3,pulses_cand,'gist_heat_r')
-    ax3.axhline(puls1.DM,ls='--')
-    scatter_SNR(ax4A,pulses,'gist_heat_r')
-    try: hist_SNR(ax4B,pulses)
+    ax3.axhline(cand.DM,ls='--')
+    scatter_SNR(ax4A,pulses_top,'gist_heat_r')
+    try: hist_SNR(ax4B,pulses_top)
     except ValueError: pass
     
     plt.tight_layout()
@@ -218,7 +218,7 @@ def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
   
   top = pulses.iloc[:10]
   for i in range(top.shape[0]):
-    ax.annotate(i,xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=7,weight='bold')
+    ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=7,weight='bold')
   ax.tick_params(which='both',direction='out')
   
   return

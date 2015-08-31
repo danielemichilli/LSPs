@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import math
 import logging
@@ -137,13 +138,15 @@ def c(n,k):
   return math.factorial(n)/math.factorial(k)/math.factorial((n-k))
 
 #Probability that k elements of an ensamble n will group together in a space with n dimensions
+#Formula approssimata, ricalcolare quella esatta
 def p(n,k):
   dim = 5450.
   return c(n,k)/dim**(k-1)
 
 #test of the probability formula
-def test_p(n,k):
+def test_p(n,k,tot):
   fav = 0
+  dim = 5450
   for i in range(tot):
     test = pd.Series(np.random.randint(0,dim,n))
     test = test.groupby(by=test).size().max()

@@ -65,20 +65,20 @@ def obs_events(folder,idL,load_events=False,conf=False):
     logging.warning("No pulse detected!")
     return
   pulses.sort_index(inplace=True)
-
+  
   cands = Candidates.candidates(pulses)
-
+  
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
   store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
     
   #Compares pulses in different beams
-  #RFIexcision.Compare_Beams(pulses)
-
+  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)])
+  
   #Clean the pulses table
   #pulses = pulses[pulses.Pulse <= RFI_percent]
-    
+  
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
     

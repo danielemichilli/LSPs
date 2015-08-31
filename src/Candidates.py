@@ -19,18 +19,20 @@ def candidates(pulses):
   pool.join()
   pulses.Candidate[(pulses.Pulse==0)&(pulses.Sigma>=6.5)] = pd.concat(results)
 
-  pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()
-  pulses.Candidate[(pulses.Pulse==0)&(pulses.Candidate<0)] = pd.concat(results)
-
+  #RFI cancella completamente pulses. Problema: RFI debole difficile da discriminare. Servono altre tecniche per discriminare e calcolare numero minimo di elementi,
+  #es. quelle impiegate in alerts, ma riescono ad individuare solo pulsar brillanti comunque
   #pool = mp.Pool()
-  #results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
+  #results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
   #pool.close()
   #pool.join()
-  #pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
-  #results = 0
+  #pulses.Candidate[(pulses.Pulse==0)&(pulses.Candidate<0)] = pd.concat(results)
+
+  pool = mp.Pool()
+  results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
+  pool.close()
+  pool.join()
+  pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
+  results = 0
   
   cands_unique = pulses[(pulses.Pulse==0)&(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(3)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
@@ -80,11 +82,13 @@ def Repeated_candidates_beam((pulses,(sap,beam))):
   
   n_pulses = pulses.shape[0]
   #Values calculated imposing Utilities.p(n,k) < 10./222 (10 events per observation)
+  #Valori sopra 4 sbagliati: ricalcolare formula probabilita'
   if n_pulses < 23: min_elements = 2
   elif n_pulses < 202: min_elements = 3
   elif n_pulses < 649: min_elements = 4
-  elif n_pulses < 1369: min_elements = 5
+  elif n_pulses < 1430: min_elements = 5
   else: min_elements = 6
+  #Per numeri maggiori usare altre statistiche, tipo quelle in alerts
   
   span = 0.5
   
