@@ -277,21 +277,19 @@ def Compare_Beams(puls):
   
   
   #TESTARE
-  
+  #AGGIUNGERE SAP!!
   def min_puls(x):                  
     if x.size <= 1: return 0
     else: return np.min(np.abs(np.diff(x)))
   
   puls_time = puls.Time.astype(int)
-  puls.groupby(puls_time).agg({'DM':np.size,'Time':min_puls})
-  puls_time = puls.groupby(puls_time).agg({'N_events':np.size,'DM':min_puls})
-  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)]
+  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)].get_level_values('Time')
   a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
   
   puls_time = (puls.Time+0.5).astype(int)
-  puls.groupby(puls_time).agg({'DM':np.size,'Time':min_puls})
-  puls_time = puls.groupby(puls_time).agg({'N_events':np.size,'DM':min_puls})
-  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)]
+  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)].get_level_values('Time')
   b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
   
   puls_time = pd.concat((a,b)).index.unique()
