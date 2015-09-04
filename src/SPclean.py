@@ -74,7 +74,8 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store.close()
     
   #Compares pulses in different beams
-  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)])
+  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)])
+  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)] = RFIexcision.time_span(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)])
   
   #Clean the pulses table
   #pulses = pulses[pulses.Pulse <= RFI_percent]

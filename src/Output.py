@@ -7,14 +7,16 @@ import LSPplot
 def output(folder,idL,pulses,events,meta_data,candidates):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort('Sigma',ascending=False,inplace=True)
+  
+  store = '{}{}/sp/candidates'.format(folder,idL)
 
   #Repeated candidates
-  LSPplot.repeated_candidates(events,pulses,candidates[(candidates.N_pulses>1)&(candidates.main_cand==0)].head(10),meta_data,idL,folder)
+  LSPplot.repeated_candidates(events,pulses,candidates[(candidates.N_pulses>1)&(candidates.main_cand==0)].head(10),meta_data,idL,store)
   
   pulses = pulses[pulses.Sigma > 6.5]
 
   #Single candidates
-  LSPplot.single_candidates(events,pulses[pulses.Pulse==0],candidates[(candidates.N_pulses==1)&(candidates.main_cand==0)].head(10),meta_data,idL,folder)
+  LSPplot.single_candidates(events,pulses[pulses.Pulse==0],candidates[(candidates.N_pulses==1)&(candidates.main_cand==0)].head(10),meta_data,idL,store)
     
   store = '{}{}/sp/diagnostics'.format(folder,idL)
   

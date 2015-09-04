@@ -261,6 +261,94 @@ def IB_Pulse_Thresh(puls,gb,data,Sigma_min):
 
 
 
+#CONTROLLARE
+beams = {
+ 13: [14, 15, 16, 17, 18, 19],
+ 14: [20, 21, 15, 13, 19, 31],
+ 15: [21, 22, 23, 16, 13, 14],
+ 16: [15, 23, 24, 25, 17, 13],
+ 17: [13, 16, 25, 26, 27, 18],
+ 18: [19, 13, 17, 27, 28, 29],
+ 19: [31, 14, 13, 18, 29, 30],
+ 20: [32, 33, 21, 14, 31, 49],
+ 21: [33, 34, 22, 15, 14, 20],
+ 22: [34, 35, 36, 23, 15, 21],
+ 23: [22, 36, 37, 24, 16, 15],
+ 24: [23, 37, 38, 29, 25, 16],
+ 25: [16, 24, 39, 40, 26, 17],
+ 26: [17, 25, 40, 41, 42, 27],
+ 27: [18, 17, 26, 42, 43, 28],
+ 28: [29, 18, 27, 43, 44, 45],
+ 29: [30, 19, 18, 28, 45, 46],
+ 30: [48, 31, 19, 29, 46, 47],
+ 31: [49, 20, 14, 19, 30, 48],
+ 32: [50, 51, 33, 20, 49, 73],
+ 33: [51, 52, 34, 21, 20, 32],
+ 34: [52, 53, 35, 22, 21, 33],
+ 35: [53, 54, 55, 36, 22, 34],
+ 36: [35, 55, 56, 37, 23, 22],
+ 37: [36, 56, 57, 38, 24, 23],
+ 38: [37, 57, 58, 59, 39, 24],
+ 39: [24, 38, 59, 60, 40, 25],
+ 40: [25, 39, 60, 61, 41, 26],
+ 41: [26, 40, 61, 62, 63, 42],
+ 42: [27, 26, 41, 63, 64, 43],
+ 43: [28, 27, 42, 64, 65, 44],
+ 44: [45, 28, 43, 65, 66, 67],
+ 45: [46, 29, 28, 44, 67, 68],
+ 46: [47, 30, 29, 45, 68, 69],
+ 47: [71, 48, 30, 46, 69, 70],
+ 48: [72, 49, 31, 30, 47, 71],
+ 49: [73, 32, 20, 31, 48, 72],
+ 50: [51, 32, 73],
+ 51: [52, 33, 32, 50],
+ 52: [53, 34, 33, 51],
+ 53: [54, 35, 34, 52],
+ 54: [55, 35, 53],
+ 55: [56, 36, 35, 54],
+ 56: [57, 37, 36, 55],
+ 57: [58, 38, 37, 56],
+ 58: [59, 38, 57],
+ 59: [60, 39, 38, 58],
+ 60: [61, 40, 39, 59],
+ 61: [62, 41, 40, 60],
+ 62: [63, 41, 61],
+ 63: [64, 42, 41, 62],
+ 64: [65, 43, 42, 63],
+ 65: [66, 44, 43, 64],
+ 66: [67, 44, 65],
+ 67: [68, 45, 44, 66],
+ 68: [69, 46, 45, 67],
+ 69: [70, 47, 46, 68],
+ 70: [71, 47, 69],
+ 71: [72, 48, 47, 70],
+ 72: [73, 49, 48, 71],
+ 73: [50, 32, 49, 72]
+}
+
+
+def time_span(puls):
+  #TESTARE
+  def min_puls(x):   
+    if x.size <= 1: return 0
+    else: return np.min(np.abs(x-np.mean(x)))
+  
+  puls_time = puls.Time.astype(int)
+  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')  #va bene 5?
+  a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
+  
+  puls_time = (puls.Time+0.5).astype(int)
+  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
+  puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')
+  b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
+  
+  puls_time = pd.concat((a,b)).index.unique()
+  puls.Pulse.loc[puls_time] += 1
+  
+  return puls.Pulse
+
+
 
 def Compare_Beams(puls):
   
@@ -276,24 +364,8 @@ def Compare_Beams(puls):
   
   
   
-  #TESTARE
-  #AGGIUNGERE SAP!!
-  def min_puls(x):                  
-    if x.size <= 1: return 0
-    else: return np.min(np.abs(np.diff(x)))
+  time_span(puls)
   
-  puls_time = puls.Time.astype(int)
-  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)].get_level_values('Time')
-  a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
-  
-  puls_time = (puls.Time+0.5).astype(int)
-  puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-  puls_time = puls_time.index[(puls_time.N_events>=3)&(puls_time.DM>1)].get_level_values('Time')
-  b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
-  
-  puls_time = pd.concat((a,b)).index.unique()
-  puls.Pulse.loc[puls_time] += 1
   
   
   

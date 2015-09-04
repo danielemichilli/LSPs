@@ -139,8 +139,7 @@ def c(n,k):
 
 #Probability that k elements of an ensamble n will group together in a space with n dimensions
 #Formula approssimata, ricalcolare quella esatta
-def p(n,k):
-  dim = 5450.
+def p(n,k,dim = 5450.):
   return c(n,k)/dim**(k-1)
 
 #test of the probability formula
