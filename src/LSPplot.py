@@ -13,7 +13,8 @@ import tarfile
 import os
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
-#import presto
+try: import presto
+except ImportError: pass
 
 import Utilities
 from Parameters import *
@@ -150,8 +151,8 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax3.set_xlabel('DM (pc/cm3)')    
     ax3.set_ylabel('SNR')
     puls_DM_Time(ax4,event,puls)
-    DynamicSpectrum(ax5,pulses.copy(),idL,sap,beam)
-    DynamicSpectrum(ax6,pulses.copy(),idL,sap,beam)
+    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam)
+    DynamicSpectrum(ax6,puls.copy(),idL,sap,beam)
     
     plt.tight_layout()
     plt.savefig('{}/SP_SAP{}BEAM{}_{}.png'.format(folder,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
@@ -213,8 +214,8 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB2.plot(event2.DM, event2.Sigma, 'k')
     axB2.set_xlabel('DM (pc/cm2')
     axB2.set_ylabel('SNR')
-    DynamicSpectrum(axC1,pulses.copy(),idL,puls1.SAP,puls1.BEAM)
-    DynamicSpectrum(axC2,pulses.copy(),idL,puls2.SAP,puls2.BEAM,sharey=True)
+    DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam)
+    DynamicSpectrum(axC2,puls2.copy(),idL,sap,beam,sharey=True)
     meta_data_repeat(ax2,meta_data,cand)
     
     pulses_cand = pulses[(pulses.Sigma<6.5)&(pulses.Pulse>0)&(pulses.Candidate==idx)]
@@ -377,26 +378,30 @@ def DynamicSpectrum(ax,puls,idL,sap,beam,sharey=False):
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return
   
-  puls.Sample[puls.DM>141.71] *= 4
-  puls.Sample[(puls.DM>40.47)&(puls.DM<=141.71)] *= 2
-  
+  if puls.DM>141.71: sample = puls.Sample * 4
+  elif puls.DM>40.47: sample = puls.Sample * 2
+  else: sample = puls.Sample
+
   #controllare che questo vada dopo downsampling correction!
   header = Utilities.read_header(filename)
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  except NameError: 
+    logging.warning("Additional modules missing")
+    return  
   bin_idx = np.int(np.round(1./v))
-  puls.Sample += puls.Sample/bin_idx
+  sample += sample/bin_idx
   
   duration = np.int(np.round(puls.Duration/RES))
   spectra_border = 15
   offset = duration*spectra_border
   
   #Load the spectrum
-  spectrum = Utilities.read_fits(filename,puls.DM.copy(),puls.Sample.copy(),offset)
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),offset)
   
   #De-dispersion
   freq = np.linspace(F_MIN,F_MAX,2430)
-  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  time = (4149 * puls.DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
   spectrum = spectrum[:2*offset+duration]
@@ -404,14 +409,14 @@ def DynamicSpectrum(ax,puls,idL,sap,beam,sharey=False):
   spectrum_min = np.min(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
   
-  extent = [(puls.Sample-offset)*RES,(puls.Sample+duration+offset)*RES,F_MIN,F_MAX]
+  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
   
   #vmin,vmax = Utilities.color_range(spectrum)
   
   ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
-  freq = np.arange(F_MAX,F_MIN-1,-1,dtype=np.float)
-  time = 4149. * puls.DM * (np.power(freq,-2) - F_MAX**-2) + bin_start*RES
-  ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
+  #freq = np.arange(F_MAX,F_MIN-1,-1,dtype=np.float)
+  #time = 4149. * puls.DM * (np.power(freq,-2) - F_MAX**-2) + sample*RES
+  #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
   ax.axis(extent)
   ax.set_xlabel('Time (s)')
   if not sharey:

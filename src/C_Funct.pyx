@@ -158,7 +158,6 @@ def Compare(float[::1] DM_c_l not None,
     int TollSigma
     int rfi_limit = RFI_percent
     float DTime, Time, DM, DDM, sign
-    float Duration_Max = FILTERS[0][2]
   
   # Uses different tollerances on sigma for coherent and incoherent beams
   if CB==int(1): TollSigma = SIGMA_TOLL

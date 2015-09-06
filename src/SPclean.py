@@ -38,14 +38,14 @@ def obs_events(folder,idL,load_events=False,conf=False):
   folders = zip(range(saps)*beams,range(beams)*saps)
   
   #Create events, meta_data and pulses lists
-  #pool = mp.Pool()
-  #results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
-  #pool.close()
-  #pool.join()
-  #pulses = pd.concat(results)
-  #results = 0
+  pool = mp.Pool()
+  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
+  pool.close()
+  pool.join()
+  pulses = pd.concat(results)
+  results = 0
   
-  pulses = lists_creation((folder,idL,2,56))
+  #pulses = lists_creation((folder,idL,2,56))
   
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
@@ -74,8 +74,8 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store.close()
     
   #Compares pulses in different beams
-  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)])
-  #pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)] = RFIexcision.time_span(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)])
+  pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)])
+  pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)] = RFIexcision.time_span(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)])
   
   #Clean the pulses table
   #pulses = pulses[pulses.Pulse <= RFI_percent]

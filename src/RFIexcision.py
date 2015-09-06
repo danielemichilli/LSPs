@@ -350,6 +350,7 @@ def time_span(puls):
 
 
 
+
 def Compare_Beams(puls):
   
   #STUDIARE VALORI E SE METTERE puls.Pulse==0
@@ -367,8 +368,21 @@ def Compare_Beams(puls):
   time_span(puls)
   
   
+
+  def puls_beams_select(x):
+    select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
+    close = select[select.isin(beams[x.BEAM])].size
+    away = select.size - close
+    if x.Sigma <= 13: return np.sum((close>3,away>1))
+    elif x.Sigma <= 20: 
+      if len(beams[x.BEAM])==6: return np.sum((close<3,away>1))
+      else: return np.sum(away>1)
+    else: 
+      if len(beams[x.BEAM])==6: return np.sum(close<3)
+      else: return 0  
   
-  
+  puls.Pulse += puls.apply(lambda x: puls_beams_select(x),axis=1).astype(np.int8)
+
   
   
   sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
