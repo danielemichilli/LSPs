@@ -142,10 +142,21 @@ def c(n,k):
 def p(n,k,dim = 5450.):
   return c(n,k)/dim**(k-1)
 
+
+
+def d(n,k):                           
+  return math.factorial(n)/math.factorial(n-k)
+#def p(n,k,dim):
+  #return 1-float(d(dim,(n-k+2)))*dim**(k-2)/dim**n
+#float(Utilities.c(n,k)*dim**(n-k)-n+1)*dim/dim**n
+
+
+
+
 #test of the probability formula
-def test_p(n,k,tot):
+def test_p(n,k,tot,dim = 5450.):
+  dim = float(dim)
   fav = 0
-  dim = 5450
   for i in range(tot):
     test = pd.Series(np.random.randint(0,dim,n))
     test = test.groupby(by=test).size().max()

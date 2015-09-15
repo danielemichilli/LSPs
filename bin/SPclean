@@ -19,6 +19,7 @@ import sys
 import shutil
 import subprocess
 import StringIO
+import scipy.special #necessary for a bug on Cartesius
 
 import SPclean
 import Parameters

@@ -9,42 +9,46 @@ import Utilities
 
 
 def candidates(pulses):
-  pulses.sort('Sigma',ascending=False,inplace=True)
+  pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
 
   #Create candidates lists
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Sigma>=6.5)],n) for n in gb_puls.indices.iterkeys()])
+  results = pool.map(Repeated_candidates_beam, [(pulses[pulses.Pulse==0],n,0) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()
-  pulses.Candidate[(pulses.Pulse==0)&(pulses.Sigma>=6.5)] = pd.concat(results)
-
-  #RFI cancella completamente pulses. Problema: RFI debole difficile da discriminare. Servono altre tecniche per discriminare e calcolare numero minimo di elementi,
-  #es. quelle impiegate in alerts, ma riescono ad individuare solo pulsar brillanti comunque
-  #pool = mp.Pool()
-  #results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse==0)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
-  #pool.close()
-  #pool.join()
-  #pulses.Candidate[(pulses.Pulse==0)&(pulses.Candidate<0)] = pd.concat(results)
-
-  pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)],n) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()
-  pulses.Candidate[(pulses.Pulse<=2)&(pulses.Sigma>=6.5)&(pulses.Candidate<0)] = pd.concat(results)
+  pulses.Candidate[pulses.Pulse==0] = pd.concat(results)
   results = 0
-  
-  cands_unique = pulses[(pulses.Pulse==0)&(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(3)
-  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
+    
+  if pulses.Candidate.unique().size <=12:
+    pool = mp.Pool()
+    results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],n,1) for n in gb_puls.indices.iterkeys()])
+    pool.close()
+    pool.join()
+    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = pd.concat(results) * 10 + 1
+    results = 0
 
+  if pulses.Candidate.unique().size <=12:
+    pool = mp.Pool()
+    results = pool.map(Repeated_candidates_beam, [(pulses[pulses.Candidate<0],n,2) for n in gb_puls.indices.iterkeys()])
+    pool.close()
+    pool.join()
+    pulses.Candidate[pulses.Candidate<0] = pd.concat(results) * 10 + 1
+    results = 0
   
-  cands = candidates_generator(pulses[pulses.Candidate>=0].copy())
-  cands['main_cand'] = 0
+  cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(2)
+  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
   
-  #Unify the same repeated candidates in different beams
-  cands.sort('Sigma',inplace=True)
-  new_cand = cands.index
-  C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)  
+  if not pulses[pulses.Candidate>=0].empty:
+    cands = candidates_generator(pulses[pulses.Candidate>=0].copy())
+    cands['main_cand'] = 0
+  
+    #Unify the same repeated candidates in different beams
+    cands.sort('Sigma',inplace=True)
+    new_cand = cands.index
+    C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)  
+  
+  else: cands = pd.DataFrame()
   
   return cands
 
@@ -62,52 +66,47 @@ def candidates_generator(pulses):
   pulses['Period'] = pulses.Time
   pulses['Period_err'] = pulses.Time
   
-  cands = pulses.groupby(['Candidate','SAP','BEAM'],as_index=False).agg({'Sigma':np.sum,'N_events':np.size,'DM':np.mean,'Time':np.min,'Period':period,'Period_err':period_err})
-
+  cands = pulses.groupby(['Candidate','SAP','BEAM'],as_index=False,sort=False).agg({'Sigma':np.sum,'N_events':np.size,'DM':np.mean,'Time':np.min,'Period':period,'Period_err':period_err,'Pulse':np.max})
+  
   cands.index = cands.Candidate.astype(int)
   cands.index.name = 'idx'
-  cands.rename(columns={'N_events': 'N_pulses'}, inplace=True)
+  cands.rename(columns={'N_events': 'N_pulses', 'Pulse': 'Rank'}, inplace=True)
   cands = cands.drop('Candidate',axis=1)
   cands.Time[cands.N_pulses>1] = 0
-  return cands
+  
+  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
+  best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
+  best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
+  
+  return best_cands
 
 
 
  
 
 
-def Repeated_candidates_beam((pulses,(sap,beam))):
+def Repeated_candidates_beam((pulses,(sap,beam),rank)):
   pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
-  pulses.DM = pulses.DM.astype(np.float64).round(2)
-  
-  n_pulses = pulses.shape[0]
-  #Values calculated imposing Utilities.p(n,k) < 10./222 (10 events per observation)
-  #Valori sopra 4 sbagliati: ricalcolare formula probabilita'
-  if n_pulses < 23: min_elements = 2
-  elif n_pulses < 202: min_elements = 3
-  elif n_pulses < 649: min_elements = 4
-  elif n_pulses < 1430: min_elements = 5
-  else: min_elements = 6
-  #Per numeri maggiori usare altre statistiche, tipo quelle in alerts
+  pulses.DM = pulses.DM.astype(np.float64).round(1)
   
   span = 0.5
   
   top_count = pulses.groupby('DM')['Sigma'].count()
   top_sum = pulses.groupby('DM')['Sigma'].sum()
   
-  top_sum = top_sum[top_count >= min_elements]
-  top_count = top_count[top_count >= min_elements]
+  top_sum = top_sum[top_count >= 2]
+  #top_count = top_count[top_count >= 2]
 
-  cand = pulses.N_events
+  cand = pulses.N_events.astype(np.int32)
   cand[:] = -1
   i = 10
 
   while not top_sum[top_sum!=0].empty:
     DM = top_sum.argmax()
-    Sigma = top_sum.loc[DM-span:DM+span].sum()
-    N_pulses = top_count.loc[DM-span:DM+span].sum()
-    cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = (i * np.int16(10) + sap) * np.int16(100) + beam
-    top_count.loc[DM-span:DM+span] = 0
+    #Sigma = top_sum.loc[DM-span:DM+span].sum()
+    #N_pulses = top_count.loc[DM-span:DM+span].sum()
+    cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
+    #top_count.loc[DM-span:DM+span] = 0
     top_sum.loc[DM-span:DM+span] = 0
     i += 1
     

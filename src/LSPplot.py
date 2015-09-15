@@ -13,6 +13,7 @@ import tarfile
 import os
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
+import logging
 try: import presto
 except ImportError: pass
 
@@ -116,11 +117,16 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
 
 
 def single_candidates(events,pulses,cands,meta_data,idL,folder):
+  pulses_top = pulses[pulses.Pulse==0]
+  rfi = pulses[pulses.Pulse>0]
   for i,(idx,cand) in enumerate(cands.iterrows()):
     puls = pulses[pulses.Candidate==idx]
     event = events[events.Pulse==puls.index[0]]
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
+
+    pulses_beam = pulses_top[(pulses_top.SAP==sap)&(pulses_top.BEAM==beam)]
+    rfi_beam = rfi[(rfi.SAP==sap)&(rfi.BEAM==beam)]
     
     plt.clf()
     fig = plt.figure()
@@ -144,9 +150,10 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax6 = plt.subplot(gs1[0,1],sharex=ax5,sharey=ax5)
     ax6.label_outer()
     
-    scatter_beam(ax1,pulses,'gist_heat_r')
+    scatter_beam(ax1,pulses_beam,'gist_heat_r',rfi=rfi_beam)
+    if cand.Rank>0: ax1.scatter(puls.Time, puls.DM, s=np.clip(np.log(puls.Sigma-5.5)*400+100,100,1200), linewidths=[0.,], c=u'b')
     ax1.scatter(puls.Time, puls.DM, s=300, linewidths=[0.,], marker='*', c='w')
-    meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls)
+    meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls,cand)
     ax3.plot(event.DM, event.Sigma, 'k')
     ax3.set_xlabel('DM (pc/cm3)')    
     ax3.set_ylabel('SNR')
@@ -162,7 +169,8 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
 
 
 def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
-  pulses_top = pulses[(pulses.Sigma>=6.5)&(pulses.Pulse==0)]
+  pulses_top = pulses[pulses.Pulse==0]
+  rfi = pulses[pulses.Pulse>0]
   for i,(idx,cand) in enumerate(cands.iterrows()):
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
@@ -170,6 +178,9 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     event2 = events[events.Pulse==puls2.name]
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
+    
+    pulses_beam = pulses_top[(pulses_top.SAP==sap)&(pulses_top.BEAM==beam)]
+    rfi_beam = rfi[(rfi.SAP==sap)&(rfi.BEAM==beam)]
     
     plt.clf()
     fig = plt.figure()
@@ -216,18 +227,18 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB2.set_ylabel('SNR')
     DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam)
     DynamicSpectrum(axC2,puls2.copy(),idL,sap,beam,sharey=True)
-    meta_data_repeat(ax2,meta_data,cand)
+    meta_data_repeat(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],cand)
     
-    pulses_cand = pulses[(pulses.Sigma<6.5)&(pulses.Pulse>0)&(pulses.Candidate==idx)]
+    pulses_cand = pulses[(pulses.Pulse>0)&(pulses.Candidate==idx)]
     
-    scatter_beam(ax1,pulses_top,'gist_heat_r')
+    scatter_beam(ax1,pulses_beam,'gist_heat_r',rfi=rfi_beam)
     scatter_beam(ax1,pulses_cand,'gist_heat_r')
-    ax1.scatter(pulses_top.Time[pulses_top.Candidate==idx], pulses_top.DM[pulses_top.Candidate==idx], s=300, linewidths=[0.,], marker='*', c='w')
+    ax1.scatter(pulses.Time[pulses.Candidate==idx], pulses.DM[pulses.Candidate==idx], s=300, linewidths=[0.,], marker='*', c='w')
     ax1.axhline(cand.DM,ls='--')
-    scatter_SNR(axD2,pulses_top,'gist_heat_r')
+    scatter_SNR(axD2,pulses_beam,'gist_heat_r')
     try: 
-      hist_DM(axD1,pulses_top)
-      hist_SNR(axD3,pulses_top)
+      hist_DM(axD1,pulses_beam)
+      hist_SNR(axD3,pulses_beam)
     except ValueError: pass
     
     plt.tight_layout()
@@ -253,7 +264,7 @@ def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
     bar.update_ticks
     bar.ax.xaxis.set_ticks_position('top')
   else: ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,],vmin=vmin)
-  if isinstance(rfi,pd.DataFrame): ax.scatter(rfi.Time, rfi.DM, s=5., c=u'k', marker='+', linewidths=[0.4,])
+  if isinstance(rfi,pd.DataFrame): ax.scatter(rfi.Time, rfi.DM, s=5, c=u'k', marker='o', linewidths=[0.,])
   
   ax.axhline(40.48,c='k',ls='--',lw=.1)
   ax.axhline(141.68,c='k',ls='--',lw=.1)
@@ -326,7 +337,7 @@ def meta_data_plot(ax,meta_data):
   return
 
 def meta_data_puls(ax,meta_data,puls):
-  ax.axis([0,10,0,9])
+  ax.axis([0,10,0,8])
   ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,8))
   ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,7))
   ax.annotate('Epoch (MJD): {0:.11}'.format(meta_data.Epoch.iloc[0]), xy=(0,6))
@@ -335,11 +346,12 @@ def meta_data_puls(ax,meta_data,puls):
   ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma.iloc[0]), xy=(0,3))
   ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration.iloc[0]*1000), xy=(0,2))
   ax.annotate('N. events: {}'.format(puls.N_events.iloc[0]), xy=(0,1))
+  ax.annotate('Rank: {0:.0f}'.format(cand.Rank), xy=(0,0))
   ax.axis('off')
   return
 
 def meta_data_repeat(ax,meta_data,cand):
-  ax.axis([0,10,0,9])
+  ax.axis([0,10,0,8])
   ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,8))
   ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,7))
   ax.annotate('Epoch (MJD): {0:.11}'.format(meta_data.Epoch.iloc[0]), xy=(0,6))
@@ -348,6 +360,7 @@ def meta_data_repeat(ax,meta_data,cand):
   ax.annotate('Period err. (s): {0:.3f}'.format(cand.Period_err), xy=(0,3))
   ax.annotate('Sigma (cum.): {0:.1f}'.format(cand.Sigma), xy=(0,2))
   ax.annotate('N. pulses: {0:.0f}'.format(cand.N_pulses), xy=(0,1))
+  ax.annotate('Rank: {0:.0f}'.format(cand.Rank), xy=(0,0))
   ax.axis('off')
   return
 

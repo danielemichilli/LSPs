@@ -74,16 +74,17 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store.close()
     
   #Compares pulses in different beams
-  pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)] = RFIexcision.Compare_Beams(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM>12)])
-  pulses.Pulse[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)] = RFIexcision.time_span(pulses[(pulses.Sigma >= 6.5)&(pulses.Pulse <= 2)&(pulses.BEAM==12)])
+  #pulses.Pulse[pulses.BEAM>12] = 
+  RFIexcision.Compare_Beams(pulses[pulses.BEAM>12])
+  #pulses.Pulse[pulses.BEAM==12] = 
+  RFIexcision.time_span(pulses[pulses.BEAM==12])
   
   #Clean the pulses table
-  #pulses = pulses[pulses.Pulse <= RFI_percent]
+  pulses = pulses[pulses.Pulse <= RFI_percent]
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
     
-    pulses = pulses[pulses.Pulse <= 2]
     events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     
@@ -121,13 +122,12 @@ def lists_creation((folder,idL,sap,beam)):
       pulses = Pulses.Generator(events)
       
       #Apply RFI filters to the pulses
+      pulses = pulses[pulses.Sigma >= 6.5]
       events = events[events.Pulse.isin(pulses.index)]
-      bright_puls = pulses[pulses.Sigma >= 6.5]
       
-      pulses.Pulse[pulses.Sigma >= 6.5] += RFIexcision.Pulse_Thresh(bright_puls,events[events.Pulse.isin(bright_puls.index)])
+      RFIexcision.Pulse_Thresh(pulses,events)
+      pulses = pulses[pulses.Pulse <= RFI_percent]
       
-      pulses = pulses[pulses.Pulse < RFI_percent]
-
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
       pulses = pd.DataFrame()

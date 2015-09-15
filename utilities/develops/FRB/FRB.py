@@ -1,5 +1,8 @@
 import argparse
 import numpy as np
+import single_pulse_search as sps
+import scipy
+import tarfile
 
 def downsample(idL,filenm,raw_file):
   print 'Starting to downsample'
@@ -9,20 +12,83 @@ def downsample(idL,filenm,raw_file):
     timeseries = np.fromfile('{}_{}.dat'.format(idL,filenm),dtype=np.float32)
 
   #Downsample to 0.5s time resloution
-  if timeseries.size == 7392000:  down_fact = 1000
-  elif timeseries.size == 3696000: down_fact = 500
-  elif timeseries.size == 1848000: down_fact = 250
+  if timeseries.size == 7392000:  down_fact = 100
+  elif timeseries.size == 3696000: down_fact = 50
+  elif timeseries.size == 1848000: down_fact = 25
   else:
     print "Error: length of the timeseries unknown!"
     exit()
 
   #Downsampled
-  downsampled = np.mean(timeseries.reshape(7392,down_fact),axis=1)  #The first value is the length after the downsample, the second the downsampling factor
+  downsampled = np.mean(timeseries.reshape(73920,down_fact),axis=1)  #The first value is the length after the downsample, the second the downsampling factor
   downsampled.tofile('{}_{}_down.ds'.format(idL,filenm))
 
   print 'Downsampled complete'
   
   return
+
+
+
+def search_ts():
+
+  #Plot bins that are some factor above the median and that have higher signal compared to DM0
+  #if filenm != 'DM0.00':
+  med = np.median(downsampled)
+  #DM0 = np.fromfile('{}_DM0.00_down_30s.ds'.format(idL),dtype=np.float32)
+  #idx = np.where( ( downsampled > 1.006 * med )&( downsampled > DM0 )&( downsampled > np.roll(DM0,-1) )&( downsampled > np.roll(DM0,-2) ))[0]  #roll(DM0,-1) e' ok!
+  
+  #idx = DM-np.maximum(DM0,np.roll(DM0,-1),np.roll(DM0,-2))  #da sviluppare!!
+    
+
+  #idx = np.where( downsampled > 1.002 * med )[0]
+  #idx.tofile('{}_{}_down_30s(ind_cand).dx'.format(idL,filenm))
+
+
+  threshold = 1.5
+
+
+  timeseries = np.fromfile('test_DM546.37.dat',dtype=np.float32)
+
+
+  downfacts = [2, 5, 10, 20, 50, 100, 200, 500, 1000]  #x0.05s
+
+  chunklen = timeseries.size #73920  #number of points in the timeseries
+
+  timeseries = scipy.signal.detrend(timeseries, type='linear')
+  tmpchunk = timeseries.copy()
+  tmpchunk.sort()
+  stds = np.sqrt((tmpchunk[chunklen/40:-chunklen/40]**2.0).sum() / (0.95*chunklen))
+  stds *= 1.148
+  timeseries /= stds
+
+  #Modifica a sps
+  timeseries = scipy.signal.detrend(timeseries, type='linear')
+  for downfact in downfacts:
+    goodchunk = np.convolve(timeseries, np.ones(downfact), mode='same') / np.sqrt(downfact)
+    
+    hibins = np.nonzero(goodchunk > threshold).tolist()
+    hivals = goodchunk.tolist()
+    
+    hibins, hivals = sps.prune_related1(hibins, hivals, downfact)    
+    
+
+    #for bin, val in zip(hibins, hivals):
+      #time = bin * dt
+      #bisect.insort(dm_candlist, candidate(info.DM, val, time, bin, downfact))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -46,67 +112,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pyfits
 import numpy as np
-import single_pulse_search as sps
 
-def search():
-
-  #Plot bins that are some factor above the median and that have higher signal compared to DM0
-  #if filenm != 'DM0.00':
-  med = np.median(downsampled)
-    #DM0 = np.fromfile('{}_DM0.00_down_30s.ds'.format(idL),dtype=np.float32)
-    #idx = np.where( ( downsampled > 1.006 * med )&( downsampled > DM0 )&( downsampled > np.roll(DM0,-1) )&( downsampled > np.roll(DM0,-2) ))[0]  #roll(DM0,-1) e' ok!
-    
-    #idx = DM-np.maximum(DM0,np.roll(DM0,-1),np.roll(DM0,-2))  #da sviluppare!!
-    
-
-  #idx = np.where( downsampled > 1.002 * med )[0]
-  #idx.tofile('{}_{}_down_30s(ind_cand).dx'.format(idL,filenm))
-
-
-
-  def next2_to_n(x):
-      #Return the first value of 2^n >= x.
-      i = 1L
-      while (i < x): i = i << 1
-      return i
-
-  timeseries = np.fromfile('test_DM546.37.dat',dtype=np.float32)
-  downfacts = [2, 3, 4, 6, 9, 14, 20, 30, 45, 70, 100]
-
-  chunklen = 1789676  #number of points in the timeseries
-  timeseries = timeseries[:chunklen]
-  fftlen = int(next2_to_n(chunklen+max(downfacts)))
-  overlap = (fftlen - chunklen)/2
-
-
-
-
-
-  timeseries = scipy.signal.detrend(timeseries, type='linear')
-  tmpchunk = timeseries.copy()
-  tmpchunk.sort()
-
-  stds = np.sqrt((tmpchunk[detrendlen/40:-detrendlen/40]**2.0).sum() / (0.95*detrendlen))
-  stds *= 1.148
-  timeseries /= stds[:,np.newaxis]
-
-
-
-
-
-  extreme = np.zeros(overlap,np.float32)
-  timeseries = np.concatenate((extreme, timeseries, extreme))
-
-  fftd_chunk = sps.rfft(timeseries, -1)
-  fftd_kerns = sps.make_fftd_kerns(downfacts, fftlen)
-
-
-
-
-  for ii, downfact in enumerate(downfacts):
-    goodchunk = sps.fft_convolve(fftd_chunk, fftd_kerns[ii], overlap, -overlap)
-    
-    hibins, hivals = prune_related1(hibins, hivals, downfact)
 
 
 
@@ -213,7 +219,6 @@ def dynspect_plot(idx,idL,filename,raw_file):
 import pandas as pd
 import os
 import argparse
-import tarfile
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')

@@ -241,23 +241,11 @@ def Pulse_Thresh(pulses,events):
   #pulses = pulses[pulses.Pulse<=RFI_percent]
   #events = events[events.Pulse.isin(pulses.index)]
   #gb = events.groupby('Pulse')
-  pulses.Pulse += gb.apply(lambda x: pulses_apply(x))
-  
-  return pulses.Pulse
-
-
-
-
-
-
- 
-def IB_Pulse_Thresh(puls,gb,data,Sigma_min):
-  #--------------------------------------------------------
-  # Applies thresholds to the pulses in an incoherent beams
-  #--------------------------------------------------------
-
+  pulses.Pulse += gb.apply(lambda x: pulses_apply(x)).astype(np.int8)
   
   return
+
+
 
 
 
@@ -335,7 +323,7 @@ def time_span(puls):
   
   puls_time = puls.Time.astype(int)
   puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-  puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')  #va bene 5?
+  puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')  #va bene 5??
   a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
   
   puls_time = (puls.Time+0.5).astype(int)
@@ -346,7 +334,7 @@ def time_span(puls):
   puls_time = pd.concat((a,b)).index.unique()
   puls.Pulse.loc[puls_time] += 1
   
-  return puls.Pulse
+  return
 
 
 
@@ -384,16 +372,15 @@ def Compare_Beams(puls):
   puls.Pulse += puls.apply(lambda x: puls_beams_select(x),axis=1).astype(np.int8)
 
   
-  
-  sap0 = puls[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
   
-  sap1 = puls[(puls.SAP==1)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap1['Time_low'] = sap1.Time_c-sap1.dTime
   sap1.sort('Time_low',inplace=True)
   
-  sap2 = puls[(puls.SAP==2)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
+  sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap2['Time_low'] = sap2.Time_c-sap2.dTime
   sap2.sort('Time_low',inplace=True)
   
@@ -412,13 +399,13 @@ def Compare_Beams(puls):
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
-  puls.Pulse.loc[(puls.SAP==0)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap0.Pulse
+  puls.Pulse.loc[puls.SAP==0] = sap0.Pulse
   
-  puls.Pulse.loc[(puls.SAP==1)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap1.Pulse
+  puls.Pulse.loc[puls.SAP==1] = sap1.Pulse
   
-  puls.Pulse.loc[(puls.SAP==2)&(puls.Pulse<=RFI_percent)&(puls.BEAM>12)]=sap2.Pulse
+  puls.Pulse.loc[puls.SAP==2] = sap2.Pulse
     
-  return puls.Pulse
+  return
 
 
 

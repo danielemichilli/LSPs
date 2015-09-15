@@ -25,7 +25,7 @@ DURAT_GROUP = 0.03  #Tollerance in seconds on the temporal shift of two consecut
 SIGMA_TOLL = 4
 SIGMA_TOLL_IB = 2
 
-RFI_percent = 5
+RFI_percent = 2
 PULS_LENGHT = 15
 
 DS_OFFSET = 100000 #bins
