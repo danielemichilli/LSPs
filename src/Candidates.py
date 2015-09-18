@@ -46,6 +46,7 @@ def candidates(pulses):
     #Unify the same repeated candidates in different beams
     cands.sort('Sigma',inplace=True)
     new_cand = cands.index
+
     C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)  
   
   else: cands = pd.DataFrame()
@@ -68,6 +69,10 @@ def candidates_generator(pulses):
   
   cands = pulses.groupby(['Candidate','SAP','BEAM'],as_index=False,sort=False).agg({'Sigma':np.sum,'N_events':np.size,'DM':np.mean,'Time':np.min,'Period':period,'Period_err':period_err,'Pulse':np.max})
   
+  cands = cands.astype(np.float32)
+  cands[['N_events','Pulse']] = cands[['N_events','Pulse']].astype(np.int16)
+  
+  
   cands.index = cands.Candidate.astype(int)
   cands.index.name = 'idx'
   cands.rename(columns={'N_events': 'N_pulses', 'Pulse': 'Rank'}, inplace=True)
@@ -86,7 +91,7 @@ def candidates_generator(pulses):
 
 
 def Repeated_candidates_beam((pulses,(sap,beam),rank)):
-  pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
+  pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
   pulses.DM = 3*(pulses.DM.astype(np.float64)/3).round(2)
   
   span = 0.25
@@ -97,7 +102,7 @@ def Repeated_candidates_beam((pulses,(sap,beam),rank)):
   top_sum = top_sum[top_count >= 2]
   #top_count = top_count[top_count >= 2]
 
-  cand = pulses.N_events.astype(np.int32)
+  cand = pulses.N_events.astype(np.int16)
   cand[:] = -1
   i = 10
 
