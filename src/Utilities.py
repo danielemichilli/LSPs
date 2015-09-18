@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import math
 import logging
+import sys
 
 try:
   import filterbank
@@ -14,10 +15,7 @@ from Parameters import *
 
 
 def read_filterbank(filename,DM,bin_start):
-  try:  #provare metodi migliori
-    id(filterbank)
-    id(sigproc)
-  except NameError: 
+  if (not 'filterbank' in sys.modules) or (not 'sigproc' in sys.modules):
     logging.warning("Additional modules missing")
     return
   
@@ -55,10 +53,8 @@ def read_filterbank(filename,DM,bin_start):
  
 
 
-def read_fits(filename,DM,bin_start,offset):
-  try:  #provare metodi migliori
-    id(pyfits)
-  except NameError: 
+def read_fits(filename,DM,bin_start,offset,RFI_reduct=False):
+  if not 'pyfits' in sys.modules:
     logging.warning("Additional modules missing")
     return
 
@@ -85,18 +81,61 @@ def read_fits(filename,DM,bin_start,offset):
   ind = np.arange(0,2592,16)
   subint = np.delete(subint,ind,axis=1)
   
+  if RFI_reduct: 
+    med = np.median(subint,axis=0)
+    subint = subint - med + 128
+  
   return subint
+
+
+
+def clean(data):
+
+  data_wso = data.astype(np.int)
+
+  masked = np.ma.array(data_wso)
+  masked[:,np.arange(0,2592,16)] = np.ma.masked
+
+
+  #Set the mean of each spectra to zero
+  #med_col = np.mean(masked,axis=1)
+  med_col = np.min((\
+   np.mean(masked[:,:2592/5],axis=1),\
+   np.mean(masked[:,-2592/5:],axis=1)),\
+   axis=0)
+
+  data_wso = data_wso - med_col[:,np.newaxis]
+
+  #Shift the mean to 128
+  data_wso = data_wso + 128
+
+  #Set the right proprieties to the data
+  data_wso[:,np.arange(0,2592,16)] = 0
+  dtype_min = np.iinfo(data.dtype).min
+  dtype_max = np.iinfo(data.dtype).max
+  np.clip(data_wso, dtype_min, dtype_max, out=data_wso)
+  data_wso = np.around(data_wso)
+  data = data_wso.astype(data.dtype)
+
+  return data
+
  
  
 
 def read_header(filename):
   name, ext = os.path.splitext(filename)
   if ext == '.fits': 
+    if not 'pyfits' in sys.modules:
+      logging.warning("Additional modules missing")
+      return    
     fits = pyfits.open(filename,memmap=True)
     header = fits['SUBINT'].header + fits['PRIMARY'].header
     fits.close()
     return header
   elif ext == '.fil':
+    if not 'filterbank' in sys.modules:
+      logging.warning("Additional modules missing")
+      return
     return filterbank.read_header(filename)[0]
   else: return None
 

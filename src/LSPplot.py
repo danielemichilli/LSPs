@@ -38,7 +38,6 @@ mpl.rc('font',size=5)
 def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   plt.clf()
 
-  cmap = plt.get_cmap('gist_heat_r')
   fill = u'b'
   square = u'g'
     
@@ -50,10 +49,10 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   ax4 = plt.subplot2grid((3,4),(0,2))
   ax5 = plt.subplot2grid((3,4),(0,3))
 
-  scatter_beam(ax1,pulses,cmap,rfi=rfi)
+  scatter_beam(ax1,pulses,rfi=rfi)
   try: hist_DM(ax2,pulses)
   except ValueError: pass
-  scatter_SNR(ax3,pulses,cmap)
+  scatter_SNR(ax3,pulses)
   try: hist_SNR(ax4,pulses)
   except ValueError: pass
   meta_data_plot(ax5,meta_data)
@@ -102,11 +101,11 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   ax3 = plt.subplot2grid((3,4),(0,1))
   ax4 = plt.subplot2grid((3,4),(0,2))
   
-  scatter_beam(ax1,top_candidates,cmap,col=col,legend=num)
+  scatter_beam(ax1,top_candidates,cmap=cmap,col=col,legend=num)
   
   try: hist_DM(ax2,top_candidates)
   except ValueError: pass
-  scatter_SNR(ax3,top_candidates,cmap,col=col,with_legend=True)
+  scatter_SNR(ax3,top_candidates,cmap=cmap,col=col,with_legend=True)
   try: hist_SNR(ax4,top_candidates)
   except ValueError: pass
   
@@ -150,7 +149,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax6 = plt.subplot(gs1[0,1],sharex=ax5,sharey=ax5)
     ax6.label_outer()
     
-    scatter_beam(ax1,pulses_beam,'gist_heat_r',rfi=rfi_beam)
+    scatter_beam(ax1,pulses_beam,rfi=rfi_beam)
     if cand.Rank>0: ax1.scatter(puls.Time, puls.DM, s=np.clip(np.log(puls.Sigma-5.5)*400+100,100,1200), linewidths=[0.,], c=u'b')
     ax1.scatter(puls.Time, puls.DM, s=300, linewidths=[0.,], marker='*', c='w')
     meta_data_puls(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],puls,cand)
@@ -158,8 +157,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax3.set_xlabel('DM (pc/cm3)')    
     ax3.set_ylabel('SNR')
     puls_DM_Time(ax4,event,puls)
-    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam)
-    DynamicSpectrum(ax6,puls.copy(),idL,sap,beam)
+    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam,ax_min=ax6)
     
     plt.tight_layout()
     plt.savefig('{}/SP_SAP{}BEAM{}_{}.png'.format(folder,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
@@ -207,10 +205,14 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB1 = plt.subplot(gsB[0,0])
     axB2 = plt.subplot(gsB[1,0],sharex=axB1)
     axB1.label_outer()
-    gsC = gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs[1,2], wspace=0.0)    
+    gsC = gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs[1,2], wspace=0.0, hspace=0.0)    
     axC1 = plt.subplot(gsC[0,0])
     axC2 = plt.subplot(gsC[0,1],sharey=axC1)
+    axC3 = plt.subplot(gsC[1,0],sharex=axC1)
+    axC4 = plt.subplot(gsC[1,1],sharex=axC2,sharey=axC3)
     axC2.label_outer()
+    axC3.label_outer()
+    axC4.label_outer()
     gsD = gridspec.GridSpecFromSubplotSpec(3,1,subplot_spec=gs[1,3], hspace=0.0)    
     axD1 = plt.subplot(gsD[0,0])
     axD2 = plt.subplot(gsD[1,0],sharex=axD1)
@@ -225,17 +227,17 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB2.plot(event2.DM, event2.Sigma, 'k')
     axB2.set_xlabel('DM (pc/cm2')
     axB2.set_ylabel('SNR')
-    DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam)
-    DynamicSpectrum(axC2,puls2.copy(),idL,sap,beam,sharey=True)
-    meta_data_repeat(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],cand)
+    DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam,ax_min=axC2)
+    DynamicSpectrum(axC3,puls2.copy(),idL,sap,beam,sharey=True,ax_min=axC4)
+    meta_data_repeat(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],cand,pulses[pulses.Candidate==idx])
     
     pulses_cand = pulses[(pulses.Pulse>0)&(pulses.Candidate==idx)]
     
-    scatter_beam(ax1,pulses_beam,'gist_heat_r',rfi=rfi_beam)
-    scatter_beam(ax1,pulses_cand,'gist_heat_r')
+    scatter_beam(ax1,pulses_beam,rfi=rfi_beam)
+    scatter_beam(ax1,pulses_cand,col='b')
     ax1.scatter(pulses.Time[pulses.Candidate==idx], pulses.DM[pulses.Candidate==idx], s=300, linewidths=[0.,], marker='*', c='w')
     ax1.axhline(cand.DM,ls='--')
-    scatter_SNR(axD2,pulses_beam,'gist_heat_r')
+    scatter_SNR(axD2,pulses_beam)
     try: 
       hist_DM(axD1,pulses_beam)
       hist_SNR(axD3,pulses_beam)
@@ -251,10 +253,12 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
 
 
 
-def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
+def scatter_beam(ax,pulses,cmap='gist_heat_r',col=None,rfi=False,legend=False):
   sig = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
-  if isinstance(col,type(None)): col = sig
-  vmin = col.min()/10.
+  if isinstance(col,type(None)): 
+    col = sig
+    vmin = col.min()/10.
+  else: vmin = None
   if legend:
     main_plt = ax.scatter(pulses.Time, pulses.DM, c=col, s=sig, cmap=cmap, linewidths=[0.,],vmin=vmin)
     ticks = np.linspace(col.min(),col.max(),num=legend)
@@ -273,7 +277,7 @@ def scatter_beam(ax,pulses,cmap,col=None,rfi=False,legend=False):
   ax.set_ylabel('DM (pc/cm3)')
   ax.axis([0,3600,DM_MIN,550])
   
-  top = pulses.iloc[:10]
+  top = pulses[pulses.Pulse==0].iloc[:10]
   for i in range(top.shape[0]):
     ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=7,weight='bold')
   ax.tick_params(which='both',direction='out')
@@ -294,9 +298,11 @@ def hist_DM(ax,pulses):
   return
 
 
-def scatter_SNR(ax,pulses,cmap,col=None,with_legend=False):
-  if isinstance(col,type(None)): col = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
-  vmin = col.min()/10.
+def scatter_SNR(ax,pulses,cmap='gist_heat_r',col=None,with_legend=False):
+  if isinstance(col,type(None)): 
+    col = np.clip(np.log(pulses.Sigma-5.5)*400+100,100,1200)
+    vmin = col.min()/10.
+  else: vmin = None
   if with_legend: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=6.,cmap=cmap,linewidths=[0.,],vmin=vmin)
   else: ax.scatter(pulses.DM,pulses.Sigma,c=col,s=3.,cmap=cmap,linewidths=[0.,],vmin=vmin)
   ax.set_xscale('log')
@@ -336,7 +342,7 @@ def meta_data_plot(ax,meta_data):
   ax.axis('off')
   return
 
-def meta_data_puls(ax,meta_data,puls):
+def meta_data_puls(ax,meta_data,puls,cand):
   ax.axis([0,10,0,8])
   ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,8))
   ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,7))
@@ -350,12 +356,13 @@ def meta_data_puls(ax,meta_data,puls):
   ax.axis('off')
   return
 
-def meta_data_repeat(ax,meta_data,cand):
-  ax.axis([0,10,0,8])
-  ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,8))
-  ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,7))
-  ax.annotate('Epoch (MJD): {0:.11}'.format(meta_data.Epoch.iloc[0]), xy=(0,6))
-  ax.annotate('DM (pc/cm2): {0:.2f}'.format(cand.DM), xy=(0,5))
+def meta_data_repeat(ax,meta_data,cand,pulses):
+  ax.axis([0,10,0,9])
+  ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,9))
+  ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,8))
+  ax.annotate('Epoch (MJD): {0:.11}'.format(meta_data.Epoch.iloc[0]), xy=(0,7))
+  ax.annotate('DM (pc/cm2): {0:.2f}'.format(cand.DM), xy=(0,6))
+  ax.annotate('dDM (pc/cm2): {0:.2f}'.format(pulses.DM.max()-pulses.DM.min()), xy=(0,5))
   ax.annotate('Period (s): {0:.3f}'.format(cand.Period), xy=(0,4))
   ax.annotate('Period err. (s): {0:.3f}'.format(cand.Period_err), xy=(0,3))
   ax.annotate('Sigma (cum.): {0:.1f}'.format(cand.Sigma), xy=(0,2))
@@ -385,7 +392,7 @@ def discrete_cmap(N, base_cmap):
   
   
 
-def DynamicSpectrum(ax,puls,idL,sap,beam,sharey=False):
+def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False,ax_min=False):
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
@@ -401,16 +408,15 @@ def DynamicSpectrum(ax,puls,idL,sap,beam,sharey=False):
   try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   except NameError: 
     logging.warning("Additional modules missing")
-    return  
-  bin_idx = np.int(np.round(1./v))
-  sample += sample/bin_idx
+    return
+  sample += np.round(sample*v).astype(int)
   
   duration = np.int(np.round(puls.Duration/RES))
   spectra_border = 15
   offset = duration*spectra_border
   
   #Load the spectrum
-  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),offset)
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),offset,RFI_reduct=True)
   
   #De-dispersion
   freq = np.linspace(F_MIN,F_MAX,2430)
@@ -419,19 +425,23 @@ def DynamicSpectrum(ax,puls,idL,sap,beam,sharey=False):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
   spectrum = spectrum[:2*offset+duration]
   
-  spectrum_min = np.min(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
-  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  spectrum = np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]])
+  spectrum_mean = np.mean(spectrum,axis=1)
   
   extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
-  
-  #vmin,vmax = Utilities.color_range(spectrum)
-  
-  ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
-  #freq = np.arange(F_MAX,F_MIN-1,-1,dtype=np.float)
-  #time = 4149. * puls.DM * (np.power(freq,-2) - F_MAX**-2) + sample*RES
-  #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
-  ax.axis(extent)
-  ax.set_xlabel('Time (s)')
+  vmin,vmax = Utilities.color_range(spectrum_mean)
+  ax1.imshow(spectrum_mean.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
+  ax1.scatter(sample,F_MIN+1,marker='^',size=1000,c='r')
+  ax1.axis(extent)
+  ax1.set_xlabel('Time (s)')
   if not sharey:
-    ax.set_ylabel('Frequency (MHz)')
+    ax1.set_ylabel('Frequency (MHz)')
+    
+  if ax_min:
+    spectrum_min = np.partition(spectrum,3,axis=1)[:,3]
+    ax_min.imshow(spectrum_min.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+    ax_min.scatter(sample,F_MIN+1,marker='^',size=1000,c='r')
+    ax_min.axis(extent)
+    ax_min.set_xlabel('Time (s)')
+      
   return 

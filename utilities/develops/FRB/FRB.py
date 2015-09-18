@@ -4,6 +4,38 @@ import single_pulse_search as sps
 import scipy
 import tarfile
 
+
+
+'''
+DM steps: 0.45835940634304545
+  DMs = dt / (4149 * (F_MIN**-2 - F_MAX**-2))
+  dt = 0.05
+
+In standard pipeline:
+- Applicare jumps removal
+- Produrre n timeseries in ogni beam #Trovare DM step#
+- In LTA_fil.sh chiamare FRB.py per ogni DM step
+  1.Rimuovere bad bins
+    a.Basandosi su statistiche fits file
+    b.Basandosi su statistiche timeseries
+    c.Basandosi su DM0 timeseries
+      + clip
+      + rimuovere span in timeseries #Quando DM0>DMx rimuovere time span precedente#
+      + rimuovere jumps estremi rispetto a bin precedente in DM0
+  2.Downsample
+  3.Rimuovere bad chunks
+  4.Cercare candidati e appendere in DB (o txt)
+  5.Salvare i DB di ogni beam in tar
+in SP pipeline:
+- Unire tutti i DB
+- Applicare RFI removal
+- Plottare dynamic spectrum e segnale in ogni beam dei candidati interessanti
+
+'''
+
+
+
+
 def downsample(idL,filenm,raw_file):
   print 'Starting to downsample'
 
@@ -21,7 +53,8 @@ def downsample(idL,filenm,raw_file):
 
   #Downsampled
   downsampled = np.mean(timeseries.reshape(73920,down_fact),axis=1)  #The first value is the length after the downsample, the second the downsampling factor
-  downsampled.tofile('{}_{}_down.ds'.format(idL,filenm))
+  
+  #downsampled.tofile('{}_{}_down.ds'.format(idL,filenm))
 
   print 'Downsampled complete'
   

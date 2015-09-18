@@ -1,6 +1,7 @@
 import os
 import multiprocessing as mp
 
+import Internet
 import LSPplot
 
 
@@ -15,6 +16,10 @@ def output(folder,idL,pulses,events,meta_data,candidates):
   
   #Single candidates
   LSPplot.single_candidates(events,pulses,candidates[(candidates.N_pulses==1)&(candidates.main_cand==0)].head(10),meta_data,idL,store)
+  
+  
+  #Internet.upload(store)
+  
     
   store = '{}{}/sp/diagnostics'.format(folder,idL)
   

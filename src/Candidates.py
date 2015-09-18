@@ -87,9 +87,9 @@ def candidates_generator(pulses):
 
 def Repeated_candidates_beam((pulses,(sap,beam),rank)):
   pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
-  pulses.DM = pulses.DM.astype(np.float64).round(1)
+  pulses.DM = 3*(pulses.DM.astype(np.float64)/3).round(2)
   
-  span = 0.5
+  span = 0.25
   
   top_count = pulses.groupby('DM')['Sigma'].count()
   top_sum = pulses.groupby('DM')['Sigma'].sum()

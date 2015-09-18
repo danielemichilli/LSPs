@@ -45,7 +45,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   pulses = pd.concat(results)
   results = 0
   
-  #pulses = lists_creation((folder,idL,2,56))
+  #pulses = lists_creation((folder,idL,2,73))
   
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
