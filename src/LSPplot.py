@@ -391,13 +391,14 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),offset,RFI_reduct=True)
   
   #De-dispersion
-  freq = np.linspace(F_MIN,F_MAX,2430)
+  freq = np.linspace(F_MIN,F_MAX,2592)
   time = (4149 * puls.DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
   spectrum = spectrum[:2*offset+duration]
   
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum,spectrum.shape[1]/32,32]),axis=1)
   
   extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
   vmin,vmax = Utilities.color_range(spectrum)

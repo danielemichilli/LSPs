@@ -46,8 +46,8 @@ def read_filterbank(filename,DM,bin_start):
   bin_end = bin_start + DM2delay(DM) + DS_OFFSET
   
   spectrum = spectrum[bin_start:bin_end]
-  ind = np.arange(0,2592,16)
-  spectrum = np.delete(spectrum,ind,axis=1)
+  #ind = np.arange(0,2592,16)
+  #spectrum = np.delete(spectrum,ind,axis=1)
   
   return spectrum
  
@@ -78,8 +78,8 @@ def read_fits(filename,DM,bin_start,offset,RFI_reduct=False):
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
   
   subint = subint[bin_start%N_spectra:bin_start%N_spectra+bin_end]
-  ind = np.arange(0,2592,16)
-  subint = np.delete(subint,ind,axis=1)
+  #ind = np.arange(0,2592,16)
+  #subint = np.delete(subint,ind,axis=1)
   
   if RFI_reduct: 
     med = np.median(subint,axis=0)
