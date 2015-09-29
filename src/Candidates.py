@@ -110,7 +110,8 @@ def Repeated_candidates_beam((pulses,(sap,beam),rank)):
     DM = top_sum.argmax()
     #Sigma = top_sum.loc[DM-span:DM+span].sum()
     #N_pulses = top_count.loc[DM-span:DM+span].sum()
-    cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
+    if cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)].shape[0] > 1:
+      cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
     #top_count.loc[DM-span:DM+span] = 0
     top_sum.loc[DM-span:DM+span] = 0
     i += 1
