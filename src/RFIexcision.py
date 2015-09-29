@@ -11,6 +11,7 @@ import pandas as pd
 import logging
 from scipy.optimize import curve_fit
 from scipy import special
+from scipy import stats
 
 import C_Funct
 from Parameters import *
@@ -316,28 +317,33 @@ beams = {
 
 
 def time_span(puls):
-  #TESTARE
   def min_puls(x):   
     if x.size <= 1: return 0
     else: return np.min(np.abs(x-np.mean(x)))
+
+  lim = 1-0.01/3600*puls.shape[0]
   
   try:
     puls_time = puls.Time.astype(int)
-    puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-    puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')  #va bene 5??
+    puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})  
+    mean = puls_time.N_events.sum()/3600.
+    k = stats.poisson.ppf(lim,mean)   
+    puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
     a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
   except KeyError,AssertionError: a = pd.DataFrame()
   
   try:
     puls_time = (puls.Time+0.5).astype(int)
     puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-    puls_time = puls_time.index[(puls_time.N_events>=5)&(puls_time.DM>1)].get_level_values('Time')
+    mean = puls_time.N_events.sum()/3600.
+    k = stats.poisson.ppf(lim,mean)
+    puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
     b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
   except KeyError,AssertionError: b = pd.DataFrame()
   
   puls_time = pd.concat((a,b)).index.unique()
   puls.Pulse.loc[puls_time] += 1
-  
+    
   return
 
 
@@ -358,20 +364,15 @@ def Compare_Beams(puls):
   
   
   time_span(puls)
-  
-  
 
   def puls_beams_select(x):
     select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
     close = select[select.isin(beams[x.BEAM])].size
     away = select.size - close
     if x.Sigma <= 13: return np.sum((close>3,away>1))
-    elif x.Sigma <= 20: 
-      if len(beams[x.BEAM])==6: return np.sum((close<3,away>1))
-      else: return np.sum(away>1)
-    else: 
-      if len(beams[x.BEAM])==6: return np.sum(close<3)
-      else: return 0  
+    elif x.Sigma <= 19:  #for sidelobe sensitivity 0.3 of main lobe 
+      return away>1
+    else: return 0  
   
   puls.Pulse += puls.apply(lambda x: puls_beams_select(x),axis=1).astype(np.int8)
 

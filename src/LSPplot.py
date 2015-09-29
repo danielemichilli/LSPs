@@ -129,26 +129,13 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     
     plt.clf()
     fig = plt.figure()
-    
-    #ax1 = plt.subplot2grid((2,6),(0,0),colspan=5)
-    #ax2 = plt.subplot2grid((2,6),(0,5))
-    #ax3 = plt.subplot2grid((2,6),(1,0),colspan=2)
-    #ax4 = plt.subplot2grid((2,6),(1,2),colspan=2)
-    #ax5 = fig.add_subplot(2,6,11)
-    #ax6 = fig.add_subplot(2,6,12,sharex=ax5,sharey=ax5)
-    #ax6.label_outer()
-    
-    
-    gs = gridspec.GridSpec(2,6)
-    ax1 = plt.subplot(gs[0,0:5])
-    ax2 = plt.subplot(gs[0,5])
-    ax3 = plt.subplot(gs[1,0:2])
-    ax4 = plt.subplot(gs[1,2:4])
-    gs1 = gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs[1,4:6], wspace=0.0)
-    ax5 = plt.subplot(gs1[0,0])
-    ax6 = plt.subplot(gs1[0,1],sharex=ax5,sharey=ax5)
-    ax6.label_outer()
-    
+
+    ax1 = plt.subplot2grid((2,3),(0,0),colspan=2)
+    ax2 = plt.subplot2grid((2,3),(0,2))
+    ax3 = plt.subplot2grid((2,3),(1,0))
+    ax4 = plt.subplot2grid((2,3),(1,1))
+    ax5 = plt.subplot2grid((2,3),(1,2))
+
     scatter_beam(ax1,pulses_beam,rfi=rfi_beam)
     if cand.Rank>0: ax1.scatter(puls.Time, puls.DM, s=np.clip(np.log(puls.Sigma-5.5)*400+100,100,1200), linewidths=[0.,], c=u'b')
     ax1.scatter(puls.Time, puls.DM, s=300, linewidths=[0.,], marker='*', c='w')
@@ -157,7 +144,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax3.set_xlabel('DM (pc/cm3)')    
     ax3.set_ylabel('SNR')
     puls_DM_Time(ax4,event,puls)
-    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam,ax_min=ax6)
+    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam)
     
     plt.tight_layout()
     plt.savefig('{}/SP_SAP{}BEAM{}_{}.png'.format(folder,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
@@ -182,18 +169,7 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     
     plt.clf()
     fig = plt.figure()
-    
-    #axA1 = plt.subplot2grid((4,5),(0,0))
-    #axA2 = plt.subplot2grid((4,5),(1,0))
-    #axB1 = plt.subplot2grid((4,5),(0,1))
-    #axB2 = plt.subplot2grid((4,5),(1,1))
-    #axC1 = plt.subplot2grid((4,5),(0,2))
-    #axC2 = plt.subplot2grid((4,5),(1,2))
-    #ax2 = plt.subplot2grid((4,5),(0,3),colspan=2,rowspan=2)
-    #ax1 = plt.subplot2grid((4,5),(2,0),colspan=4,rowspan=2)
-    #ax4A = plt.subplot2grid((4,5),(2,4))
-    #ax4B = plt.subplot2grid((4,5),(3,4))
-    
+
     gs = gridspec.GridSpec(2,4)
     ax1 = plt.subplot(gs[0,0:3])
     ax2 = plt.subplot(gs[0,3])
@@ -205,14 +181,10 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB1 = plt.subplot(gsB[0,0])
     axB2 = plt.subplot(gsB[1,0],sharex=axB1)
     axB1.label_outer()
-    gsC = gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs[1,2], wspace=0.0, hspace=0.0)    
+    gsC = gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=gs[1,2], wspace=0.0, hspace=0.0)    
     axC1 = plt.subplot(gsC[0,0])
     axC2 = plt.subplot(gsC[0,1],sharey=axC1)
-    axC3 = plt.subplot(gsC[1,0],sharex=axC1)
-    axC4 = plt.subplot(gsC[1,1],sharex=axC2,sharey=axC3)
     axC2.label_outer()
-    axC3.label_outer()
-    axC4.label_outer()
     gsD = gridspec.GridSpecFromSubplotSpec(3,1,subplot_spec=gs[1,3], hspace=0.0)    
     axD1 = plt.subplot(gsD[0,0])
     axD2 = plt.subplot(gsD[1,0],sharex=axD1)
@@ -227,8 +199,8 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     axB2.plot(event2.DM, event2.Sigma, 'k')
     axB2.set_xlabel('DM (pc/cm2')
     axB2.set_ylabel('SNR')
-    DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam,ax_min=axC2)
-    DynamicSpectrum(axC3,puls2.copy(),idL,sap,beam,sharey=True,ax_min=axC4)
+    DynamicSpectrum(axC1,puls1.copy(),idL,sap,beam)
+    DynamicSpectrum(axC2,puls2.copy(),idL,sap,beam,sharey=True)
     meta_data_repeat(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],cand,pulses[pulses.Candidate==idx])
     
     pulses_cand = pulses[(pulses.Pulse>0)&(pulses.Candidate==idx)]
@@ -392,7 +364,7 @@ def discrete_cmap(N, base_cmap):
   
   
 
-def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False,ax_min=False):
+def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
@@ -425,23 +397,15 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False,ax_min=False):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
   spectrum = spectrum[:2*offset+duration]
   
-  spectrum = np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]])
-  spectrum_mean = np.mean(spectrum,axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
   
   extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
-  vmin,vmax = Utilities.color_range(spectrum_mean)
-  ax1.imshow(spectrum_mean.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
-  ax1.scatter(sample,F_MIN+1,marker='^',size=1000,c='r')
+  vmin,vmax = Utilities.color_range(spectrum)
+  ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
+  ax1.scatter(sample,F_MIN+1,marker='^',s=1000,c='r')
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')
   if not sharey:
     ax1.set_ylabel('Frequency (MHz)')
-    
-  if ax_min:
-    spectrum_min = np.partition(spectrum,3,axis=1)[:,3]
-    ax_min.imshow(spectrum_min.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-    ax_min.scatter(sample,F_MIN+1,marker='^',size=1000,c='r')
-    ax_min.axis(extent)
-    ax_min.set_xlabel('Time (s)')
       
   return 
