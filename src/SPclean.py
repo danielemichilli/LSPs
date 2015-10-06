@@ -66,7 +66,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
     return
   pulses.sort_index(inplace=True)
   
-  cands = Candidates.candidates(pulses)
+  cands = Candidates.candidates(pulses,idL)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
@@ -90,6 +90,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
     
     #Produce the output
     Output.output(folder,idL,pulses,events,meta_data,cands)
+    
+    #Store the best candidates online
+    Internet.upload(cands,folder,idL)
   
   return
 

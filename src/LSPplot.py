@@ -118,7 +118,7 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
 def single_candidates(events,pulses,cands,meta_data,idL,folder):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
-  for i,(idx,cand) in enumerate(cands.iterrows()):
+  for idx,cand in cands.iterrows():
     puls = pulses[pulses.Candidate==idx]
     event = events[events.Pulse==puls.index[0]]
     sap = int(cand.SAP)
@@ -147,7 +147,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     DynamicSpectrum(ax5,puls.copy(),idL,sap,beam)
     
     plt.tight_layout()
-    plt.savefig('{}/SP_SAP{}BEAM{}_{}.png'.format(folder,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
+    plt.savefig('{}/{}.png'.format(folder,cand.id),format='png',bbox_inches='tight',dpi=200)
 
   return
 
@@ -156,7 +156,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
 def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
-  for i,(idx,cand) in enumerate(cands.iterrows()):
+  for idx,cand in cands.iterrows():
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
     event1 = events[events.Pulse==puls1.name]
@@ -216,7 +216,7 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     except ValueError: pass
     
     plt.tight_layout()
-    plt.savefig('{}/RC_SAP{}BEAM{}_{}.png'.format(folder,sap,beam,i),format='png',bbox_inches='tight',dpi=200)
+    plt.savefig('{}/{}.png'.format(folder,cand.id),format='png',bbox_inches='tight',dpi=200)
 
   return
 
@@ -384,7 +384,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   sample += np.round(sample*v).astype(int)
   
   duration = np.int(np.round(puls.Duration/RES))
-  spectra_border = 15
+  spectra_border = 20
   offset = duration*spectra_border
   
   #Load the spectrum
@@ -398,11 +398,10 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   spectrum = spectrum[:2*offset+duration]
   
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
-  spectrum = np.mean(np.reshape(spectrum,[spectrum,spectrum.shape[1]/32,32]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
   
   extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
-  vmin,vmax = Utilities.color_range(spectrum)
-  ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)
+  ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
   ax1.scatter(sample,F_MIN+1,marker='^',s=1000,c='r')
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')

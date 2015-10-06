@@ -8,7 +8,7 @@ import C_Funct
 import Utilities
 
 
-def candidates(pulses):
+def candidates(pulses,idL):
   pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
 
   #Create candidates lists
@@ -40,7 +40,7 @@ def candidates(pulses):
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
   
   if not pulses[pulses.Candidate>=0].empty:
-    cands = candidates_generator(pulses[pulses.Candidate>=0].copy())
+    cands = candidates_generator(pulses[pulses.Candidate>=0].copy(),idL)
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
@@ -63,7 +63,7 @@ def period_err(x):
   if x.size<=1: return 0
   else: return Utilities.rrat_period(x)[1]
 
-def candidates_generator(pulses):
+def candidates_generator(pulses,idL):
   pulses['Period'] = pulses.Time
   pulses['Period_err'] = pulses.Time
   
@@ -78,8 +78,9 @@ def candidates_generator(pulses):
   cands.rename(columns={'N_events': 'N_pulses', 'Pulse': 'Rank'}, inplace=True)
   cands = cands.drop('Candidate',axis=1)
   cands.Time[cands.N_pulses>1] = 0
+  cands['id'] = idL + '_' + cands.SAP.astype(str) + '_' + cands.BEAM.astype(str) + '_' + cands.index.astype(str)
   
-  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
+  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)   #c'e' un ERRORE!! (v. plots di L204720)
   best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
   best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
   

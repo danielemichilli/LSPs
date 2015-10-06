@@ -6,7 +6,13 @@ PASSWD='J0140+56'
 ftp -n $HOST <<END_SCRIPT
 quote USER $USER
 quote PASS $PASSWD
-$1 $2
+
+if [ "$1" = "cd" ]; then
+  ${@:1:2}
+  ${@:3}
+else
+  $@
+fi
 
 bye
 END_SCRIPT
