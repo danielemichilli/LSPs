@@ -23,31 +23,31 @@ def upload(cands,folder,idL):
   ftp.mkd(idL)
 
   #Create the html list file of all the obs folders
-  create_list(ftp,folder)
+  create_list(ftp,folder,idL)
 
   #Create the html obs file
-  create_obs(folder)
+  create_obs(folder,idL)
   
   #upload the candidate plots
   ftp.cwd(idL)
-  plot_list = os.listdir(folder+'/candidates/')
+  plot_list = os.listdir(folder+idL+'/sp/candidates/')
   for plot in plot_list:
-    ftp.storbinary('STOR '+plot, open(folder+'/candidates/'+plot,'r'))
+    ftp.storbinary('STOR '+plot, open(folder+idL+'/sp/candidates/'+plot,'r'))
   
   ftp.quit()
-  os.remove(folder+'/obs_list.html')
-  os.remove(folder+'candidates/observation.html')
+  os.remove(folder+idL+'/sp/obs_list.html')
+  os.remove(folder+idL+'/sp/candidates/observation.html')
   
   return
 
 
-def create_list(ftp,folder):
+def create_list(ftp,folder,idL):
   obs_list = []
   ftp.retrlines('MLSD',obs_list.append)
   obs_list = [line[1:] for line in obs_list if (line[1]=='L')&(line[2:].isdigit())]
   obs_list.sort()  
   
-  f = open(folder+'/obs_list.html','w')
+  f = open(folder+idL+'/sp/obs_list.html','w')
   f.write('<!DOCTYPE html>\n<html>\n<head>\n<base target="plots">\n</head>\n<body>\n <ul style="list-style-type:none">\n\n')
   for line in obs_list: 
     s = '  <li><a href="{idL}/observation.html" target="plots">{idL}</a></li>'.format(idL=line)
@@ -55,13 +55,13 @@ def create_list(ftp,folder):
   f.write('\n\n </ul>\n</body>\n</html>\n')
   f.close()
   
-  ftp.storbinary('STOR obs_list.html', open(folder+'/obs_list.html','r'))
+  ftp.storbinary('STOR obs_list.html', open(folder+idL+'/sp/obs_list.html','r'))
   
   return
 
 
-def create_obs(folder):
-  f = open(folder+'candidates/observation.html','w')
+def create_obs(folder,idL):
+  f = open(folder+idL+'/sp/candidates/observation.html','w')
   f.write("""<!DOCTYPE html>
 <html>
 <head>
@@ -78,7 +78,7 @@ def create_obs(folder):
 
 """)
     
-  plot_list = os.listdir(folder+'/candidates/')
+  plot_list = os.listdir(folder+idL+'/sp/candidates/')
   for plot in plot_list:
     if os.path.splitext(plot)[1] == ".png":
       f.write('<form id="foo">\n')
@@ -109,7 +109,7 @@ def upload_sheet(cands,idL):
   for idx,cand in cands.iterrows():
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
-    row = [cands.id, date, idL, cands.SAP, cands.BEAM, kind, cands.N_pulses, cands.DM, cands.Rank]
+    row = [cand.id, date, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank]
     wks.append_row(row)
   
   return

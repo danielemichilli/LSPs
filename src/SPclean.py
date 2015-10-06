@@ -21,6 +21,7 @@ import RFIexcision
 import LSPplot
 import Output
 import Candidates
+import Internet
 from Parameters import *
 
 def obs_events(folder,idL,load_events=False,conf=False):

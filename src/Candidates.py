@@ -70,8 +70,7 @@ def candidates_generator(pulses,idL):
   cands = pulses.groupby(['Candidate','SAP','BEAM'],as_index=False,sort=False).agg({'Sigma':np.sum,'N_events':np.size,'DM':np.mean,'Time':np.min,'Period':period,'Period_err':period_err,'Pulse':np.max})
   
   cands = cands.astype(np.float32)
-  cands[['N_events','Pulse']] = cands[['N_events','Pulse']].astype(np.int16)
-  
+  cands[['N_events','Pulse','SAP','BEAM']] = cands[['N_events','Pulse','SAP','BEAM']].astype(np.int16)
   
   cands.index = cands.Candidate.astype(int)
   cands.index.name = 'idx'
@@ -103,7 +102,7 @@ def Repeated_candidates_beam((pulses,(sap,beam),rank)):
   top_sum = top_sum[top_count >= 2]
   #top_count = top_count[top_count >= 2]
 
-  cand = pulses.N_events.astype(np.int16)
+  cand = pulses.N_events.astype(np.int32)
   cand[:] = -1
   i = 10
 
