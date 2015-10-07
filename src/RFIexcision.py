@@ -414,15 +414,67 @@ def Compare_Beams(puls):
 
 
 
-def Multimoment(ds,DM,duration):
-  freq = np.linspace(F_MIN,F_MAX,2592)
-  time = (4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES + DS_OFFSET).round().astype(np.int)
+#def Multimoment(ds,DM,duration):
+  #freq = np.linspace(F_MIN,F_MAX,2592)
+  #time = (4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES + DS_OFFSET).round().astype(np.int)
   
-  spectrum = ds[100:]
-  spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+  #spectrum = ds[100:]
+  #spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
   
-  I1 = spectrum.size * np.sum(spectrum**2)
-  I2 = np.sum(spectrum)**2
+  #I1 = spectrum.size * np.sum(spectrum**2)
+  #I2 = np.sum(spectrum)**2
   
-  return (I1 - I2) / I2
+  #return (I1 - I2) / I2
 
+
+
+
+
+def Multimoment(pulses,idL):
+  pulses.sort(['SAP','BEAM'],inplace=True)
+  beam = -1
+  sap = -1
+  freq = np.linspace(F_MIN,F_MAX,2592)
+  
+  multimoment = np.zeros(0,dtype=np.float32)
+  
+  for i,(idx,puls) in enumerate(pulses.iterrows()):
+    if (puls.BEAM != beam) | (puls.SAP != sap):
+      beam = puls.BEAM
+      sap = puls.SAP
+      
+      #Open the fits file
+      if beam==12: stokes = 'incoherentstokes'
+      else: stokes = 'stokes'
+      filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+      if not os.path.isfile(filename): continue
+  
+      if puls.DM>141.71: sample = puls.Sample * 4
+      elif puls.DM>40.47: sample = puls.Sample * 2
+      else: sample = puls.Sample
+
+      header = Utilities.read_header(filename)
+      MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+      try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+      except NameError: 
+        logging.warning("Additional modules missing")
+        return
+      sample += np.round(sample*v).astype(int)
+  
+      duration = np.int(np.round(puls.Duration/RES))
+  
+      #Load the spectrum
+      spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),puls.duration,0,RFI_reduct=True)
+  
+    #De-dispersion
+    time = (4149 * puls.DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int)
+    spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+    
+    I1 = spectrum.size * np.sum(spectrum**2)
+    I2 = np.sum(spectrum)**2
+    
+    multimoment[i] = (I1 - I2) / I2
+
+  pulses['multimoment'] = multimoment
+
+  return

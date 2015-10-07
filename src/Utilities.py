@@ -53,12 +53,13 @@ def read_filterbank(filename,DM,bin_start):
  
 
 
-def read_fits(filename,DM,bin_start,offset,RFI_reduct=False):
+def read_fits(filename,DM,bin_start,duration,offset,RFI_reduct=False):
   if not 'pyfits' in sys.modules:
     logging.warning("Additional modules missing")
     return
 
   bin_start = np.int(bin_start)
+  duration = np.int(duration/RES+1)
   fits = pyfits.open(filename,memmap=True)
   
   header = fits['SUBINT'].header
@@ -67,7 +68,7 @@ def read_fits(filename,DM,bin_start,offset,RFI_reduct=False):
   N_spectra = header['NSBLK']
 
   bin_start -= offset
-  bin_end = bin_start + DM2delay(DM) + 2*offset
+  bin_end = bin_start + DM2delay(DM) +  + 2*offset
   
   subint_start = bin_start/N_spectra
   subint_end = bin_end/N_spectra+1
