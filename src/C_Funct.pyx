@@ -241,3 +241,35 @@ def Compare_candidates(float[::1] DM not None,
 
       
   return
+  
+  
+  
+  
+  
+def time_span(float[::1] DM not None,
+            float[::1] Time not None,          
+            signed char[::1] cand not None):
+
+  cdef:
+    unsigned int i, j
+    unsigned int dim = len(DM)
+
+  # Compare each candidate
+  for i in range(0,dim):
+    
+    for j in range(i+1,dim):
+      
+      if Time[j]-Time[i] < 10.:
+      
+        if abs(DM[j]-DM[i]) < 1.:
+        
+          cand[i] = 1
+          cand[j] = 1
+          
+          break
+        
+      else: break
+      
+  return  
+
+

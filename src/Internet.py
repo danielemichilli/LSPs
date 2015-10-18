@@ -1,6 +1,7 @@
 import logging
 try:
   from ftplib import FTP
+  from ftplib import error_perm
   import json
   import gspread
   from oauth2client.client import SignedJwtAssertionCredentials
@@ -15,13 +16,29 @@ from Paths import *
 def upload(cands,folder,idL):
   upload_sheet(cands,idL)
   
+  #Retrive website information to connect
+  f = open(SITE_ATTR)
+  site_host = f.readline().split()[0]
+  username = f.readline().split()[0]
+  psw = f.readline().split()[0]
+  f.close()
+  
   #Connect the remote server
-  ftp = FTP('lsps.co.nf')
-  ftp.login(user='1948849_lsps',passwd='J0140+56')
-
+  ftp = FTP(site_host)
+  ftp.login(user=username,passwd=psw)
+  ftp.cwd('public_html')
+  
   #Create the obs folder  
-  ftp.mkd(idL)
-
+  try: ftp.mkd(idL)
+  except error_perm:
+    ftp.cwd(idL)
+    for file in ftp.nlst():
+      try: ftp.delete(file)
+      except error_perm: pass
+    ftp.cwd('..')
+    ftp.rmd(idL)
+    ftp.mkd(idL)
+  
   #Create the html list file of all the obs folders
   create_list(ftp,folder,idL)
 
@@ -42,9 +59,10 @@ def upload(cands,folder,idL):
 
 
 def create_list(ftp,folder,idL):
-  obs_list = []
-  ftp.retrlines('MLSD',obs_list.append)
-  obs_list = [line[1:] for line in obs_list if (line[1]=='L')&(line[2:].isdigit())]
+  #obs_list = []
+  #ftp.retrlines('MLSD',obs_list.append)
+  obs_list = ftp.nlst()
+  obs_list = [line for line in obs_list if (line[0]=='L')&(line[2:].isdigit())]
   obs_list.sort()  
   
   f = open(folder+idL+'/sp/obs_list.html','w')
@@ -103,13 +121,26 @@ def upload_sheet(cands,idL):
   credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
   gc = gspread.authorize(credentials)
   wks = gc.open("LSPs Candidates").sheet1
-
   date = time.strftime("%d/%m/%Y")
+  
+  cand_list = wks.col_values(1)
   
   for idx,cand in cands.iterrows():
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
     row = [cand.id, date, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank]
-    wks.append_row(row)
+    if cand.id in cand_list:
+      row_num = wks.find(cand.id).row
+      col_num = len(wks.row_values(row_num))
+      #col_num = chr(len(row)-1 + ord('A'))
+      col_num = chr(col_num-1 + ord('A'))
+      cells = wks.range('A{row}:{col}{row}'.format(row=row_num,col=col_num))
+      for i,cell in enumerate(cells): 
+        if i < len(row): cell.value = row[i]
+        else:  cell.value = ''
+      wks.update_cells(cells)
+      logging.warning("Candidate {} already existed in the datasheet! It has been substituted.".format(cand.id))
+    else:
+      wks.append_row(row)
   
   return

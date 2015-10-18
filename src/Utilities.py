@@ -53,28 +53,29 @@ def read_filterbank(filename,DM,bin_start):
  
 
 
-def read_fits(filename,DM,bin_start,duration,offset,RFI_reduct=False):
-  if not 'pyfits' in sys.modules:
-    logging.warning("Additional modules missing")
-    return
-
+def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   bin_start = np.int(bin_start)
   duration = np.int(duration/RES+1)
-  fits = pyfits.open(filename,memmap=True)
   
-  header = fits['SUBINT'].header
+  if isinstance(fits,str):
+    try: fits = pyfits.open(fits,memmap=True)
+    except NameError: 
+      logging.warning("Additional modules missing")
+      return    
+    header = fits['SUBINT'].header
+  else: header = fits['SUBINT'].header
   
   N_channels = header['NCHAN']
   N_spectra = header['NSBLK']
 
   bin_start -= offset
-  bin_end = bin_start + DM2delay(DM) +  + 2*offset
+  bin_end = bin_start + DM2delay(DM) + duration + 2*offset
   
   subint_start = bin_start/N_spectra
   subint_end = bin_end/N_spectra+1
   subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
   
-  fits.close()
+  if not isinstance(fits,str): fits.close()
 
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
   

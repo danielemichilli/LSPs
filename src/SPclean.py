@@ -24,6 +24,7 @@ import Candidates
 import Internet
 from Parameters import *
 
+
 def obs_events(folder,idL,load_events=False,conf=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
@@ -48,7 +49,6 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   #pulses = lists_creation((folder,idL,2,73))
   
-  
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   for file in os.listdir('{}{}/sp'.format(folder,idL)):
     if file.endswith('.tmp'):
@@ -66,6 +66,27 @@ def obs_events(folder,idL,load_events=False,conf=False):
     logging.warning("No pulse detected!")
     return
   pulses.sort_index(inplace=True)
+
+
+
+  #TO BE TESTED
+
+
+  #Remove time-spans affectd by RFI
+  pulses.sort_index(inplace=True)
+  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM==12])] += 1
+  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM>12])] += 1
+  pulses = pulses[pulses.Pulse <= RFI_percent]
+
+  #Compare different beams
+  pulses.Pulse.loc[RFIexcision.Compare_Beams(pulses[pulses.BEAM>12].copy())] += 1
+  pulses = pulses[pulses.Pulse <= RFI_percent]
+
+  #Remove pulses appearing in too many beams
+  pulses.Pulse += pulses.apply(lambda x: RFIexcision.puls_beams_select(x,pulses),axis=1).astype(np.int8)
+  pulses = pulses[pulses.Pulse <= RFI_percent]
+  
+  
   
   cands = Candidates.candidates(pulses,idL)
   
@@ -73,15 +94,6 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store.append('pulses',pulses,data_columns=['Pulse'])
   store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
-    
-  #Compares pulses in different beams
-  #pulses.Pulse[pulses.BEAM>12] = 
-  RFIexcision.Compare_Beams(pulses[pulses.BEAM>12])
-  #pulses.Pulse[pulses.BEAM==12] = 
-  RFIexcision.time_span(pulses[pulses.BEAM==12])
-  
-  #Clean the pulses table
-  pulses = pulses[pulses.Pulse <= RFI_percent]
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
@@ -109,7 +121,7 @@ def lists_creation((folder,idL,sap,beam)):
     try:
       #Correct for the time misalignment of events
       events.sort(['DM','Time'],inplace=True)
-      events.Time = Events.TimeAlign(events.Time,events.DM)
+      events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
       
       #Group the events
       events.sort(['DM','Time'],inplace=True)
@@ -125,15 +137,29 @@ def lists_creation((folder,idL,sap,beam)):
       events = events[events.Pulse>=0]
       pulses = Pulses.Generator(events)
       
-      #Apply RFI filters to the pulses
+      #Clean the pulses
       pulses = pulses[pulses.Sigma >= 6.5]
       events = events[events.Pulse.isin(pulses.index)]
       
-      RFIexcision.Pulse_Thresh(pulses,events)
+      #Apply global RFI filters to the pulses
+      RFIexcision.global_filters(pulses,events)
       pulses = pulses[pulses.Pulse <= RFI_percent]
+      events = events[events.Pulse.isin(pulses.index)]
+      
+      #Apply local RFI filters to the pulses
+      RFIexcision.local_filters(pulses,events)
+      pulses = pulses[pulses.Pulse <= RFI_percent]
+      events = events[events.Pulse.isin(pulses.index)]
+      
+      #A set of known pulses is necessary
+      #Apply multimoment analysis to the pulses
+      RFIexcision.multimoment(pulses,idL)
+      pulses = pulses[pulses.Pulse <= RFI_percent]
+      events = events[events.Pulse.isin(pulses.index)]
       
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
       pulses = pd.DataFrame()
       
   return pulses
+

@@ -6,7 +6,8 @@ import tarfile
 
 
 
-'''
+'''OLD
+
 DM steps: 0.45835940634304545
   DMs = dt / (4149 * (F_MIN**-2 - F_MAX**-2))
   dt = 0.05
@@ -36,11 +37,27 @@ in SP pipeline:
 
 
 
-def downsample(idL,filenm,raw_file):
+''' NEW
+
+DM steps: 1
+
+In standard pipeline:
+- Applicare jumps removal
+- Produrre 500 timeseries per ogni beam con -clip argument
+- Caricare come tabella in memoria e applicare convolution per ogni DM
+- Produrre array con segnale maggiore ad ogni tempo per ogni DM piu' DM e downfact corrispondenti
+
+
+
+'''
+
+
+
+def downsample(idL,filenm,raw_file,timeseries=None):
   print 'Starting to downsample'
 
   #Load the timeseries
-  if not timeseries:
+  if timeseries is None:
     timeseries = np.fromfile('{}_{}.dat'.format(idL,filenm),dtype=np.float32)
 
   #Downsample to 0.5s time resloution
@@ -95,7 +112,7 @@ def search_ts():
   timeseries /= stds
 
   #Modifica a sps
-  timeseries = scipy.signal.detrend(timeseries, type='linear')
+  #timeseries = scipy.signal.detrend(timeseries, type='linear')
   for downfact in downfacts:
     goodchunk = np.convolve(timeseries, np.ones(downfact), mode='same') / np.sqrt(downfact)
     

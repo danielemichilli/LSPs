@@ -12,13 +12,16 @@ import logging
 from scipy.optimize import curve_fit
 from scipy import special
 from scipy import stats
+import os
+try: import pyfits
+except ImportError: pass
 
+import Utilities
 import C_Funct
+import Paths
 from Parameters import *
 
-import time
-
-def Pulse_Thresh(pulses,events):
+def global_filters(pulses,events):
   #-----------------------------------------------------
   # Applies thresholds to the pulses in a coherent beams
   #-----------------------------------------------------
@@ -69,6 +72,17 @@ def Pulse_Thresh(pulses,events):
   DM_extremes_min = 0
   DM_extremes = 0
   
+  return
+  
+  
+def local_filters(pulses,events):
+  events.DM = events.DM.astype(np.float64)
+  events.Sigma = events.Sigma.astype(np.float64)
+  
+  events.sort_index(inplace=True)
+  gb = events.groupby('Pulse')
+  pulses.sort_index(inplace=True)
+  
   def pulses_apply(ev):
     s1 = ev.Sigma - ev.Sigma.shift(-1)
     s2 = ev.Sigma - ev.Sigma.shift(1)
@@ -99,7 +113,6 @@ def Pulse_Thresh(pulses,events):
     if sigma.max()<8: return np.std(sigma) < FILTERS['sigma_std_largest_weak']
     else: return np.std(sigma) < FILTERS['sigma_std_largest']
   
-
   def fit0(x,y):
     if x.size<20: return 0
     p = np.polyfit(x, y, 0)
@@ -112,7 +125,6 @@ def Pulse_Thresh(pulses,events):
     if y.max()<8: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit1_weak']
     else: return np.sum((np.polyval(p, x) - y) ** 2) / x.size < FILTERS['flat_fit1']
   
-  
   def pulse_simmetric(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
     x = ev.DM[ev.DM<=DM_c]
@@ -122,7 +134,6 @@ def Pulse_Thresh(pulses,events):
     y = ev.Sigma[ev.DM>=DM_c]
     mr = np.polyfit(x, y, 1)[0]
     return np.min((-ml/mr,-mr/ml))
-  
   
   def number_events(ev):
     dim = ev.shape[0]/5
@@ -159,7 +170,6 @@ def Pulse_Thresh(pulses,events):
     sigma[sigma_max:] *= -1
     return np.partition(sigma,1)[1]
 
-
   def sigma_jumps(ev_sigma):
     sigma = np.convolve(ev_sigma, np.ones(5), mode='same')/5.
     sigma_max = sigma.argmax()
@@ -167,19 +177,16 @@ def Pulse_Thresh(pulses,events):
     sigma[sigma_max:] *= -1
     return sigma[sigma<0].size/float(sigma.size)
 
-
   def SNR_simmetric(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
     l = ev[ev.DM<=DM_c]
     r = ev[ev.DM>=DM_c]
     return np.max((l.Sigma.min(),r.Sigma.min()))
   
-  
   def window_sum_SNR(Sigma):
     val = np.convolve(Sigma,np.ones(3),mode='valid')
     return val.min()/val.max()
-   
-
+  
   def fit1_brightest(ev):
     sigma = np.convolve(ev.Sigma, np.ones(3), mode='valid')/3
     dm = ev.DM.iloc[3/2:-int(3-1.5)/2]
@@ -200,7 +207,6 @@ def Pulse_Thresh(pulses,events):
     p = np.polyfit(x, y, 1)
     return np.sum((np.polyval(p, x) - y) ** 2) / (x.size-1)
     
-  
   #rimuove gli eventi piu' deboli a destra e sinistra.
   def bright_events_abs(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
@@ -233,20 +239,70 @@ def Pulse_Thresh(pulses,events):
     if ev.shape[0]<5: return 0
     else: return np.max((ev.Sigma[ev.DM.argmin()],ev.Sigma[ev.DM.argmax()]))/ev.Sigma.max()
 
-
   def flat_SNR_extremes(ev):                                            
     if ev.shape[0] < 30: return 0
     else: return np.max((ev.Sigma.iloc[1],ev.Sigma.iloc[-2]))/ev.Sigma.max()
   
-  
-  #pulses = pulses[pulses.Pulse<=RFI_percent]
-  #events = events[events.Pulse.isin(pulses.index)]
-  #gb = events.groupby('Pulse')
   pulses.Pulse += gb.apply(lambda x: pulses_apply(x)).astype(np.int8)
   
   return
 
 
+def multimoment(pulses,idL):
+  pulses.sort(['SAP','BEAM'],inplace=True)
+  last_beam = -1
+  last_sap = -1
+  freq = np.linspace(F_MIN,F_MAX,2592)
+  v = 0
+  multimoment = np.zeros(pulses.shape[0],dtype=np.float32)
+  
+  for i,(idx,puls) in enumerate(pulses.iterrows()):
+    if (puls.BEAM != last_beam) | (puls.SAP != last_sap):
+      beam = puls.BEAM.astype(int)
+      sap = puls.SAP.astype(int)
+      
+      #Open the fits file
+      if beam==12: stokes = 'incoherentstokes'
+      else: stokes = 'stokes'
+      filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+      try: fits = pyfits.open(fits,memmap=True)
+      except NameError: 
+        logging.warning("Additional modules missing")
+        return
+      except IOError: continue
+      
+      last_beam = beam
+      last_sap = sap
+  
+      header = Utilities.read_header(filename)
+      MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+      try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+      except NameError: 
+        logging.warning("Additional modules missing")
+        return
+      
+    if puls.DM>141.71: sample = puls.Sample * 4
+    elif puls.DM>40.47: sample = puls.Sample * 2
+    else: sample = puls.Sample      
+    
+    sample += np.round(sample*v).astype(int)
+    duration = np.int(np.round(puls.Duration/RES))
+  
+    #Load the spectrum
+    spectrum = Utilities.read_fits(fits,puls.DM.copy(),sample.copy(),duration,0)
+  
+    #De-dispersion
+    time = (4149 * puls.DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int)
+    spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+    
+    I1 = spectrum.size * np.sum(spectrum**2)
+    I2 = np.sum(spectrum)**2
+    
+    multimoment[i] = (I1 - I2) / I2
+
+  pulses['multimoment'] = multimoment <= MULTIMOMENT
+
+  return
 
 
 
@@ -316,67 +372,88 @@ beams = {
 }
 
 
-def time_span(puls):
-  def min_puls(x):   
-    if x.size <= 1: return 0
-    else: return np.min(np.abs(x-np.mean(x)))
+#def time_span(puls):
+  #def min_puls(x):   
+    #if x.size <= 1: return 0
+    #else: return np.min(np.abs(x-np.mean(x)))
 
-  lim = 1-0.01/3600*puls.shape[0]
+  #lim = 1-0.01/3600*puls.shape[0]
   
-  try:
-    puls_time = puls.Time.astype(int)
-    puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})  
-    mean = puls_time.N_events.sum()/3600.
-    k = stats.poisson.ppf(lim,mean)   
-    puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
-    a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
-  except KeyError,AssertionError: a = pd.DataFrame()
+  #try:
+    #puls_time = puls.Time.astype(int)
+    #puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})  
+    #mean = puls_time.N_events.sum()/3600.
+    #k = stats.poisson.ppf(lim,mean)   
+    #puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
+    #a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
+  #except KeyError,AssertionError: a = pd.DataFrame()
   
-  try:
-    puls_time = (puls.Time+0.5).astype(int)
-    puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-    mean = puls_time.N_events.sum()/3600.
-    k = stats.poisson.ppf(lim,mean)
-    puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
-    b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
-  except KeyError,AssertionError: b = pd.DataFrame()
+  #try:
+    #puls_time = (puls.Time+0.5).astype(int)
+    #puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
+    #mean = puls_time.N_events.sum()/3600.
+    #k = stats.poisson.ppf(lim,mean)
+    #puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
+    #b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
+  #except KeyError,AssertionError: b = pd.DataFrame()
   
-  puls_time = pd.concat((a,b)).index.unique()
-  puls.Pulse.loc[puls_time] += 1
+  #puls_time = pd.concat((a,b)).index.unique()
+  #puls_time.sort()
     
-  return
+  #return puls_time
 
 
+def time_span(pulses):
+  RFI = pd.DataFrame()
+  
+  for sap in pulses.SAP.unique():
+    puls = pulses[pulses.SAP==sap]
+  
+    lim = 1-0.01/360*puls.shape[0]
+    
+    try:
+      puls_time = puls.Time.round(-1).astype(int)
+      puls_time = puls.groupby(puls_time,sort=False)['N_events'].size()  
+      mean = puls_time.sum()/360.
+      k = stats.poisson.ppf(lim,mean)   
+      puls_time = puls_time.index[puls_time>k]
+      puls_time = puls.loc[puls.Time.round(-1).astype(int).isin(puls_time),['DM','Time']] 
+    except KeyError,AssertionError: puls_time = pd.DataFrame()
+    RFI = RFI.append(puls_time)
+    
+    try:
+      puls_time = (puls.Time+5).round(-1).astype(int)
+      puls_time = puls.groupby(puls_time,sort=False)['N_events'].size()  
+      mean = puls_time.sum()/360.
+      k = stats.poisson.ppf(lim,mean)
+      puls_time = puls_time.index[puls_time>k]
+      puls_time = puls.loc[puls.Time.round(-1).astype(int).isin(puls_time),['DM','Time']] 
+    except KeyError,AssertionError: puls_time = pd.DataFrame()
+    RFI = RFI.append(puls_time)
+  
+  RFI = RFI.drop_duplicates()
+  RFI.sort(['Time'],inplace=True)
+  no_rfi = np.zeros(RFI.shape[0],dtype=np.int8)
+  C_Funct.time_span(RFI.DM.values,RFI.Time.values,no_rfi)
+  
+  RFI.sort_index(inplace=True)
+  return RFI.index[no_rfi==0]
+
+
+def puls_beams_select(x,puls):
+  if x.BEAM==12: return 0
+  select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
+  close = select[select.isin(beams[x.BEAM])].size
+  away = select.size - close
+  if x.Sigma <= 13: return np.max((close>3,away>1))
+  elif x.Sigma <= 19:  #for sidelobe sensitivity 0.3 of main lobe 
+    return away>1
+  else: return 0
 
 
 def Compare_Beams(puls):
-  
-  #STUDIARE VALORI E SE METTERE puls.Pulse==0
-  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=36000)
-  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
-  
-  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=3600)
-  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
-  
-  #count,div = np.histogram(puls.Time[puls.Pulse==0],bins=360)
-  #puls.Pulse[((puls.Time-0.01)/(div[1]-div[0])).astype(np.int16).isin(div.argsort()[count>=20.])] += 1
-  
-  
-  
-  time_span(puls)
-
-  def puls_beams_select(x):
-    select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
-    close = select[select.isin(beams[x.BEAM])].size
-    away = select.size - close
-    if x.Sigma <= 13: return np.sum((close>3,away>1))
-    elif x.Sigma <= 19:  #for sidelobe sensitivity 0.3 of main lobe 
-      return away>1
-    else: return 0  
-  
-  puls.Pulse += puls.apply(lambda x: puls_beams_select(x),axis=1).astype(np.int8)
-
-  
+  puls.Pulse[:] = 0
+    
   sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
   sap0['Time_low'] = sap0.Time_c-sap0.dTime
   sap0.sort('Time_low',inplace=True)
@@ -389,92 +466,24 @@ def Compare_Beams(puls):
   sap2['Time_low'] = sap2.Time_c-sap2.dTime
   sap2.sort('Time_low',inplace=True)
   
-  logging.info('Comparison is starting')
-
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
                   sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
   
-  logging.info('1/3 completed')
-  
   C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
-  
-  logging.info('2/3 completed')
   
   C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
                   sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
   
-  puls.Pulse.loc[puls.SAP==0] = sap0.Pulse
+  #puls.Pulse.loc[puls.SAP==0] = sap0.Pulse
   
-  puls.Pulse.loc[puls.SAP==1] = sap1.Pulse
+  #puls.Pulse.loc[puls.SAP==1] = sap1.Pulse
   
-  puls.Pulse.loc[puls.SAP==2] = sap2.Pulse
-    
-  return
+  #puls.Pulse.loc[puls.SAP==2] = sap2.Pulse
+  
+  idx = pd.concat((sap0[sap0.Pulse>0],sap1[sap1.Pulse>0],sap2[sap2.Pulse>0]))
+  idx.sort_index(inplace=True)
+  
+  return idx.index
 
 
-
-#def Multimoment(ds,DM,duration):
-  #freq = np.linspace(F_MIN,F_MAX,2592)
-  #time = (4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES + DS_OFFSET).round().astype(np.int)
-  
-  #spectrum = ds[100:]
-  #spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
-  
-  #I1 = spectrum.size * np.sum(spectrum**2)
-  #I2 = np.sum(spectrum)**2
-  
-  #return (I1 - I2) / I2
-
-
-
-
-
-def Multimoment(pulses,idL):
-  pulses.sort(['SAP','BEAM'],inplace=True)
-  beam = -1
-  sap = -1
-  freq = np.linspace(F_MIN,F_MAX,2592)
-  
-  multimoment = np.zeros(0,dtype=np.float32)
-  
-  for i,(idx,puls) in enumerate(pulses.iterrows()):
-    if (puls.BEAM != beam) | (puls.SAP != sap):
-      beam = puls.BEAM
-      sap = puls.SAP
-      
-      #Open the fits file
-      if beam==12: stokes = 'incoherentstokes'
-      else: stokes = 'stokes'
-      filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-      if not os.path.isfile(filename): continue
-  
-      if puls.DM>141.71: sample = puls.Sample * 4
-      elif puls.DM>40.47: sample = puls.Sample * 2
-      else: sample = puls.Sample
-
-      header = Utilities.read_header(filename)
-      MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-      try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-      except NameError: 
-        logging.warning("Additional modules missing")
-        return
-      sample += np.round(sample*v).astype(int)
-  
-      duration = np.int(np.round(puls.Duration/RES))
-  
-      #Load the spectrum
-      spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),puls.duration,0,RFI_reduct=True)
-  
-    #De-dispersion
-    time = (4149 * puls.DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int)
-    spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
-    
-    I1 = spectrum.size * np.sum(spectrum**2)
-    I2 = np.sum(spectrum)**2
-    
-    multimoment[i] = (I1 - I2) / I2
-
-  pulses['multimoment'] = multimoment
-
-  return
