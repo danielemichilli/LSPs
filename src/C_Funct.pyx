@@ -216,16 +216,15 @@ def Compare(float[::1] DM_c_l not None,
 # Compares repeated pulses
 #-------------------------
 def Compare_candidates(float[::1] DM not None,
-            float[::1] Sigma not None,
             float[::1] Time not None,            
-            short[::1] N_pulses not None,
             long[::1] idx not None,            
             long[::1] cand not None):
 
   cdef:
     unsigned int i, j
     unsigned int dim = len(DM)
-
+    float float_err = 0.0001
+    
   # Compare each candidate
   for i in range(0,dim):
     
@@ -233,7 +232,7 @@ def Compare_candidates(float[::1] DM not None,
       
       if abs(DM[j]-DM[i]) < 1.:
       
-        if abs(Time[j]-Time[i]) < 1.:
+        if (abs(Time[j]-Time[i]) < 1.) | (Time[i]<float_err) | (Time[j]<float_err):
         
           cand[i] = idx[j]
           

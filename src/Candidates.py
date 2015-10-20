@@ -44,10 +44,10 @@ def candidates(pulses,idL):
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort('Sigma',inplace=True)
+    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
     new_cand = cands.index
 
-    C_Funct.Compare_candidates(cands.DM.values,cands.Sigma.values,cands.Time.values,cands.N_pulses.values,cands.index.values,cands.main_cand.values)  
+    C_Funct.Compare_candidates(cands.DM.values,cands.Time.values,cands.index.values,cands.main_cand.values)  
   
   else: cands = pd.DataFrame()
   
@@ -79,7 +79,7 @@ def candidates_generator(pulses,idL):
   cands.Time[cands.N_pulses>1] = 0
   cands['id'] = idL + '_' + cands.SAP.astype(str) + '_' + cands.BEAM.astype(str) + '_' + cands.index.astype(str)
   
-  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)   #c'e' un ERRORE!! (v. plots di L204720)
+  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
   best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
   best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
   
