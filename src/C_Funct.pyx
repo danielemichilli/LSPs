@@ -246,7 +246,7 @@ def Compare_candidates(float[::1] DM not None,
   
   
 def time_span(float[::1] DM not None,
-            float[::1] Time not None,          
+            double[::1] Time not None,          
             signed char[::1] cand not None):
 
   cdef:

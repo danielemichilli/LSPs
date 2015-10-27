@@ -75,20 +75,64 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   subint_end = bin_end/N_spectra+1
   subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
   
-  if not isinstance(fits,str): fits.close()
+  fits.close()
 
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
   
+  #ATTENZIONE! Salvare .mask file nella pipeline!!
+  try:
+    #Zap the channels from the mask file
+    zap_chans, zap_ints, chans_per_int = read_mask(filename,subint_start,subint_end)
+    med_value = np.median(subint)
+    subint[:,zap_chans] = med_value
+    zap_ints = zap_ints[(zap_ints>=bin_start)&(zap_ints<=bin_end)]
+    subint[zap_ints,:] = med_value
+
+    for i,chans in enumerate(chans_per_int):
+      chunk = subint[i*N_spectra:(i+1)*N_spectra]
+      chunk[:,chans] = med_value
+      if RFI_reduct: np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+    
+  except IOError:
+    if RFI_reduct:
+      for i in range(subint_end-subint_start):
+        chunk = subint[i*N_spectra:(i+1)*N_spectra]
+        np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+    
   subint = subint[bin_start%N_spectra:bin_start%N_spectra+bin_end]
   #ind = np.arange(0,2592,16)
   #subint = np.delete(subint,ind,axis=1)
   
-  if RFI_reduct: 
-    med = np.median(subint,axis=0)
-    subint = subint - med + 128
-  
   return subint
 
+
+
+def read_mask(filename,subint_start,subint_end):
+  f = open(filename,'r')
+  timesigma, freqsigma, mjd, dtint, lofreq, dfreq = np.fromfile(f,count=6,dtype=np.double)
+  numchan, numint, ptsperint = np.fromfile(f,count=3,dtype=np.intc)
+  
+  num_zap_chans, = np.fromfile(f,count=1,dtype=np.intc)
+  zap_chans = np.fromfile(f,count=num_zap_chans,dtype=np.intc)
+
+  num_zap_ints, = np.fromfile(f,count=1,dtype=np.intc)
+  zap_ints = np.fromfile(f,count=num_zap_ints,dtype=np.intc)
+  
+  num_chans_per_int = np.fromfile(f,count=numint,dtype=np.intc)
+  num_chans_per_int[num_chans_per_int==numchan] = 0
+  num_chans_cum = np.cumsum(num_chans_per_int)
+  chans = np.fromfile(f,dtype=np.intc)
+  f.close()
+  
+  chans_per_int = []
+  for i in range(subint_start,subint_end+1):
+    if i==0:
+      chans_per_int.append(chans[:num_chans_cum[i]])
+    else:
+      chans_per_int.append(chans[num_chans_cum[i-1]:num_chans_cum[i]])
+    
+  return zap_chans, zap_ints, chans_per_int
+  
 
 
 def clean(data):
@@ -256,7 +300,7 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
   offset = 300
   
   #for i,(idx,puls) in enumerate(pulses.iterrows()):
-    #spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+    #spectrum, bin_start, bin_end = read_fits(filename,puls.DM,puls.Sample,offset)
     ##if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
       ##pulses.Pulse += 1
       ##continue
@@ -272,10 +316,10 @@ def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses q
 
 
   puls = pulses
-  spectrum, bin_start, bin_end = Utilities.read_fits(filename,puls.DM,puls.Sample,offset)
+  spectrum, bin_start, bin_end = read_fits(filename,puls.DM,puls.Sample,offset)
   extent = [bin_start*RES,bin_end*RES,119,151]
   
-  vmin,vmax = Utilities.color_range(spectrum)
+  vmin,vmax = color_range(spectrum)
   
   plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)     #provare anche pcolormesh
   time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES

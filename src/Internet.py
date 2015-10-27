@@ -129,7 +129,7 @@ def upload_sheet(cands,idL):
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
     row = [cand.id, date, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank]
-    if cand.id in cand_list:
+    if cand.id in cand_list:    #Magari meglio rimuovere tutta l'osservazione nel sheet
       row_num = wks.find(cand.id).row
       col_num = len(wks.row_values(row_num))
       #col_num = chr(len(row)-1 + ord('A'))

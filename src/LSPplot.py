@@ -388,7 +388,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   offset = duration*spectra_border
   
   #Load the spectrum
-  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),puls.duration,offset,RFI_reduct=True)
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True)
   
   #De-dispersion
   freq = np.linspace(F_MIN,F_MAX,2592)

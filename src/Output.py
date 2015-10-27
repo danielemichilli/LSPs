@@ -12,10 +12,10 @@ def output(folder,idL,pulses,events,meta_data,candidates):
   store = '{}{}/sp/candidates'.format(folder,idL)
 
   #Repeated candidates
-  LSPplot.repeated_candidates(events,pulses,candidates[(candidates.N_pulses>1)&(candidates.main_cand==0)].head(10),meta_data,idL,store)
+  LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),meta_data,idL,store)
   
   #Single candidates
-  LSPplot.single_candidates(events,pulses,candidates[(candidates.N_pulses==1)&(candidates.main_cand==0)].head(10),meta_data,idL,store)
+  LSPplot.single_candidates(events,pulses,candidates[candidates.N_pulses==1].head(10),meta_data,idL,store)
   
   
   #Internet.upload(store)

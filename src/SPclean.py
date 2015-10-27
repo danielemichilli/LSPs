@@ -85,15 +85,16 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #Remove pulses appearing in too many beams
   pulses.Pulse += pulses.apply(lambda x: RFIexcision.puls_beams_select(x,pulses),axis=1).astype(np.int8)
   pulses = pulses[pulses.Pulse <= RFI_percent]
-  
-  
-  
+    
   cands = Candidates.candidates(pulses,idL)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
   store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
+  
+  cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
+  cands = cands[cands.main_cand==0].head(30)
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:

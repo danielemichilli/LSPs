@@ -431,8 +431,9 @@ def time_span(pulses):
     except KeyError,AssertionError: puls_time = pd.DataFrame()
     RFI = RFI.append(puls_time)
   
+  if RFI.empty: return RFI.index
   RFI = RFI.drop_duplicates()
-  RFI.sort(['Time'],inplace=True)
+  RFI.sort('Time',inplace=True)
   no_rfi = np.zeros(RFI.shape[0],dtype=np.int8)
   C_Funct.time_span(RFI.DM.values,RFI.Time.values,no_rfi)
   

@@ -109,6 +109,8 @@ def time_fft(timeseries):
     for downfact in downfacts:
       goodchunk = np.convolve(ts, np.ones(downfact), mode='same') / np.sqrt(downfact)
       down_series = np.max((goodchunk,down_series),axis=0)
+      #store on a second array of ints the downfactor value for the highest SNR 
+
     
     ts = down_series
 
