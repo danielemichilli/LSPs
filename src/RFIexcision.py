@@ -435,7 +435,7 @@ def time_span(pulses):
   RFI = RFI.drop_duplicates()
   RFI.sort('Time',inplace=True)
   no_rfi = np.zeros(RFI.shape[0],dtype=np.int8)
-  C_Funct.time_span(RFI.DM.values,RFI.Time.values,no_rfi)
+  C_Funct.time_span(RFI.DM.astype(np.float32).values,RFI.Time.astype(np.float32).values,no_rfi)
   
   RFI.sort_index(inplace=True)
   return RFI.index[no_rfi==0]

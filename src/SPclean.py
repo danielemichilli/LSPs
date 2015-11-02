@@ -41,7 +41,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   #Create events, meta_data and pulses lists
   pool = mp.Pool()
-  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])
+  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])  #Probably better map_async
   pool.close()
   pool.join()
   pulses = pd.concat(results)
@@ -106,8 +106,10 @@ def obs_events(folder,idL,load_events=False,conf=False):
     Output.output(folder,idL,pulses,events,meta_data,cands)
     
     #Store the best candidates online
-    Internet.upload(cands,folder,idL)
-  
+    try: Internet.upload(cands,folder,idL)
+    except: logging.warning("ATTENTION! Website currently down. Try to upload the observation later with the Upload.py script.")
+    Internet.upload_sheet(cands,idL)
+    
   return
 
 

@@ -14,8 +14,6 @@ from Paths import *
 
 
 def upload(cands,folder,idL):
-  upload_sheet(cands,idL)
-  
   #Retrive website information to connect
   f = open(SITE_ATTR)
   site_host = f.readline().split()[0]

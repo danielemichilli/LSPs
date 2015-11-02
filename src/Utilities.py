@@ -62,14 +62,16 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
     except NameError: 
       logging.warning("Additional modules missing")
       return    
-    header = fits['SUBINT'].header
-  else: header = fits['SUBINT'].header
+  header = fits['SUBINT'].header
   
   N_channels = header['NCHAN']
   N_spectra = header['NSBLK']
+  spectra_per_file = N_spectra * header['NAXIS2']
 
   bin_start -= offset
+  if bin_start<0: bin_start = 0
   bin_end = bin_start + DM2delay(DM) + duration + 2*offset
+  if bin_end>spectra_per_file: bin_end = spectra_per_file
   
   subint_start = bin_start/N_spectra
   subint_end = bin_end/N_spectra+1
@@ -78,10 +80,11 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   fits.close()
 
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
-  
+    
   #ATTENZIONE! Salvare .mask file nella pipeline!!
   try:
     #Zap the channels from the mask file
+    filename = ''
     zap_chans, zap_ints, chans_per_int = read_mask(filename,subint_start,subint_end)
     med_value = np.median(subint)
     subint[:,zap_chans] = med_value
@@ -99,9 +102,9 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
         chunk = subint[i*N_spectra:(i+1)*N_spectra]
         np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
     
-  subint = subint[bin_start%N_spectra:bin_start%N_spectra+bin_end]
-  #ind = np.arange(0,2592,16)
-  #subint = np.delete(subint,ind,axis=1)
+  bin_start = bin_start%N_spectra
+  bin_end = (subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1
+  subint = subint[bin_start%N_spectra:(subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1]
   
   return subint
 

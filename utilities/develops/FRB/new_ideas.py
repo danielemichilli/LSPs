@@ -89,7 +89,7 @@ from matplotlib.mlab import griddata
 import numpy as np
 from scipy import signal
 
-lim = 10
+lim1 = 10
 lim2 = 
 
 def time_fft(timeseries):
@@ -107,14 +107,12 @@ def time_fft(timeseries):
     down_series = np.zeros(ts.size)
     
     for downfact in downfacts:
-      goodchunk = np.convolve(ts, np.ones(downfact), mode='same') / np.sqrt(downfact)
+      goodchunk = np.convolve(ts, np.ones(downfact) / np.sqrt(downfact), mode='same')
       down_series = np.max((goodchunk,down_series),axis=0)
       #store on a second array of ints the downfactor value for the highest SNR 
-
     
     ts = down_series
-
-  
+    
   return np.unravel_index(np.argpartition(timeseries, -lim1, axis=None)[-lim1:],timeseries.shape)[0]
   #return np.where(timeseries.max(axis=0)>lim)
 
@@ -165,11 +163,9 @@ obs = np.random.randint(0,255,(61,1000,500)).astype(np.float32)
 for idx in data.shape[2]:
   data = obs[:,:,idx]
 
-  timeseries = data.copy()
-  good_times = time_fft(timeseries)
+  good_times = time_fft(data.copy())
 
-  timeseries = data.copy()
-  good_spaces = space_fft(timeseries,good_times)
+  good_spaces = space_fft(data.copy(),good_times)
 
 
 #selezionare DM con segnale piu' grande tra tutti i good_spaces

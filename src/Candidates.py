@@ -47,7 +47,7 @@ def candidates(pulses,idL):
     cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
     new_cand = cands.index
 
-    C_Funct.Compare_candidates(cands.DM.values,cands.Time.values,cands.index.values,cands.main_cand.values)  
+    C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)  
   
   else: cands = pd.DataFrame()
   
