@@ -379,7 +379,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   except NameError: 
-    logging.warning("Additional modules missing")
+    logging.warning("LSPplot - Additional modules missing")
     return
   sample += np.round(sample*v).astype(int)
   
@@ -402,7 +402,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   
   extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
   ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax1.scatter(sample,F_MIN+1,marker='^',s=1000,c='r')
+  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')
   if not sharey:

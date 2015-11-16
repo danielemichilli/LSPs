@@ -1,4 +1,5 @@
 BUGS:
+- CHECK that first 11 beams are well integrated
 
 PLOT:
 - Histogram bins smaller

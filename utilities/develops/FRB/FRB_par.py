@@ -25,7 +25,7 @@ In LSPs:
 
 '''
 
-#datacube(61,500,100000)
+#datacube(61,500,36000)
 
 Number_of_candidates = 10
 
@@ -34,78 +34,37 @@ def beam_matrix():
   """
   Load the timesieries for a beam and transform the signal in SNR
   """
-  
 
-  #Forse possibile detrend in DM ogni time bin?
-
-  #Convert signal in SNR
-  pool = mp.Pool()
-  results = pool.map(time_fft, range(os.cpu_count()-1))
-  pool.close()
-  pool.join()
+  #Create the matrix of the beam in DM-Time space and fill it
+  beam = np.zeros((500,36000))
+  for idx,DM in enumerate(np.arange(500)):
+    try: file = glob.glob('*_DM{}.dat'.format(DM))[0]
+    except IndexError: continue
+    beam[idx] = np.fromfile(file,dtype=np.float32)[:36000]
   
-  beam = np.vstack(results)
-  results = 0
+  #Convert signal to SNR
+  beam = signal.detrend(beam, type='constant', axis=1)
+  stds = beam.copy()
+  stds.sort(axis=1)
+  stds = stds[:,900:-900]**2
+  stds = np.sum(stds, axis=1)
+  np.sqrt(stds / 34200., out=stds)
+  beam /= stds[:,None]
   
-  np.save('../FRB_beam_matrix_SNR',beam)
-  beam = 0
-
-  for idx,DM in enumerate(np.arange(0,500)):
-    file = glob.glob('*_DM{}.dat'.format(DM))[0]
-    if idx ==0: 
-      beam0 = np.fromfile(file,dtype=np.float32)
-      beam = np.zeros((500,beam0.size))
-      beam[0] = beam0
-    else:
-      beam[idx] = np.fromfile(file,dtype=np.float32)
-    
-  np.save('../FRB_beam_matrix_signal',beam)  
+  #Calculate the maximum value of the integrated signal for different downfactor windows in time
+  downfacts = [2, 5, 10, 20, 50, 100, 200, 500, 1000]
+  for downfact in downfacts:
+    for idx,ts in enumerate(beam):
+      conv = np.convolve(ts, np.ones(downfact) / np.sqrt(downfact), mode='same')
+      ts = np.max((conv,ts),axis=0)
+  
+  np.save('../FRB_beam_SNR',beam)
   
   return
   
   
   
-def time_fft(CPU):
-  DM_range = 500 / (os.cpu_count()-1)
   
-  timeseries = np.zeros((DM_range,36000))
-
-  downfacts = [2, 5, 10, 20, 50, 100, 200, 500, 1000]
-  chunklen = timeseries.shape[1]
-  
-  for idx,DM in enumerate(np.arange(CPU*DM_range,(CPU+1)*DM_range)):
-    file = glob.glob('*_DM{}.dat'.format(DM))[0]
-    ts = np.fromfile(file,dtype=np.float32)[:36000]
-    
-    if idx == 0:
-      timeseries = np.zeros((DM_range,ts.size))
-      
-    ts = signal.detrend(ts, type='constant')
-    tmpchunk = ts.copy()
-    tmpchunk.sort()
-    stds = np.sqrt((tmpchunk[chunklen/40:-chunklen/40]**2.0).sum() / (0.95*chunklen))
-    stds *= 1.148
-    ts /= stds
-    down_series = np.zeros(ts.size)
-    
-    for downfact in downfacts:
-      goodchunk = np.convolve(ts, np.ones(downfact) / np.sqrt(downfact), mode='same')
-      down_series = np.max((goodchunk,down_series),axis=0)
-    
-    timeseries[idx] = down_series
-  
-  return timeseries
-
-
-
-
-def dc_load():
-  
-  
-  return datacube
-
-
-
 def FRBs_finder():
   fill = 10  #Pixels per beam
 
@@ -122,8 +81,22 @@ def FRBs_finder():
         150, 200, 300, 400, 500, 600, 650, 700, 750])
 
   grid = np.linspace(0,800,8*fill)
+ 
+  #Create the matrix of the datacube in beam-DM-Time space and fill it 
+  datacube = np.zeros((61,500,36000))
+  for idx,beam in enumerate(np.arange(61)):
+    try: beam[idx] = np.load('FRB_beam_SNR.npz')
+    except IOError: continue
   
-  datacube = dc_load()
+  #SNR along time to SNR along beam
+  datacube = signal.detrend(datacube, type='constant', axis=0)
+  stds = datacube.copy()
+  stds.sort(axis=0)
+  stds = stds[:,1:-1]**2
+  stds = np.sum(stds, axis=1)
+  np.sqrt(stds / 57.95, out=stds)
+  beam /= stds[:,None]
+  
   
   #best_time_idxs = np.max(datacube,axis=(0,1)).argsort()[::-1]  #Assuming time is on axis 2
   
@@ -151,13 +124,6 @@ def space_fft(CPU):
   for time in times:
     #DM_idx = np.unravel_index(np.argmax(datacube[:,:,time_idx],datacube.shape)[1]
     
-    ts = datacube[:,DM_idx,time_idx]
-    ts = signal.detrend(ts, type='constant')
-    tmpchunk = ts.copy()
-    tmpchunk.sort()
-    stds = np.sqrt((tmpchunk[chunklen/40:-chunklen/40]**2.0).sum() / (0.95*chunklen))
-    stds *= 1.148
-    ts /= stds
 
     beams_map = griddata(ra, dec, ts, grid, grid, interp='nn')
     beams_map[beams_map.mask==True] = 0

@@ -13,7 +13,9 @@ from scipy.optimize import curve_fit
 from scipy import special
 from scipy import stats
 import os
-try: import pyfits
+try: 
+  import pyfits
+  import presto
 except ImportError: pass
 
 import Utilities
@@ -265,9 +267,9 @@ def multimoment(pulses,idL):
       if beam==12: stokes = 'incoherentstokes'
       else: stokes = 'stokes'
       filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-      try: fits = pyfits.open(fits,memmap=True)
+      try: fits = pyfits.open(filename,memmap=True)
       except NameError: 
-        logging.warning("Additional modules missing")
+        logging.warning("RFIexcision - Additional modules missing")
         return
       except IOError: continue
       
@@ -278,29 +280,29 @@ def multimoment(pulses,idL):
       MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
       try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
       except NameError: 
-        logging.warning("Additional modules missing")
+        logging.warning("RFIexcision - Additional modules missing")
         return
       
-    if puls.DM>141.71: sample = puls.Sample * 4
-    elif puls.DM>40.47: sample = puls.Sample * 2
-    else: sample = puls.Sample      
+      if puls.DM>141.71: sample = puls.Sample * 4
+      elif puls.DM>40.47: sample = puls.Sample * 2
+      else: sample = puls.Sample      
+      
+      sample += np.round(sample*v).astype(int)
+      duration = np.int(np.round(puls.Duration/RES))
     
-    sample += np.round(sample*v).astype(int)
-    duration = np.int(np.round(puls.Duration/RES))
-  
-    #Load the spectrum
-    spectrum = Utilities.read_fits(fits,puls.DM.copy(),sample.copy(),duration,0)
-  
-    #De-dispersion
-    time = (4149 * puls.DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int)
-    spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+      #Load the spectrum
+      spectrum = Utilities.read_fits(fits,puls.DM.copy(),sample.copy(),duration,0)
     
-    I1 = spectrum.size * np.sum(spectrum**2)
-    I2 = np.sum(spectrum)**2
-    
-    multimoment[i] = (I1 - I2) / I2
+      #De-dispersion
+      time = (4149 * puls.DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int)
+      spectrum = np.sum([spectrum[time+x,np.arange(2592)] for x in range(duration)],axis=0)
+      
+      I1 = spectrum.size * np.sum(spectrum**2)
+      I2 = np.sum(spectrum)**2
+      
+      multimoment[i] = (I1 - I2) / I2
 
-  pulses['multimoment'] = multimoment <= MULTIMOMENT
+  pulses['multimoment'] = multimoment # <= MULTIMOMENT
 
   return
 
@@ -408,14 +410,12 @@ def time_span(pulses):
   
   for sap in pulses.SAP.unique():
     puls = pulses[pulses.SAP==sap]
-  
-    lim = 1-0.01/360*puls.shape[0]
-    
+      
     try:
       puls_time = puls.Time.round(-1).astype(int)
       puls_time = puls.groupby(puls_time,sort=False)['N_events'].size()  
       mean = puls_time.sum()/360.
-      k = stats.poisson.ppf(lim,mean)   
+      k = stats.poisson.ppf(0.99,mean)
       puls_time = puls_time.index[puls_time>k]
       puls_time = puls.loc[puls.Time.round(-1).astype(int).isin(puls_time),['DM','Time']] 
     except KeyError,AssertionError: puls_time = pd.DataFrame()
@@ -425,7 +425,7 @@ def time_span(pulses):
       puls_time = (puls.Time+5).round(-1).astype(int)
       puls_time = puls.groupby(puls_time,sort=False)['N_events'].size()  
       mean = puls_time.sum()/360.
-      k = stats.poisson.ppf(lim,mean)
+      k = stats.poisson.ppf(0.99,mean)
       puls_time = puls_time.index[puls_time>k]
       puls_time = puls.loc[puls.Time.round(-1).astype(int).isin(puls_time),['DM','Time']] 
     except KeyError,AssertionError: puls_time = pd.DataFrame()
@@ -442,7 +442,7 @@ def time_span(pulses):
 
 
 def puls_beams_select(x,puls):
-  if x.BEAM==12: return 0
+  if x.BEAM<13: return 0
   select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
   close = select[select.isin(beams[x.BEAM])].size
   away = select.size - close

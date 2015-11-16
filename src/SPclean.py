@@ -98,7 +98,6 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
-    
     events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     

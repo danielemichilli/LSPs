@@ -14,12 +14,11 @@
 cimport cython
 from Parameters import *
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-
 #---------------------------------
 # Gives a pulse-code to each event
 #---------------------------------
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def Get_Group(float[::1] DM not None,
           float[::1] Sigma not None,
           float[::1] Time not None,
@@ -136,6 +135,8 @@ def Get_Group(float[::1] DM not None,
 #-------------------------
 # Compares different beams
 #-------------------------
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def Compare(float[::1] DM_c_l not None,
             float[::1] dDM_l not None,
             float[::1] Time_c_l not None,
@@ -215,6 +216,8 @@ def Compare(float[::1] DM_c_l not None,
 #-------------------------
 # Compares repeated pulses
 #-------------------------
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def Compare_candidates(float[::1] DM not None,
             float[::1] Time not None,            
             long[::1] idx not None,            
@@ -244,7 +247,8 @@ def Compare_candidates(float[::1] DM not None,
   
   
   
-  
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def time_span(float[::1] DM not None,
             float[::1] Time not None,          
             signed char[::1] cand not None):

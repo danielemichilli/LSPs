@@ -16,7 +16,7 @@ from Parameters import *
 
 def read_filterbank(filename,DM,bin_start):
   if (not 'filterbank' in sys.modules) or (not 'sigproc' in sys.modules):
-    logging.warning("Additional modules missing")
+    logging.warning("Utilities - Additional modules missing")
     return
   
   #Read data from filterbank file
@@ -60,7 +60,7 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   if isinstance(fits,str):
     try: fits = pyfits.open(fits,memmap=True)
     except NameError: 
-      logging.warning("Additional modules missing")
+      logging.warning("Utilities - Additional modules missing")
       return    
   header = fits['SUBINT'].header
   
@@ -70,15 +70,16 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
 
   bin_start -= offset
   if bin_start<0: bin_start = 0
-  bin_end = bin_start + DM2delay(DM) + duration + 2*offset
-  if bin_end>spectra_per_file: bin_end = spectra_per_file
-  
   subint_start = bin_start/N_spectra
-  subint_end = bin_end/N_spectra+1
-  subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
-  
-  fits.close()
 
+  bin_end = bin_start + DM2delay(DM) + duration + 2*offset
+  if bin_end >= spectra_per_file: 
+    bin_end = spectra_per_file
+    subint_end = bin_end/N_spectra
+  else: subint_end = bin_end/N_spectra+1
+
+  subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
+  fits.close()
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
     
   #ATTENZIONE! Salvare .mask file nella pipeline!!
@@ -175,7 +176,7 @@ def read_header(filename):
   name, ext = os.path.splitext(filename)
   if ext == '.fits': 
     if not 'pyfits' in sys.modules:
-      logging.warning("Additional modules missing")
+      logging.warning("Utilities - Additional modules missing")
       return    
     fits = pyfits.open(filename,memmap=True)
     header = fits['SUBINT'].header + fits['PRIMARY'].header
@@ -183,7 +184,7 @@ def read_header(filename):
     return header
   elif ext == '.fil':
     if not 'filterbank' in sys.modules:
-      logging.warning("Additional modules missing")
+      logging.warning("Utilities - Additional modules missing")
       return
     return filterbank.read_header(filename)[0]
   else: return None

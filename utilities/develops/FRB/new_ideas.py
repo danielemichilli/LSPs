@@ -66,12 +66,15 @@ grid = np.linspace(0,800,8*fill)
 beams_map = griddata(ra, dec, val, grid, grid, interp='nn')
 beams_map[beams_map.mask==True] = 0
 
-conv = signal.convolve2d(beams_map,np.ones((fill,fill)),mode='same')
+conv = signal.convolve2d(beams_map,np.ones((8*fill,8*fill))/fill,mode='same')
 
 for i,n in enumerate(val):                                                                                               
     plt.annotate(str(n),xy=(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center',color='k',size=18,weight='bold')
     
 plt.contourf(grid, grid, conv, 10, cmap=plt.cm.hot_r)
+
+plt.contourf(np.ones((8*fill,8*fill)))
+
 plt.show()
 
 
