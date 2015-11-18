@@ -133,19 +133,21 @@ def lists_creation((folder,idL,sap,beam)):
       meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
 
       #Apply the thresholds to the events
+      events = events[events.Pulse>=0]
       events = Events.Thresh(events)
 
       #Generate the pulses
-      events = events[events.Pulse>=0]
       pulses = Pulses.Generator(events)
-      
-      #Clean the pulses
       pulses = pulses[pulses.Sigma >= 6.5]
       events = events[events.Pulse.isin(pulses.index)]
-      
+            
       #Apply global RFI filters to the pulses
       RFIexcision.global_filters(pulses,events)
       pulses = pulses[pulses.Pulse <= RFI_percent]
+
+      #Set a maximum amout of pulses to prevent bad observations to block the pipeline
+      pulses.sort('Sigma',ascending=False,inplace=True)
+      pulses = pulses.iloc[:3e4]
       events = events[events.Pulse.isin(pulses.index)]
       
       #Apply local RFI filters to the pulses

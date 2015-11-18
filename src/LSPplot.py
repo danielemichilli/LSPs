@@ -144,7 +144,7 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     ax3.set_xlabel('DM (pc/cm3)')    
     ax3.set_ylabel('SNR')
     puls_DM_Time(ax4,event,puls)
-    DynamicSpectrum(ax5,puls.copy(),idL,sap,beam)
+    DynamicSpectrum(ax5,puls.iloc[0].copy(),idL,sap,beam)
     
     plt.tight_layout()
     plt.savefig('{}/{}.png'.format(folder,cand.id),format='png',bbox_inches='tight',dpi=200)
