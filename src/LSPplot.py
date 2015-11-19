@@ -62,10 +62,11 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   return
 
 
-def sp_shape(pulses,events,store,obs):
+def sp_shape(pulses,store,folder,idL):
   plt.clf()
   fig = plt.figure()
   
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
   for i,(idx,puls) in enumerate(pulses.iterrows()):
     event = events[events.Pulse==idx]
     ax = plt.subplot2grid((2,5),(i/5,i%5))
@@ -75,7 +76,7 @@ def sp_shape(pulses,events,store,obs):
   # Set common labels
   fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
   fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
-  fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(obs,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
+  fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(idL,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
   
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
   return
@@ -115,9 +116,10 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   return
 
 
-def single_candidates(events,pulses,cands,meta_data,idL,folder):
+def single_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
   for idx,cand in cands.iterrows():
     puls = pulses[pulses.Candidate==idx]
     event = events[events.Pulse==puls.index[0]]
@@ -147,15 +149,17 @@ def single_candidates(events,pulses,cands,meta_data,idL,folder):
     DynamicSpectrum(ax5,puls.iloc[0].copy(),idL,sap,beam)
     
     plt.tight_layout()
-    plt.savefig('{}/{}.png'.format(folder,cand.id),format='png',bbox_inches='tight',dpi=200)
+    store = '{}{}/sp/candidates'.format(folder,idL)
+    plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
 
   return
 
 
 
-def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
+def repeated_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
   for idx,cand in cands.iterrows():
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
@@ -216,7 +220,8 @@ def repeated_candidates(events,pulses,cands,meta_data,idL,folder):
     except ValueError: pass
     
     plt.tight_layout()
-    plt.savefig('{}/{}.png'.format(folder,cand.id),format='png',bbox_inches='tight',dpi=200)
+    store = '{}{}/sp/candidates'.format(folder,idL)
+    plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
 
   return
 

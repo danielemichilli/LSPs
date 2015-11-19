@@ -5,37 +5,31 @@ import Internet
 import LSPplot
 
 
-def output(folder,idL,pulses,events,meta_data,candidates):
+def output(folder,idL,pulses,meta_data,candidates):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
-  store = '{}{}/sp/candidates'.format(folder,idL)
-
   #Repeated candidates
-  LSPplot.repeated_candidates(events,pulses,candidates[candidates.N_pulses>1].head(10),meta_data,idL,store)
+  LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
   
   #Single candidates
-  LSPplot.single_candidates(events,pulses,candidates[candidates.N_pulses==1].head(10),meta_data,idL,store)
+  LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
   
   
   #Internet.upload(store)
   
     
-  store = '{}{}/sp/diagnostics'.format(folder,idL)
+  
   
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
-  for n in gb_puls.indices.iterkeys():
-    name = 'SAP{}_BEAM{}'.format(n[0],n[1])
-    os.makedirs('{}/{}'.format(store,name))
-    
   pool = mp.Pool()
-  pool.map(output_beams, [(pulses,events,meta_data,store,idL,n) for n in gb_puls.indices.iterkeys()])
+  pool.map(output_beams, [(pulses,meta_data,folder,idL,n) for n in gb_puls.indices.iterkeys()])
   pool.close()
   pool.join()  
   
   #for n in gb_puls.indices.iterkeys():
-    #output_beams((pulses,events,meta_data,store,idL,n))
+    #output_beams((pulses,meta_data,store,idL,n))
   
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
@@ -44,24 +38,27 @@ def output(folder,idL,pulses,events,meta_data,candidates):
 
 
 
-def output_beams((pulses,events,meta_data,folder,obs,(sap,beam))):
+def output_beams((pulses,meta_data,folder,idL,(sap,beam))):
+  store = '{}{}/sp/diagnostics'.format(folder,idL)
+  name = 'SAP{}_BEAM{}'.format(sap,beam)
+  os.makedirs('{}/{}'.format(store,name))
   
   top = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==0)]
   good = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==1)]
   
   if beam == 12:
     if top.shape[0] > 0: 
-      LSPplot.sp_shape(top.head(10),events,'{}/SAP{}_BEAM{}/top_candidates(0-9).png'.format(folder,sap,beam),obs)
+      LSPplot.sp_shape(top.head(10),'{}/SAP{}_BEAM{}/top_candidates(0-9).png'.format(store,sap,beam),folder,idL)
       if top.shape[0] > 10:
-        LSPplot.sp_shape(top.iloc[10:20],events,'{}/SAP{}_BEAM{}/top_candidates(10-19).png'.format(folder,sap,beam),obs)
+        LSPplot.sp_shape(top.iloc[10:20],'{}/SAP{}_BEAM{}/top_candidates(10-19).png'.format(store,sap,beam),folder,idL)
         if top.shape[0] > 20: 
-          LSPplot.sp_shape(top.iloc[20:30],events,'{}/SAP{}_BEAM{}/top_candidates(20-29).png'.format(folder,sap,beam),obs)
-    LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+          LSPplot.sp_shape(top.iloc[20:30],'{}/SAP{}_BEAM{}/top_candidates(20-29).png'.format(store,sap,beam),folder,idL)
+    LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(store,sap,beam))
     
   else:
     if top.shape[0] > 0: 
-      LSPplot.sp_shape(top.head(10),events,'{}/SAP{}_BEAM{}/top_candidates.png'.format(folder,sap,beam),obs)
-      LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(folder,sap,beam))
+      LSPplot.sp_shape(top.head(10),'{}/SAP{}_BEAM{}/top_candidates.png'.format(store,sap,beam),folder,idL)
+      LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(store,sap,beam))
   
   return
   

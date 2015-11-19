@@ -98,11 +98,10 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
-    events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
     
     #Produce the output
-    Output.output(folder,idL,pulses,events,meta_data,cands)
+    Output.output(folder,idL,pulses,meta_data,cands)
     
     #Store the best candidates online
     try: Internet.upload(cands,folder,idL)
@@ -157,9 +156,9 @@ def lists_creation((folder,idL,sap,beam)):
       
       #A set of known pulses is necessary
       #Apply multimoment analysis to the pulses
-      RFIexcision.multimoment(pulses,idL)
-      pulses = pulses[pulses.Pulse <= RFI_percent]
-      events = events[events.Pulse.isin(pulses.index)]
+      #RFIexcision.multimoment(pulses,idL)
+      #pulses = pulses[pulses.Pulse <= RFI_percent]
+      #events = events[events.Pulse.isin(pulses.index)]
       
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
