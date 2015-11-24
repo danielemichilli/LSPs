@@ -88,10 +88,10 @@ def create_DB(folder,idL,args):
   logging.warning("The DataBase is being created.\n")
   
   try:
-    time0 = time.clock()
+    time0 = time.time()
     SPclean.obs_events(folder,idL,conf=conf)
     logging.warning("The DataBase has been created.")
-    logging.warning("Time spent: %.2f s"%(time.clock() - time0))
+    logging.warning("Time spent: %.2f s"%(time.time() - time0))
     
   except Exception as e:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")

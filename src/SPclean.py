@@ -39,15 +39,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
     beams = 74
   folders = zip(range(saps)*beams,range(beams)*saps)
   
-  #Create events, meta_data and pulses lists
-  pool = mp.Pool()
-  results = pool.map(lists_creation, [(folder,idL,sap,beam) for (sap,beam) in folders])  #Probably better map_async
-  pool.close()
-  pool.join()
-  pulses = pd.concat(results)
-  results = 0
-  
-  #pulses = lists_creation((folder,idL,2,73))
+  pulses = pulses_parallel(folder,idL,folders)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   for file in os.listdir('{}{}/sp'.format(folder,idL)):
@@ -71,7 +63,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
 
   #TO BE TESTED
 
-
+  '''
   #Remove time-spans affectd by RFI
   pulses.sort_index(inplace=True)
   pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM==12])] += 1
@@ -85,7 +77,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #Remove pulses appearing in too many beams
   pulses.Pulse += pulses.apply(lambda x: RFIexcision.puls_beams_select(x,pulses),axis=1).astype(np.int8)
   pulses = pulses[pulses.Pulse <= RFI_percent]
-    
+  '''
+  
+  
   cands = Candidates.candidates(pulses,idL)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
@@ -111,8 +105,15 @@ def obs_events(folder,idL,load_events=False,conf=False):
   return
 
 
+def pulses_parallel(folder,idL,folders):
+  #Create events, meta_data and pulses lists
+  pool = mp.Pool()
+  results = [pool.apply_async(lists_creation, args=(folder,idL,sap,beam)) for (sap,beam) in folders]
+  pulses = pd.concat([p.get() for p in results])
+  return pulses
 
-def lists_creation((folder,idL,sap,beam)):
+
+def lists_creation(folder,idL,sap,beam):
 
   #Import the events
   events, meta_data = Events.Loader(folder,idL,sap,beam)
@@ -152,7 +153,7 @@ def lists_creation((folder,idL,sap,beam)):
       #Apply local RFI filters to the pulses
       RFIexcision.local_filters(pulses,events)
       pulses = pulses[pulses.Pulse <= RFI_percent]
-      events = events[events.Pulse.isin(pulses.index)]
+      #events = events[events.Pulse.isin(pulses.index)]
       
       #A set of known pulses is necessary
       #Apply multimoment analysis to the pulses

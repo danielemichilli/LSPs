@@ -25,16 +25,6 @@ import RFIexcision
 mpl.rc('font',size=5)
 
 
-#def alerts(pulses,folder):
-  #file_name = os.path.dirname(folder) + '/Candidates.log'
-  #cumSNR = pulses.groupby('Candidate').agg({'SAP': np.mean, 'BEAM': np.mean, 'DM': np.mean, 'Sigma': np.sum, 'N_events': np.size})
-  #cumSNR = cumSNR[cumSNR.Sigma>=10.]
-  #if not cumSNR.empty:
-    #cumSNR.to_csv(file_name,sep='\t',float_format='%.2f',columns=['SAP','BEAM','DM','N_events','Sigma'],header=['SAP','BEAM','DM','Num','Sigma'],index_label='Cand',mode='a')  
-  #return
-
-
-
 def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   plt.clf()
 
@@ -59,6 +49,7 @@ def sp_plot(pulses,rfi,meta_data,sap,beam,store):
   
   fig.tight_layout()
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+  plt.close('all')
   return
 
 
@@ -79,6 +70,7 @@ def sp_shape(pulses,store,folder,idL):
   fig.text(0.5, 0.95, '{} - SAP{}_BEAM{}'.format(idL,pulses.SAP.unique()[0],pulses.BEAM.unique()[0]), ha='center', va='center', fontsize=12)
   
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+  plt.close('all')
   return
 
 
@@ -112,14 +104,17 @@ def obs_top_candidates(top_candidates,store,incoherent=False):
   
   fig.tight_layout()
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
-  
+  plt.close('all')
   return
 
 
 def single_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
+  idx = pulses[pulses.Candidate.isin(cands.index)].groupby('Candidate',sort=False).head(1).index
+  print cands
+  print pulses[pulses.Candidate.isin(cands.index)]
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==idx.tolist()'])
   for idx,cand in cands.iterrows():
     puls = pulses[pulses.Candidate==idx]
     event = events[events.Pulse==puls.index[0]]
@@ -151,7 +146,7 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
     plt.tight_layout()
     store = '{}{}/sp/candidates'.format(folder,idL)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
-
+    plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
 
 
@@ -159,7 +154,8 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
 def repeated_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
+  idx = pulses[pulses.Candidate.isin(cands.index)].groupby('Candidate',sort=False).head(2).index
+  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==idx.tolist()'])
   for idx,cand in cands.iterrows():
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
@@ -222,7 +218,7 @@ def repeated_candidates(pulses,cands,meta_data,folder,idL):
     plt.tight_layout()
     store = '{}{}/sp/candidates'.format(folder,idL)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
-
+    plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
 
 

@@ -19,7 +19,7 @@ from Parameters import *
 #---------------------------------
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def void Get_Group(float[::1] DM not None,
+def Get_Group(float[::1] DM not None,
           float[::1] Sigma not None,
           float[::1] Time not None,
           float[::1] Duration not None,
@@ -137,7 +137,7 @@ def void Get_Group(float[::1] DM not None,
 #-------------------------
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def void Compare(float[::1] DM_c_l not None,
+def Compare(float[::1] DM_c_l not None,
             float[::1] dDM_l not None,
             float[::1] Time_c_l not None,
             float[::1] dTime_l not None,
@@ -218,7 +218,7 @@ def void Compare(float[::1] DM_c_l not None,
 #-------------------------
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def void Compare_candidates(float[::1] DM not None,
+def Compare_candidates(float[::1] DM not None,
             float[::1] Time not None,            
             long[::1] idx not None,            
             long[::1] cand not None):
@@ -249,7 +249,7 @@ def void Compare_candidates(float[::1] DM not None,
   
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def void time_span(float[::1] DM not None,
+def time_span(float[::1] DM not None,
             float[::1] Time not None,          
             signed char[::1] cand not None):
 
@@ -279,7 +279,7 @@ def void time_span(float[::1] DM not None,
   
 
   
-  
+'''
   
 #------------------
 # RFI local filters

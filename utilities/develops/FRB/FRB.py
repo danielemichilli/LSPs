@@ -40,7 +40,7 @@ def beam_matrix():
 
   #Convert signal in SNR
   pool = mp.Pool()
-  results = pool.map(time_fft, range(os.cpu_count()-1))
+  results = pool.map_async(time_fft, range(os.cpu_count()-1))
   pool.close()
   pool.join()
   

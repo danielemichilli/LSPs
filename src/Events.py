@@ -62,8 +62,8 @@ def Loader(folder,idL,sap,beam):
     inf.BEAM = inf.BEAM.astype(np.uint8)
     
     #Append to the existing tables
-    events = events.append(data,ignore_index=True)
-    meta_data = meta_data.append(inf,ignore_index=False)
+    events = data
+    meta_data = inf
     
   except (IOError,pd.parser.CParserError):
     #Handle missing beams

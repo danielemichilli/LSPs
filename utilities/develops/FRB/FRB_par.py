@@ -66,22 +66,16 @@ def beam_matrix():
   
   
 def FRBs_finder():
-  fill = 10  #Pixels per beam
-
-  ra = np.array([399, 399, 498, 497, 399, 302, 301, 399, 499, 598, 595, 594, 496,
-        399, 303, 206, 203, 201, 300, 399, 500, 600, 698, 695, 692, 690,
-        592, 495, 399, 304, 207, 110, 107, 103, 101, 199, 299, 399, 502,
-        602, 701, 800, 796, 792, 788, 785, 687, 590, 494, 399, 305, 209,
-        112,  14,  11,   7,   3,   0,  98, 198, 298])
+  ra = np.array([ 8,  8, 10, 10,  8,  6,  6,  8, 10, 12, 12, 12, 10,  8,  6,  4,  4,
+        4,  6,  8, 10, 12, 14, 14, 14, 14, 12, 10,  8,  6,  4,  2,  2,  2,
+        2,  4,  6,  8, 10, 12, 14, 16, 16, 16, 16, 16, 14, 12, 10,  8,  6,
+        4,  2,  0,  0,  0,  0,  0,  2,  4,  6])
   
-  dec = np.array([400, 500, 450, 350, 300, 350, 450, 600, 550, 500, 400, 300, 250,
-        200, 250, 300, 400, 500, 550, 700, 650, 600, 550, 450, 350, 250,
-        200, 150, 100, 150, 200, 250, 350, 450, 550, 600, 650, 800, 750,
-        700, 650, 600, 500, 400, 300, 200, 150, 100,  50,   0,  50, 100,
-        150, 200, 300, 400, 500, 600, 650, 700, 750])
+  dec = np.array([ 8, 10,  9,  7,  6,  7,  9, 12, 11, 10,  8,  6,  5,  4,  5,  6,  8,
+       10, 11, 14, 13, 12, 11,  9,  7,  5,  4,  3,  2,  3,  4,  5,  7,  9,
+       11, 12, 13, 16, 15, 14, 13, 12, 10,  8,  6,  4,  3,  2,  1,  0,  1,
+        2,  3,  4,  6,  8, 10, 12, 13, 14, 15])
 
-  grid = np.linspace(0,800,8*fill)
- 
   #Create the matrix of the datacube in beam-DM-Time space and fill it 
   datacube = np.zeros((61,500,36000))
   for idx,beam in enumerate(np.arange(61)):
@@ -92,18 +86,13 @@ def FRBs_finder():
   datacube = signal.detrend(datacube, type='constant', axis=0)
   stds = datacube.copy()
   stds.sort(axis=0)
-  stds = stds[:,1:-1]**2
-  stds = np.sum(stds, axis=1)
+  stds = stds[1:-1]**2
+  stds = np.sum(stds, axis=0)
   np.sqrt(stds / 57.95, out=stds)
-  beam /= stds[:,None]
+  datacube /= stds[:,None]
   
   
   #best_time_idxs = np.max(datacube,axis=(0,1)).argsort()[::-1]  #Assuming time is on axis 2
-  
-  cand_idx = np.zeros(Number_of_candidates) - 1 
-  
-  
-
 
 ##
   pool = mp.Pool()
@@ -125,7 +114,8 @@ def space_fft(CPU):
     #DM_idx = np.unravel_index(np.argmax(datacube[:,:,time_idx],datacube.shape)[1]
     
 
-    beams_map = griddata(ra, dec, ts, grid, grid, interp='nn')
+    grid = np.arange(17)
+    beams_map = griddata(ra, dec, ts, grid, grid, interp='linear')
     beams_map[beams_map.mask==True] = 0
     conv = signal.convolve2d(beams_map,np.ones((fill,fill))/fill,mode='same')  #Check the statistics!
     

@@ -2,6 +2,8 @@ BUGS:
 - CHECK that first 11 beams are well integrated
 
 PLOT:
+- Cands: red triangle in dynamic spectrum smaller
+- Cands: Insert number of beams where the candidate appears
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
 - Highlight time spans affected by RFI in general plot
@@ -32,6 +34,3 @@ FRB
 - Multimoment analysis: write out dynamic spectrum
 - Matched filtering: modify single_pulse_search.py
 
-
-
-Dynamic spectrum

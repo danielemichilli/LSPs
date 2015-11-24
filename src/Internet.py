@@ -66,7 +66,7 @@ def create_list(ftp,folder,idL):
   f = open(folder+idL+'/sp/obs_list.html','w')
   f.write('<!DOCTYPE html>\n<html>\n<head>\n<base target="plots">\n</head>\n<body>\n <ul style="list-style-type:none">\n\n')
   for line in obs_list: 
-    s = '  <li><a href="{idL}/observation.html" target="plots">{idL}</a></li>'.format(idL=line)
+    s = '  <li><a href="onservations/{idL}/observation.html" target="plots">{idL}</a></li>\n'.format(idL=line)
     f.write(s)
   f.write('\n\n </ul>\n</body>\n</html>\n')
   f.close()

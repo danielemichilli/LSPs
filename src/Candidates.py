@@ -11,30 +11,13 @@ import Utilities
 def candidates(pulses,idL):
   pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
 
-  #Create candidates lists
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
-  pool = mp.Pool()
-  results = pool.map(Repeated_candidates_beam, [(pulses[pulses.Pulse==0],n,0) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()
-  pulses.Candidate[pulses.Pulse==0] = pd.concat(results)
-  results = 0
-    
+  pulses.Candidate[pulses.Pulse==0] = repeated_parallel(pulses[pulses.Pulse==0],0)
+  
   if pulses.Candidate.unique().size <=12:
-    pool = mp.Pool()
-    results = pool.map(Repeated_candidates_beam, [(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],n,1) for n in gb_puls.indices.iterkeys()])
-    pool.close()
-    pool.join()
-    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = pd.concat(results) * 10 + 1
-    results = 0
+    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = repeated_parallel(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1) * 10 + 1
 
   if pulses.Candidate.unique().size <=12:
-    pool = mp.Pool()
-    results = pool.map(Repeated_candidates_beam, [(pulses[pulses.Candidate<0],n,2) for n in gb_puls.indices.iterkeys()])
-    pool.close()
-    pool.join()
-    pulses.Candidate[pulses.Candidate<0] = pd.concat(results) * 10 + 1
-    results = 0
+    pulses.Candidate[pulses.Candidate<0] = repeated_parallel(pulses[pulses.Candidate<0],2) * 10 + 1
   
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(2)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
@@ -52,6 +35,14 @@ def candidates(pulses,idL):
   else: cands = pd.DataFrame()
   
   return cands
+
+
+def repeated_parallel(pulses,rank):
+  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  pool = mp.Pool()
+  results = [pool.apply_async(Repeated_candidates_beam, args=(pulses[pulses.Pulse==0],sap,beam,rank)) for (sap,beam) in gb_puls.indices.iterkeys()]
+  return pd.concat([p.get() for p in results])
+
 
 
 
@@ -90,7 +81,7 @@ def candidates_generator(pulses,idL):
  
 
 
-def Repeated_candidates_beam((pulses,(sap,beam),rank)):
+def Repeated_candidates_beam(pulses,sap,beam,rank):
   pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
   pulses.DM = 3*(pulses.DM.astype(np.float64)/3).round(2)
   

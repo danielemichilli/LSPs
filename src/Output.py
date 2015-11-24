@@ -10,32 +10,35 @@ def output(folder,idL,pulses,meta_data,candidates):
   candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
   #Repeated candidates
-  LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
+  if candidates[candidates.N_pulses>1].shape[0] > 0:
+    LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
   
   #Single candidates
-  LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
+  if candidates[candidates.N_pulses==1].shape[0] > 0:
+    LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
   
   
   #Internet.upload(store)
-  
-    
-  
-  
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
-  
-  pool = mp.Pool()
-  pool.map(output_beams, [(pulses,meta_data,folder,idL,n) for n in gb_puls.indices.iterkeys()])
-  pool.close()
-  pool.join()  
-  
+
   #for n in gb_puls.indices.iterkeys():
     #output_beams((pulses,meta_data,store,idL,n))
+
+  beams_parallel(pulses,meta_data,folder,idL)
+
   
   pulses = pulses[pulses.Pulse==0]
   output_pointing(pulses,folder,idL)
   
   return
 
+
+def beams_parallel(pulses,meta_data,folder,idL):
+  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  
+  pool = mp.Pool()
+  [pool.apply_async(output_beams, args=(pulses,meta_data,folder,idL,n)) for n in gb_puls.indices.iterkeys()]
+
+  return    
 
 
 def output_beams((pulses,meta_data,folder,idL,(sap,beam))):
