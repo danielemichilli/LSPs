@@ -1,0 +1,97 @@
+import os
+import multiprocessing as mp
+
+import Internet
+import LSPplot
+
+
+def output(folder,idL,pulses,meta_data,candidates):
+  pulses.sort('Sigma',ascending=False,inplace=True)
+  candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
+  
+  #Repeated candidates
+  if candidates[candidates.N_pulses>1].shape[0] > 0:
+    LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
+  
+  #Single candidates
+  if candidates[candidates.N_pulses==1].shape[0] > 0:
+    LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
+  
+  
+  #Internet.upload(store)
+
+  #for n in gb_puls.indices.iterkeys():
+    #output_beams((pulses,meta_data,store,idL,n))
+
+  beams_parallel(pulses,meta_data,folder,idL)
+
+  
+  pulses = pulses[pulses.Pulse==0]
+  output_pointing(pulses,folder,idL)
+  
+  return
+
+
+def beams_parallel(pulses,meta_data,folder,idL):
+  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  
+  pool = mp.Pool()
+  [pool.apply_async(output_beams, args=(pulses,meta_data,folder,idL,sap,beam)) for (sap,beam) in gb_puls.indices.iterkeys()]
+  pool.close()
+  pool.join()
+  return    
+
+
+def output_beams(pulses,meta_data,folder,idL,sap,beam):
+  store = '{}{}/sp/diagnostics'.format(folder,idL)
+  name = 'SAP{}_BEAM{}'.format(sap,beam)
+  os.makedirs('{}/{}'.format(store,name))
+  
+  top = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==0)]
+  good = pulses[(pulses.SAP==sap) & (pulses.BEAM==beam) & (pulses.Pulse==1)]
+  
+  if beam == 12:
+    if top.shape[0] > 0: 
+      LSPplot.sp_shape(top.head(10),'{}/SAP{}_BEAM{}/top_candidates(0-9).png'.format(store,sap,beam),folder,idL)
+      if top.shape[0] > 10:
+        LSPplot.sp_shape(top.iloc[10:20],'{}/SAP{}_BEAM{}/top_candidates(10-19).png'.format(store,sap,beam),folder,idL)
+        if top.shape[0] > 20: 
+          LSPplot.sp_shape(top.iloc[20:30],'{}/SAP{}_BEAM{}/top_candidates(20-29).png'.format(store,sap,beam),folder,idL)
+    LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(store,sap,beam))
+    
+  else:
+    if top.shape[0] > 0: 
+      LSPplot.sp_shape(top.head(10),'{}/SAP{}_BEAM{}/top_candidates.png'.format(store,sap,beam),folder,idL)
+      LSPplot.sp_plot(top,good,meta_data,sap,beam,'{}/SAP{}_BEAM{}/beam.png'.format(store,sap,beam))
+  
+  return
+  
+  
+
+def output_pointing(pulses,folder,idL):
+  
+  top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
+  top_candidates = top_candidates.append(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
+  top_candidates.sort(['SAP','BEAM','Sigma'],ascending=[True,True,False],inplace=True)
+  top_candidates['code'] = top_candidates.index
+  if not top_candidates.empty:
+    a = top_candidates.groupby(['SAP','BEAM'],sort=False).apply(lambda x: range(len(x))).tolist()
+    b = [val for sublist in a for val in sublist]
+    top_candidates.index = b
+  top_candidates.Duration *= 1000
+  top_candidates['void'] = ''
+  top_candidates.to_csv('{}{}/sp/diagnostics/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+    columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
+    header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
+  
+  puls = pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30)
+  if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+  
+  for sap in pulses.SAP.unique():
+    puls = pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10)
+    if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/top_candidates(SAP{}).png'.format(folder,idL,sap))
+
+  return
+
+
+ 

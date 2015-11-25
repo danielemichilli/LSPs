@@ -1,26 +1,35 @@
 BUGS:
-- High-DM astropysical pulses are removed (es. L199854_SAP0_BEAM72)
+- CHECK that first 11 beams are well integrated
 
 PLOT:
+- Cands: red triangle in dynamic spectrum smaller
+- Cands: Insert number of beams where the candidate appears
 - Histogram bins smaller
 - Histogram bins logarithmic or plot non logarithmic
-- Remove time spans affected by RFI in general plot
-- Histogram also for only pulses brighter than threshold
+- Highlight time spans affected by RFI in general plot
+- General plot: obs and sap names
+- Pulses shape: name of sap and beam
 
 OUTPUT:
-- Folder with general best plots
-- Same name to folders inside hdf5 to all observations
 
 ANALYSIS:
-- Study better time alignment with high-DM pulsar
-- Modify filters for the aligned pulse shape
-- Study other possible filters: duration*sigma2 (astronomy book), fit shape, pulse simmetry, pulse straight
-- Better study parameters of grouping
-  - Better study filter values
-- Substitute duration filter with downfact filter
-- Alert for pulsars (more than x pulses at one DM, more than y pulses brighter than S in one DM)
-- Pulse spectra
+- Multimoment analysis
+- Better removal of affected time bins
+- Substitute time in alignment and grouping with sample
+- Beam comparison: time range ~0.05s
+- Remove pulses at the end of time
+- Parameter for time spans affected by RFI in the whole sap
+- Tollerance on DM steps in grouping relative to SNR of the event
+- Study time misalignment on fake raw dataset
+- RFI filters: 
+    1. Many pulses at the same time but different DM
+    2. Sigma / Number of beams in which a pulse appears (consider brightest and weakest pulses)
+    3. Pulses at the same time in distant beams (create matrix of the beam disposition)
 
 GENERAL
 - Write Readme
 - Re-write Installation
+
+FRB
+- Multimoment analysis: write out dynamic spectrum
+- Matched filtering: modify single_pulse_search.py

@@ -83,8 +83,7 @@ def local_filters(pulses,events):
   
   events.sort('DM',inplace=True)
   gb = events.groupby('Pulse',sort=False)
-  pulses.sort_index(inplace=True)
-  
+  pulses.sort_index()
   
   def pulses_apply(ev):
     s1 = ev.Sigma - ev.Sigma.shift(-1)

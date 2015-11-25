@@ -8,6 +8,7 @@ Written by Daniele Michilli
 
 '''
 
+import scipy.special #necessary for a bug on Cartesius
 import os
 import time
 import argparse
@@ -17,12 +18,12 @@ import pandas as pd
 import logging
 import sys
 import shutil
-import traceback
 import subprocess
 import StringIO
 
 import SPclean
 import Parameters
+import Paths
 
 def parser():
   #---------------------
@@ -31,9 +32,11 @@ def parser():
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
   parser.add_argument('idL', nargs=1, help='Observation ID')
-  parser.add_argument('folder', nargs=1, help='Path of the folder containig the observation')
+  parser.add_argument('-folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
+  parser.add_argument('-conf', help="Run over confirmation observations.",action='store_true')
+  parser.add_argument('-load_DB', help="Load events from a DataBase instead of text files.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
   
@@ -48,9 +51,19 @@ def parser():
 
 
 def create_DB(folder,idL,args):
+  conf = args.conf
   
-  if os.path.exists('{}{}/sp'.format(folder,idL)): shutil.rmtree('{}{}/sp'.format(folder,idL))
-  os.makedirs('{}{}/sp'.format(folder,idL))
+  ALERTS = 0
+  if os.path.exists('{}{}/sp'.format(folder,idL)): 
+    if os.path.exists('{}{}/sp/ALERTS'.format(folder,idL)):
+       shutil.move('{}{}/sp/ALERTS','{}{}')
+       ALERTS = 1
+    shutil.rmtree('{}{}/sp'.format(folder,idL))
+
+  os.makedirs('{}{}/sp/diagnostics'.format(folder,idL))
+  os.makedirs('{}{}/sp/candidates'.format(folder,idL))
+  if ALERTS == 1:
+    shutil.move('{}{}/ALERTS','{}{}/sp')
   
   TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'
@@ -77,10 +90,10 @@ def create_DB(folder,idL,args):
   logging.warning("The DataBase is being created.\n")
   
   try:
-    time0 = time.clock()
-    SPclean.obs_events(folder,idL)
+    time0 = time.time()
+    SPclean.obs_events(folder,idL,conf=conf)
     logging.warning("The DataBase has been created.")
-    logging.warning("Time spent: %.2f s"%(time.clock() - time0))
+    logging.warning("Time spent: %.2f s"%(time.time() - time0))
     
   except Exception as e:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
@@ -96,7 +109,9 @@ def main():
   args = parser()
   if not args.debug: warnings.filterwarnings("ignore")
   
-  folder = args.folder[0]
+
+  if args.folder: folder = args.folder[0] + '/'
+  else: folder = Paths.OBS_FOLDER + '/'
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
