@@ -81,13 +81,13 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   
   cands = Candidates.candidates(pulses,idL)
+  cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
   store.append('candidates',cands,data_columns=['Candidate'])
   store.close()
   
-  cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
   cands = cands[cands.main_cand==0].head(30)
   
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")

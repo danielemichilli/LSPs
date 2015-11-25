@@ -36,12 +36,13 @@ def beams_parallel(pulses,meta_data,folder,idL):
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   
   pool = mp.Pool()
-  [pool.apply_async(output_beams, args=(pulses,meta_data,folder,idL,n)) for n in gb_puls.indices.iterkeys()]
-
+  [pool.apply_async(output_beams, args=(pulses,meta_data,folder,idL,sap,beam)) for (sap,beam) in gb_puls.indices.iterkeys()]
+  pool.close()
+  pool.join()
   return    
 
 
-def output_beams((pulses,meta_data,folder,idL,(sap,beam))):
+def output_beams(pulses,meta_data,folder,idL,sap,beam):
   store = '{}{}/sp/diagnostics'.format(folder,idL)
   name = 'SAP{}_BEAM{}'.format(sap,beam)
   os.makedirs('{}/{}'.format(store,name))

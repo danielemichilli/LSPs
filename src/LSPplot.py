@@ -112,8 +112,6 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
   idx = pulses[pulses.Candidate.isin(cands.index)].groupby('Candidate',sort=False).head(1).index
-  print cands
-  print pulses[pulses.Candidate.isin(cands.index)]
   events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==idx.tolist()'])
   for idx,cand in cands.iterrows():
     puls = pulses[pulses.Candidate==idx]
