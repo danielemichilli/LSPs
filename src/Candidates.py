@@ -39,11 +39,48 @@ def candidates(pulses,idL):
 
 def repeated_parallel(pulses,rank):
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
+  dirs = [n for n in gb_puls.indices.iterkeys()]
+  
+  CPUs = mp.cpu_count()
+  dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
+
   pool = mp.Pool()
-  results = [pool.apply_async(Repeated_candidates_beam, args=(pulses[pulses.Pulse==0],sap,beam,rank)) for (sap,beam) in gb_puls.indices.iterkeys()]
+  dirs_CPU = [dirs[i*dirs_range:(i+1)*dirs_range] for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
+  results = [pool.apply_async(Repeated_candidates_beam, args=(pulses[(pulses.Pulse==0)&pulses.SAP.isin(zip(*dir_CPU)[0])&pulses.BEAM.isin(zip(*dir_CPU)[1])],dir_CPU,rank)) for dir_CPU in dirs_CPU]
   return pd.concat([p.get() for p in results])
 
 
+def Repeated_candidates_beam(pulses,dirs,rank):
+  result = pd.Series()
+  for (sap,beam) in dirs:
+    pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
+    pulses.DM = 3*(pulses.DM.astype(np.float64)/3).round(2)
+    
+    span = 0.25
+    
+    top_count = pulses.groupby('DM')['Sigma'].count()
+    top_sum = pulses.groupby('DM')['Sigma'].sum()
+    
+    top_sum = top_sum[top_count >= 2]
+    #top_count = top_count[top_count >= 2]
+
+    cand = pulses.N_events.astype(np.int32)
+    cand[:] = -1
+    i = 10
+
+    while not top_sum[top_sum!=0].empty:
+      DM = top_sum.argmax()
+      #Sigma = top_sum.loc[DM-span:DM+span].sum()
+      #N_pulses = top_count.loc[DM-span:DM+span].sum()
+      if cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)].shape[0] > 1:
+        cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
+      #top_count.loc[DM-span:DM+span] = 0
+      top_sum.loc[DM-span:DM+span] = 0
+      i += 1
+    
+    result = pd.concat((cand,result))
+    
+  return result
 
 
 def period(x):
@@ -75,36 +112,3 @@ def candidates_generator(pulses,idL):
   best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
   
   return best_cands
-
-
-
- 
-
-
-def Repeated_candidates_beam(pulses,sap,beam,rank):
-  pulses = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
-  pulses.DM = 3*(pulses.DM.astype(np.float64)/3).round(2)
-  
-  span = 0.25
-  
-  top_count = pulses.groupby('DM')['Sigma'].count()
-  top_sum = pulses.groupby('DM')['Sigma'].sum()
-  
-  top_sum = top_sum[top_count >= 2]
-  #top_count = top_count[top_count >= 2]
-
-  cand = pulses.N_events.astype(np.int32)
-  cand[:] = -1
-  i = 10
-
-  while not top_sum[top_sum!=0].empty:
-    DM = top_sum.argmax()
-    #Sigma = top_sum.loc[DM-span:DM+span].sum()
-    #N_pulses = top_count.loc[DM-span:DM+span].sum()
-    if cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)].shape[0] > 1:
-      cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
-    #top_count.loc[DM-span:DM+span] = 0
-    top_sum.loc[DM-span:DM+span] = 0
-    i += 1
-    
-  return cand

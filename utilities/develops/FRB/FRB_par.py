@@ -18,6 +18,7 @@ In standard pipeline:
 - Rimuovere timeseries
 - Salvare matrici numpy
 In LSPs:
+- Chiamare datacube_creation
 - Chiamare FRBs_finder
 
 
@@ -65,7 +66,7 @@ def beam_matrix():
   
   
   
-def FRBs_finder():
+def datacube_creation():
   ra = np.array([ 8,  8, 10, 10,  8,  6,  6,  8, 10, 12, 12, 12, 10,  8,  6,  4,  4,
         4,  6,  8, 10, 12, 14, 14, 14, 14, 12, 10,  8,  6,  4,  2,  2,  2,
         2,  4,  6,  8, 10, 12, 14, 16, 16, 16, 16, 16, 14, 12, 10,  8,  6,
@@ -91,6 +92,12 @@ def FRBs_finder():
   np.sqrt(stds / 57.95, out=stds)
   datacube /= stds[:,None]
   
+  np.save('FRB_datacube',datacube)
+  
+  
+  
+  
+  
   
   #best_time_idxs = np.max(datacube,axis=(0,1)).argsort()[::-1]  #Assuming time is on axis 2
 
@@ -102,6 +109,8 @@ def FRBs_finder():
   
   beam = np.vstack(results)
   results = 0
+  
+  
 
   
   
