@@ -37,9 +37,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
   else: 
     saps = 3
     beams = 74
-  folders = zip(range(saps)*beams,range(beams)*saps)
+  dirs = zip(range(saps)*beams,range(beams)*saps)
   
-  pulses = pulses_parallel(folder,idL,folders)
+  pulses = pulses_parallel(folder,idL,dirs)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   for file in os.listdir('{}{}/sp'.format(folder,idL)):
@@ -105,65 +105,71 @@ def obs_events(folder,idL,load_events=False,conf=False):
   return
 
 
-def pulses_parallel(folder,idL,folders):
+def pulses_parallel(folder,idL,dirs):
   #Create events, meta_data and pulses lists
-  pool = mp.Pool()
-  results = [pool.apply_async(lists_creation, args=(folder,idL,sap,beam)) for (sap,beam) in folders]
-  pulses = pd.concat([p.get() for p in results])
-  return pulses
-
-
-def lists_creation(folder,idL,sap,beam):
-
-  #Import the events
-  events, meta_data = Events.Loader(folder,idL,sap,beam)
-  pulses = pd.DataFrame()
+  CPUs = mp.cpu_count()
+  dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
-  if not events.empty:
-    try:
-      #Correct for the time misalignment of events
-      events.sort(['DM','Time'],inplace=True)
-      events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
-      
-      #Group the events
-      events.sort(['DM','Time'],inplace=True)
-      Events.Group(events)
-      
-      events.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'events',mode='w')
-      meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
+  pool = mp.Pool(CPUs)
+  results = [pool.apply_async(lists_creation, args=(folder,idL,dirs[i*dirs_range:(i+1)*dirs_range])) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
+  return pd.concat([p.get() for p in results])
 
-      #Apply the thresholds to the events
-      events = events[events.Pulse>=0]
-      events = Events.Thresh(events)
 
-      #Generate the pulses
-      pulses = Pulses.Generator(events)
-      pulses = pulses[pulses.Sigma >= 6.5]
-      events = events[events.Pulse.isin(pulses.index)]
-            
-      #Apply global RFI filters to the pulses
-      RFIexcision.global_filters(pulses,events)
-      pulses = pulses[pulses.Pulse <= RFI_percent]
+def lists_creation(folder,idL,dirs):
+  result = pd.DataFrame()
+  for (sap,beam) in dirs:
+    
+    #Import the events
+    events, meta_data = Events.Loader(folder,idL,sap,beam)
+    pulses = pd.DataFrame()
+    
+    if not events.empty:
+      try:
+        #Correct for the time misalignment of events
+        events.sort(['DM','Time'],inplace=True)
+        events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
+        
+        #Group the events
+        events.sort(['DM','Time'],inplace=True)
+        Events.Group(events)
+        
+        events.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'events',mode='w')
+        meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
 
-      #Set a maximum amout of pulses to prevent bad observations to block the pipeline
-      pulses.sort('Sigma',ascending=False,inplace=True)
-      pulses = pulses.iloc[:3e4]
-      events = events[events.Pulse.isin(pulses.index)]
+        #Apply the thresholds to the events
+        events = events[events.Pulse>=0]
+        events = Events.Thresh(events)
+
+        #Generate the pulses
+        pulses = Pulses.Generator(events)
+        pulses = pulses[pulses.Sigma >= 6.5]
+        events = events[events.Pulse.isin(pulses.index)]
+              
+        #Apply global RFI filters to the pulses
+        RFIexcision.global_filters(pulses,events)
+        pulses = pulses[pulses.Pulse <= RFI_percent]
+
+        #Set a maximum amout of pulses to prevent bad observations to block the pipeline
+        pulses.sort('Sigma',ascending=False,inplace=True)
+        pulses = pulses.iloc[:3e4]
+        events = events[events.Pulse.isin(pulses.index)]
+        
+        #Apply local RFI filters to the pulses
+        RFIexcision.local_filters(pulses,events)
+        pulses = pulses[pulses.Pulse <= RFI_percent]
+        #events = events[events.Pulse.isin(pulses.index)]
+        
+        #A set of known pulses is necessary
+        #Apply multimoment analysis to the pulses
+        #RFIexcision.multimoment(pulses,idL)
+        #pulses = pulses[pulses.Pulse <= RFI_percent]
+        #events = events[events.Pulse.isin(pulses.index)]
+        
+      except:
+        logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
+        pulses = pd.DataFrame()
       
-      #Apply local RFI filters to the pulses
-      RFIexcision.local_filters(pulses,events)
-      pulses = pulses[pulses.Pulse <= RFI_percent]
-      #events = events[events.Pulse.isin(pulses.index)]
-      
-      #A set of known pulses is necessary
-      #Apply multimoment analysis to the pulses
-      #RFIexcision.multimoment(pulses,idL)
-      #pulses = pulses[pulses.Pulse <= RFI_percent]
-      #events = events[events.Pulse.isin(pulses.index)]
-      
-    except:
-      logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
-      pulses = pd.DataFrame()
-      
-  return pulses
+    result = pd.concat((pulses,result))
+  
+  return result
 
