@@ -14,13 +14,13 @@ def candidates(pulses,idL):
   pulses.Candidate[pulses.Pulse==0] = repeated_parallel(pulses[pulses.Pulse==0],0)
   
   if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = repeated_parallel(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1) * 10 + 1
+    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = repeated_parallel(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1)
 
   if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[pulses.Candidate<0] = repeated_parallel(pulses[pulses.Candidate<0],2) * 10 + 1
+    pulses.Candidate[pulses.Candidate<0] = repeated_parallel(pulses[pulses.Candidate<0],2)
   
-  cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(2)
-  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = (np.arange(cands_unique.shape[0]) * 10 + cands_unique.SAP) * 100 + cands_unique.BEAM
+  cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(2).astype(np.int16)
+  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = np.arange(cands_unique.shape[0]) * 1000 + cands_unique.SAP * 100 + cands_unique.BEAM
   
   if not pulses[pulses.Candidate>=0].empty:
     cands = candidates_generator(pulses[pulses.Candidate>=0].copy(),idL)
@@ -47,6 +47,8 @@ def repeated_parallel(pulses,rank):
   pool = mp.Pool()
   dirs_CPU = [dirs[i*dirs_range:(i+1)*dirs_range] for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
   results = [pool.apply_async(Repeated_candidates_beam, args=(pulses[(pulses.Pulse==0)&pulses.SAP.isin(zip(*dir_CPU)[0])&pulses.BEAM.isin(zip(*dir_CPU)[1])],dir_CPU,rank)) for dir_CPU in dirs_CPU]
+  pool.close()
+  pool.join()
   return pd.concat([p.get() for p in results])
 
 
@@ -73,7 +75,7 @@ def Repeated_candidates_beam(pulses,dirs,rank):
       #Sigma = top_sum.loc[DM-span:DM+span].sum()
       #N_pulses = top_count.loc[DM-span:DM+span].sum()
       if cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)].shape[0] > 1:
-        cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = ((i * 10 + sap) * 100 + beam) * 10 + rank
+        cand[(pulses.DM>=DM-span)&(pulses.DM<=DM+span)] = (i+1) * 10000 + sap * 1000 + beam * 10 + rank
       #top_count.loc[DM-span:DM+span] = 0
       top_sum.loc[DM-span:DM+span] = 0
       i += 1

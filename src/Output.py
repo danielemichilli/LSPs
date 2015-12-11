@@ -8,15 +8,17 @@ import LSPplot
 
 def output(folder,idL,pulses,meta_data,candidates):
   pulses.sort('Sigma',ascending=False,inplace=True)
-  candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
-  #Repeated candidates
-  if candidates[candidates.N_pulses>1].shape[0] > 0:
-    LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
+  if not candidates.empty:
+    candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
-  #Single candidates
-  if candidates[candidates.N_pulses==1].shape[0] > 0:
-    LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
+    #Repeated candidates
+    if candidates[candidates.N_pulses>1].shape[0] > 0:
+      LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
+  
+    #Single candidates
+    if candidates[candidates.N_pulses==1].shape[0] > 0:
+      LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
 
   beams_parallel(pulses,meta_data,folder,idL)
 

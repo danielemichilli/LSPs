@@ -81,15 +81,15 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   
   cands = Candidates.candidates(pulses,idL)
-  cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
-  store.append('candidates',cands,data_columns=['Candidate'])
+  if not cands.empty:
+    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
+    store.append('candidates',cands,data_columns=['Candidate'])
+    cands = cands[cands.main_cand==0].head(30)
   store.close()
-  
-  cands = cands[cands.main_cand==0].head(30)
-  
+    
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
     meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
@@ -97,6 +97,8 @@ def obs_events(folder,idL,load_events=False,conf=False):
     #Produce the output
     Output.output(folder,idL,pulses,meta_data,cands)
     
+  if cands.empty: logging.warning("Any reliable candidate detected!")
+  else:
     #Store the best candidates online
     try: Internet.upload(cands,folder,idL)
     except: logging.warning("ATTENTION! Website currently down. Try to upload the observation later with the Upload.py script.")
@@ -112,6 +114,8 @@ def pulses_parallel(folder,idL,dirs):
   
   pool = mp.Pool(CPUs)
   results = [pool.apply_async(lists_creation, args=(folder,idL,dirs[i*dirs_range:(i+1)*dirs_range])) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
+  pool.close()
+  pool.join()
   return pd.concat([p.get() for p in results])
 
 
