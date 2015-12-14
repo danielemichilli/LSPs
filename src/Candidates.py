@@ -19,7 +19,6 @@ def candidates(pulses,idL):
     pulses.Candidate[pulses.Candidate<0] = Repeated_candidates_beam(pulses[pulses.Candidate<0],2)
 
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(5).astype(np.int32)
-  #ATTENZIONE: aumentare head(2) e selezionare head(2) solo dopo aver visto quali non sono in altri candidates
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = np.arange(cands_unique.shape[0]) * 1000 + cands_unique.SAP * 100 + cands_unique.BEAM
   
   if not pulses[pulses.Candidate>=0].empty:
@@ -30,7 +29,9 @@ def candidates(pulses,idL):
     cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
     new_cand = cands.index
 
-    C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)  
+    C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
+    
+    #selezionare solo top 2 signle candidates
   
   else: cands = pd.DataFrame()
   
