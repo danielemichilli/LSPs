@@ -17,6 +17,7 @@ def upload_website():
   idL = args.idL[0]
   
   cands = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'candidates')
+  cands = cands[cands.main_cand==0].head(30)
   
   Internet.upload(cands,folder,idL)
 
