@@ -100,9 +100,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     #Store the best candidates online
-    try: Internet.upload(cands,folder,idL)
-    except: logging.warning("ATTENTION! Website currently down. Try to upload the observation later with the Upload.py script.")
-    Internet.upload_sheet(cands,idL)
+    Internet.upload(cands,folder,idL)
     
   return
 

@@ -67,7 +67,7 @@ def upload_sheet(cands,idL):
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/",OFFSET($A$1,ROW()-1,0),".png"),"Plot")'.format(idL)
-    date_mod = '=IF(ISTEXT(OFFSET($M$1,ROW()-1,0)),today(),)'
+    date_mod = '=timestamp(OFFSET($M$1,ROW()-1,0))'
     row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', date_mod, 'ToProcess', '', link]    
     wks.append_row(row)
 
@@ -89,6 +89,6 @@ def upload_sheet(cands,idL):
   try: 
     row = wks.col_values(1).index('')
     wks.resize(rows=row, cols=col_size)
-  except gspread.CellNotFound: pass  
+  except ValueError: pass  
   
   return
