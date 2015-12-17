@@ -9,11 +9,13 @@
 import pandas as pd
 import numpy as np
 import os
+import fnmatch
 import matplotlib as mpl
 mpl.use('Agg')
 import multiprocessing as mp
 import matplotlib.pyplot as plt
 import logging
+import re
 
 import Events
 import Pulses
@@ -29,17 +31,23 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
-
-  if conf:
-    logging.warning("A confirmation observation will be processed.")
-    saps = 1
-    beams = 128
-  else: 
-    saps = 3
-    beams = 74
-  dirs = zip(range(saps)*beams,range(beams)*saps)
+  def file_list(folder,idL):
+    file_list = []
+    file_names = []
+    for root, dirnames, filenames in os.walk(folder+idL):
+      for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
+        if filename in file_names:
+          logging.warning("ATTENTION!: Two sp archives with the same filename foud. Only {} will be processed".format(filename))
+          continue
+        else:
+          file_list.append(root+'/'+filename)
+          file_names.append(filename)
+    
+    return file_list
   
-  pulses = pulses_parallel(folder,idL,dirs)
+  file_list = file_list(folder,idL)
+    
+  pulses = pulses_parallel(folder,idL,file_list)
   
   store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
   for file in os.listdir('{}{}/sp'.format(folder,idL)):
@@ -105,7 +113,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   return
 
 
-def pulses_parallel(folder,idL,dirs):
+def pulses_parallel(folder,idL,dirs):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
@@ -119,10 +127,18 @@ def pulses_parallel(folder,idL,dirs):
 
 def lists_creation(folder,idL,dirs):
   result = pd.DataFrame()
-  for (sap,beam) in dirs:
+  
+  for directory in dirs:
+    def coord_from_path(directory):
+      elements = os.path.basename(directory).split('_')
+      sap = int(re.findall('\d', elements[1])[0])
+      beam = int(re.findall('\d+', elements[2])[0])
+      return sap, beam
     
+    sap, beam = coord_from_path(directory)
+
     #Import the events
-    events, meta_data = Events.Loader(folder,idL,sap,beam)
+    events, meta_data = Events.Loader(directory,sap,beam)
     pulses = pd.DataFrame()
     
     if not events.empty:

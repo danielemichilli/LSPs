@@ -7,7 +7,7 @@ import logging
 import C_Funct
 from Parameters import *
 
-def Loader(folder,idL,sap,beam):
+def Loader(directory,sap,beam):
   #------------------------------------------
   # Creates a table for one .singlepulse file
   #------------------------------------------
@@ -15,15 +15,11 @@ def Loader(folder,idL,sap,beam):
   events = pd.DataFrame()
   meta_data = pd.DataFrame()
       
-  name = '{}_SAP{}_BEAM{}'.format(idL,sap,beam)
-  path = 'SAP{}/{}/BEAM{}_sift/sp/'.format(sap,name,beam)
-  events_path = '{}{}/{}{}_singlepulse.tgz'.format(folder,idL,path,name)
+  name = os.path.basename(directory).split('_single')[0]
   
-  #events_path = '{}{}/{}_singlepulse.tgz'.format(folder,idL,name)
-
   try:
     #Open the file
-    tar_file = tarfile.open(events_path)
+    tar_file = tarfile.open(directory)
     events_file = tar_file.extractfile(name+'.singlepulse')
     inf_file = tar_file.extractfile(name+'.inf')
     
