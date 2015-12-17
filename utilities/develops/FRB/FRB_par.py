@@ -78,7 +78,7 @@ def datacube_creation():
         2,  3,  4,  6,  8, 10, 12, 13, 14, 15])
 
   #Create the matrix of the datacube in beam-DM-Time space and fill it 
-  datacube = np.zeros((61,500,36000))
+  datacube = np.zeros((61,500,36000))  #This will occupy ~9 GB
   for idx,beam in enumerate(np.arange(61)):
     try: beam[idx] = np.load('FRB_beam_SNR.npz')
     except IOError: continue
@@ -92,11 +92,9 @@ def datacube_creation():
   np.sqrt(stds / 57.95, out=stds)
   datacube /= stds[:,None]
   
-  np.save('FRB_datacube',datacube)
   
-  
-  
-  
+
+
   
   
   #best_time_idxs = np.max(datacube,axis=(0,1)).argsort()[::-1]  #Assuming time is on axis 2
@@ -121,7 +119,6 @@ def space_fft(CPU):
   
   for time in times:
     #DM_idx = np.unravel_index(np.argmax(datacube[:,:,time_idx],datacube.shape)[1]
-    
 
     grid = np.arange(17)
     beams_map = griddata(ra, dec, ts, grid, grid, interp='linear')

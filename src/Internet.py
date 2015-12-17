@@ -26,7 +26,7 @@ def upload_plots(folder,idL):
 
 
 def upload_sheet(cands,idL):
-  try: json_key = json.load(open(SITE_CERT))
+  try: json_key = json.load(open('.site_cert.json')) #json_key = json.load(open(SITE_CERT))
   except IOError:
     logging.warning("Spreadsheet cannot be uploaded - Google certificate missing")
     return
@@ -66,8 +66,8 @@ def upload_sheet(cands,idL):
   for idx,cand in cands.iterrows():
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
-    link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/",OFFSET($A$1,ROW()-1,0),".png"),"Plot")'.format(idL)
-    date_mod = '=timestamp(OFFSET($M$1,ROW()-1,0))'
+    link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".png");"Plot")'.format(idL)
+    date_mod = '=timestamp(OFFSET($M$1;ROW()-1;0))'
     row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', date_mod, 'ToProcess', '', link]    
     wks.append_row(row)
 
@@ -87,7 +87,9 @@ def upload_sheet(cands,idL):
 
   #Resize spreadsheet
   try: 
-    row = wks.col_values(1).index('')
+    row = wks.col_values(1)
+    row = [val for val in row if val != '']
+    row = len(row)
     wks.resize(rows=row, cols=col_size)
   except ValueError: pass  
   
