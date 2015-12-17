@@ -67,16 +67,6 @@ def beam_matrix():
   
   
 def datacube_creation():
-  ra = np.array([ 8,  8, 10, 10,  8,  6,  6,  8, 10, 12, 12, 12, 10,  8,  6,  4,  4,
-        4,  6,  8, 10, 12, 14, 14, 14, 14, 12, 10,  8,  6,  4,  2,  2,  2,
-        2,  4,  6,  8, 10, 12, 14, 16, 16, 16, 16, 16, 14, 12, 10,  8,  6,
-        4,  2,  0,  0,  0,  0,  0,  2,  4,  6])
-  
-  dec = np.array([ 8, 10,  9,  7,  6,  7,  9, 12, 11, 10,  8,  6,  5,  4,  5,  6,  8,
-       10, 11, 14, 13, 12, 11,  9,  7,  5,  4,  3,  2,  3,  4,  5,  7,  9,
-       11, 12, 13, 16, 15, 14, 13, 12, 10,  8,  6,  4,  3,  2,  1,  0,  1,
-        2,  3,  4,  6,  8, 10, 12, 13, 14, 15])
-
   #Create the matrix of the datacube in beam-DM-Time space and fill it 
   datacube = np.zeros((61,500,36000))  #This will occupy ~9 GB
   for idx,beam in enumerate(np.arange(61)):
@@ -92,45 +82,48 @@ def datacube_creation():
   np.sqrt(stds / 57.95, out=stds)
   datacube /= stds[:,None]
   
-  
-
-
+  datacube = datacube_parallel(datacube)
   
   
-  #best_time_idxs = np.max(datacube,axis=(0,1)).argsort()[::-1]  #Assuming time is on axis 2
-
-##
+  
+  
+def datacube_parallel(datacube):
+  CPUs = mp.cpu_count()
+  idx_range = int(np.ceil(datacube.shape[-1]/float(CPUs)))  
+  data_list = [datacube[...,i*idx_range:(i+1)*idx_range] for i in range(CPUs)]
+  
   pool = mp.Pool()
-  results = pool.map(space_fft, range(os.cpu_count()-1))
+  results = pool.map(space_fft, data_list)
   pool.close()
   pool.join()
   
-  beam = np.vstack(results)
-  results = 0
+  return np.dstack(results)
   
   
 
   
   
-def space_fft(CPU):
-  t_range = 36000 / (os.cpu_count()-1)
+def space_fft(data):
+  ra = np.array([ 8,  8, 10, 10,  8,  6,  6,  8, 10, 12, 12, 12, 10,  8,  6,  4,  4,
+        4,  6,  8, 10, 12, 14, 14, 14, 14, 12, 10,  8,  6,  4,  2,  2,  2,
+        2,  4,  6,  8, 10, 12, 14, 16, 16, 16, 16, 16, 14, 12, 10,  8,  6,
+        4,  2,  0,  0,  0,  0,  0,  2,  4,  6])
   
-  beams = data[:,:,CPU*t_range:(CPU+1)*t_range]
+  dec = np.array([ 8, 10,  9,  7,  6,  7,  9, 12, 11, 10,  8,  6,  5,  4,  5,  6,  8,
+       10, 11, 14, 13, 12, 11,  9,  7,  5,  4,  3,  2,  3,  4,  5,  7,  9,
+       11, 12, 13, 16, 15, 14, 13, 12, 10,  8,  6,  4,  3,  2,  1,  0,  1,
+        2,  3,  4,  6,  8, 10, 12, 13, 14, 15])
   
-  for time in times:
-    #DM_idx = np.unravel_index(np.argmax(datacube[:,:,time_idx],datacube.shape)[1]
+  grid = np.arange(17)
 
-    grid = np.arange(17)
-    beams_map = griddata(ra, dec, ts, grid, grid, interp='linear')
-    beams_map[beams_map.mask==True] = 0
-    conv = signal.convolve2d(beams_map,np.ones((fill,fill))/fill,mode='same')  #Check the statistics!
-    
-    
-    
-    #Condizioni per salvare il bin
-    
-    
-    
-    if cand_idx[cand_idx>=0].size == 0: break
+  for i in range(data.shape[1]):
+    for j in range(data.shape[2]):
+      ts = data[:,i,j]
+
+      beams_map = griddata(ra, dec, ts, grid, grid, interp='linear')
+      beams_map[beams_map.mask==True] = 0
+      conv = signal.convolve2d(beams_map,np.ones((fill,fill))/fill,mode='same')  #Check the statistics!
+
+
   
   
