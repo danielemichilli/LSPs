@@ -98,7 +98,7 @@ def create_DB(folder,idL,args):
   except:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
     with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
-      f.write("ATTENTION! Error in processing obs. {}".format(idL))
+      f.write("ATTENTION! Error in processing obs. {}\n".format(idL))
     
   return
     
