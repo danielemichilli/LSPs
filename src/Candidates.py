@@ -10,13 +10,13 @@ import Utilities
 def candidates(pulses,idL):
   pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
   
-  pulses.Candidate[pulses.Pulse==0] = Repeated_candidates_beam(pulses[pulses.Pulse==0],0)
+  pulses.Candidate[pulses.Pulse==0] = Repeated_candidates_beam(pulses[pulses.Pulse==0],0).astype(pulses.Candidate.dtype)
   
   if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = Repeated_candidates_beam(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1)
+    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = Repeated_candidates_beam(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1).astype(pulses.Candidate.dtype)
 
   if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[pulses.Candidate<0] = Repeated_candidates_beam(pulses[pulses.Candidate<0],2)
+    pulses.Candidate[pulses.Candidate<0] = Repeated_candidates_beam(pulses[pulses.Candidate<0],2).astype(pulses.Candidate.dtype)
 
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(5).astype(np.int32)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = np.arange(cands_unique.shape[0]) * 1000 + cands_unique.SAP * 100 + cands_unique.BEAM
