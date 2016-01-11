@@ -114,7 +114,7 @@ def space_fft(data):
        11, 12, 13, 16, 15, 14, 13, 12, 10,  8,  6,  4,  3,  2,  1,  0,  1,
         2,  3,  4,  6,  8, 10, 12, 13, 14, 15])
   
-  grid = np.arange(17)
+  grid = np.arange(3)
 
   for i in range(data.shape[1]):
     for j in range(data.shape[2]):
