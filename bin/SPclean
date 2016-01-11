@@ -95,9 +95,10 @@ def create_DB(folder,idL,args):
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.time() - time0))
     
-  except Exception as e:
+  except:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
-
+    with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
+      f.write("ATTENTION! Error in processing obs. {}".format(idL))
     
   return
     
