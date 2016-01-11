@@ -37,7 +37,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
     for root, dirnames, filenames in os.walk(folder+idL):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
-          logging.warning("ATTENTION!: Two sp archives with the same filename foud. Only {} will be processed".format(filename))
+          logging.warning("ATTENTION!: Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename))
+          idx = file_names.index(filename)
+          file_list[idx] = root+'/'+filename
           continue
         else:
           file_list.append(root+'/'+filename)
@@ -129,20 +131,20 @@ def lists_creation(folder,idL,dirs):
   result = pd.DataFrame()
   
   for directory in dirs:
-    def coord_from_path(directory):
-      elements = os.path.basename(directory).split('_')
-      sap = int(re.findall('\d', elements[1])[0])
-      beam = int(re.findall('\d+', elements[2])[0])
-      return sap, beam
-    
-    sap, beam = coord_from_path(directory)
+    try:
+      def coord_from_path(directory):
+        elements = os.path.basename(directory).split('_')
+        sap = int(re.findall('\d', elements[1])[0])
+        beam = int(re.findall('\d+', elements[2])[0])
+        return sap, beam
+      
+      sap, beam = coord_from_path(directory)
 
-    #Import the events
-    events, meta_data = Events.Loader(directory,sap,beam)
-    pulses = pd.DataFrame()
+      #Import the events
+      events, meta_data = Events.Loader(directory,sap,beam)
+      pulses = pd.DataFrame()
     
-    if not events.empty:
-      try:
+      if not events.empty:
         #Correct for the time misalignment of events
         events.sort(['DM','Time'],inplace=True)
         events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
@@ -183,9 +185,9 @@ def lists_creation(folder,idL,dirs):
         #pulses = pulses[pulses.Pulse <= RFI_percent]
         #events = events[events.Pulse.isin(pulses.index)]
         
-      except:
-        logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
-        pulses = pd.DataFrame()
+    except:
+      logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
+      pulses = pd.DataFrame()
       
     result = pd.concat((pulses,result))
   

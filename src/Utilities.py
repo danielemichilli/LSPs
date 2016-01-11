@@ -174,11 +174,11 @@ def clean(data):
 
 def read_header(filename):
   name, ext = os.path.splitext(filename)
-  if ext == '.fits': 
-    if not 'pyfits' in sys.modules:
+  if ext == '.fits':
+    try: fits = pyfits.open(filename,memmap=True)
+    except NameError: 
       logging.warning("Utilities - Additional modules missing")
       return    
-    fits = pyfits.open(filename,memmap=True)
     header = fits['SUBINT'].header + fits['PRIMARY'].header
     fits.close()
     return header
