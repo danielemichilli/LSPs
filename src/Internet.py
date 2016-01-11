@@ -27,7 +27,7 @@ def upload_plots(folder,idL):
 
 
 def upload_sheet(cands,idL):
-  try: json_key = json.load(open('.site_cert.json')) #json_key = json.load(open(SITE_CERT))
+  try: json_key = json.load(open(SITE_CERT))
   except IOError:
     logging.warning("Spreadsheet cannot be uploaded - Google certificate missing")
     return
