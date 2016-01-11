@@ -207,7 +207,7 @@ def repeated_candidates(pulses,cands,meta_data,folder,idL):
     scatter_beam(ax1,pulses_cand,col='b')
     ax1.scatter(pulses.Time[pulses.Candidate==idx], pulses.DM[pulses.Candidate==idx], s=300, linewidths=[0.,], marker='*', c='w')
     ax1.axhline(cand.DM,ls='--')
-    scatter_SNR(axD2,pulses_beam)
+    if not pulses_beam.empty: scatter_SNR(axD2,pulses_beam)
     try: 
       hist_DM(axD1,pulses_beam)
       hist_SNR(axD3,pulses_beam)
