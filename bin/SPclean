@@ -23,7 +23,7 @@ import StringIO
 
 import SPclean
 import Parameters
-import Paths
+from Paths import *
 
 def parser():
   #---------------------
@@ -120,7 +120,7 @@ def main():
   
 
   if args.folder: folder = args.folder[0] + '/'
-  else: folder = Paths.OBS_FOLDER + '/'
+  else: folder = OBS_FOLDER + '/'
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it

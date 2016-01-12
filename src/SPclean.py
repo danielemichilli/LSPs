@@ -52,19 +52,18 @@ def obs_events(folder,idL,load_events=False,conf=False):
     
   pulses = pulses_parallel(idL,file_list)
   
-  def merge_temp_databases(idL):
-    store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
-    for file in os.listdir(TEMP_FOLDER.format(idL)):
-      if file.endswith('.tmp'):
-        events = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'events')
-        store.append('events',events,data_columns=['Pulse'])
-        meta_data = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'meta_data')
-        meta_data.reset_index(inplace=True,drop=True)
-        store.append('meta_data',meta_data)
-        #os.remove('{}{}/sp/{}'.format(folder,idL,file))
-    store.close()
-  
-  merge_temp_databases(idL)
+  def merge_temp_databases(idL,store):
+    store.append('events',pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse'])
+    meta_data = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'meta_data')
+    meta_data.reset_index(inplace=True,drop=True)
+    store.append('meta_data',meta_data)    
+    #os.remove('{}{}/sp/{}'.format(folder,idL,file))
+    
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
+  for file in os.listdir(TEMP_FOLDER.format(idL)):
+    if file.endswith('.tmp'):
+      merge_temp_databases(idL,store):
+  store.close()
   
   if pulses.empty: 
     logging.warning("No pulse detected!")
