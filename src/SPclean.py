@@ -57,7 +57,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
     meta_data = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
     store.append('meta_data',meta_data)    
-    #os.remove('{}{}/sp/{}'.format(folder,idL,file))
+    os.remove('{}/{}'.format(TEMP_FOLDER.format(idL),file))
     
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
   for file in os.listdir(TEMP_FOLDER.format(idL)):
