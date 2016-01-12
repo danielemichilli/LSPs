@@ -60,7 +60,7 @@ def upload_sheet(cands,idL):
     wks.update_cells(cells)
       
   #Append candidates
-  date = time.strftime("%d/%m/%Y")
+  date = time.strftime("%m/%d/%Y")
   fileName, fileExtension = os.path.splitext(Parameters.__file__)
   git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
   vers = subprocess.check_output(['git','--git-dir',git_folder,'describe','--tags','--abbrev=0','--always']).strip()
