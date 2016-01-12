@@ -62,7 +62,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
   for file in os.listdir(TEMP_FOLDER.format(idL)):
     if file.endswith('.tmp'):
-      merge_temp_databases(idL,store):
+      merge_temp_databases(idL,store)
   store.close()
   
   if pulses.empty: 
