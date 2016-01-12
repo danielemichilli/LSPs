@@ -13,15 +13,16 @@ from Paths import *
 import Parameters
 
 
-def upload(cands,folder,idL):
+def upload(cands,idL):
   upload_sheet(cands,idL)
-  upload_plots(folder,idL)
+  upload_plots(idL)
   return
 
 
-def upload_plots(folder,idL):
+def upload_plots(idL):
+  folder = '{}/sp/candidates'.format(TEMP_FOLDER.format(idL))
   FNULL = open(os.devnull, 'w')
-  error = subprocess.call(['scp','-r','{}/{}/sp/candidates'.format(folder,idL),'ag004:/var/www/lofarpwg/lotaas-sp/observations/{}'.format(idL)], stdout=FNULL, stderr=FNULL)
+  error = subprocess.call(['scp','-r',folder,'ag004:/var/www/lofarpwg/lotaas-sp/observations/{}'.format(idL)], stdout=FNULL, stderr=FNULL)
   if error: raise ConnectionError("ATTENTION! Website currently down. Try to upload the observation later with Upload.py")
   return
 

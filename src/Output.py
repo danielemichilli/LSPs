@@ -4,9 +4,10 @@ import numpy as np
 
 import Internet
 import LSPplot
+from Paths import *
 
-
-def output(folder,idL,pulses,meta_data,candidates):
+def output(idL,pulses,meta_data,candidates):
+  folder = '{}/sp/'.format(TEMP_FOLDER.format(idL))
   pulses.sort('Sigma',ascending=False,inplace=True)
   
   if not candidates.empty:

@@ -25,6 +25,7 @@ import Output
 import Candidates
 import Internet
 from Parameters import *
+from Paths import *
 
 
 def obs_events(folder,idL,load_events=False,conf=False):
@@ -49,20 +50,21 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   file_list = file_list(folder,idL)
     
-  pulses = pulses_parallel(folder,idL,file_list)
+  pulses = pulses_parallel(idL,file_list)
   
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'w')
-  for file in os.listdir('{}{}/sp'.format(folder,idL)):
-    if file.endswith('.tmp'):
-      events = pd.read_hdf('{}{}/sp/{}'.format(folder,idL,file),'events')
-      store.append('events',events,data_columns=['Pulse'])
-      events = 0
-      meta_data = pd.read_hdf('{}{}/sp/{}'.format(folder,idL,file),'meta_data')
-      meta_data.reset_index(inplace=True,drop=True)
-      store.append('meta_data',meta_data)
-      meta_data = 0
-      os.remove('{}{}/sp/{}'.format(folder,idL,file))
-  store.close()
+  def merge_temp_databases(idL):
+    store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
+    for file in os.listdir(TEMP_FOLDER.format(idL)):
+      if file.endswith('.tmp'):
+        events = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'events')
+        store.append('events',events,data_columns=['Pulse'])
+        meta_data = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'meta_data')
+        meta_data.reset_index(inplace=True,drop=True)
+        store.append('meta_data',meta_data)
+        #os.remove('{}{}/sp/{}'.format(folder,idL,file))
+    store.close()
+  
+  merge_temp_databases(idL)
   
   if pulses.empty: 
     logging.warning("No pulse detected!")
@@ -92,42 +94,42 @@ def obs_events(folder,idL,load_events=False,conf=False):
   
   cands = Candidates.candidates(pulses,idL)
   
-  store = pd.HDFStore('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'a')
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
   if not cands.empty:
     cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
     store.append('candidates',cands,data_columns=['Candidate'])
     cands = cands[cands.main_cand==0].head(30)
   store.close()
-    
+  
   if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
   else:
-    meta_data = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'meta_data')
+    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'meta_data')
     
     #Produce the output
-    Output.output(folder,idL,pulses,meta_data,cands)
+    Output.output(idL,pulses,meta_data,cands)
     
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     #Store the best candidates online
-    Internet.upload(cands,folder,idL)
+    Internet.upload(cands,idL)
     
   return
 
 
-def pulses_parallel(folder,idL,dirs):    
+def pulses_parallel(idL,dirs):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
   pool = mp.Pool(CPUs)
-  results = [pool.apply_async(lists_creation, args=(folder,idL,dirs[i*dirs_range:(i+1)*dirs_range])) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
+  results = [pool.apply_async(lists_creation, args=(idL,dirs[i*dirs_range:(i+1)*dirs_range])) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
   pool.close()
   pool.join()
   return pd.concat([p.get() for p in results])
 
 
-def lists_creation(folder,idL,dirs):
+def lists_creation(idL,dirs):
   result = pd.DataFrame()
   
   for directory in dirs:
@@ -153,8 +155,8 @@ def lists_creation(folder,idL,dirs):
         events.sort(['DM','Time'],inplace=True)
         Events.Group(events)
         
-        events.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'events',mode='w')
-        meta_data.to_hdf('{}{}/sp/SAP{}_BEAM{}.tmp'.format(folder,idL,sap,beam),'meta_data',mode='a')
+        events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TEMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+        meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TEMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
 
         #Apply the thresholds to the events
         events = events[events.Pulse>=0]
