@@ -279,19 +279,20 @@ def rrat_period(times, numperiods=20000):
   
   
 
-def DynamicSpectrum(ax,puls,filename):
+def DynamicSpectrum(ax,puls,filename,bary=True):
   if not os.path.isfile(filename): return
   
   sample = puls['Sample'] * puls['Downfact']
-
-  header = Utilities.read_header(filename)
-  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-  except NameError: 
-    logging.warning("LSPplot - Additional modules missing")
-    return
-  sample += np.round(sample*v).astype(int)
   
+  if bary:
+    header = Utilities.read_header(filename)
+    MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+    try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+    except NameError: 
+      logging.warning("LSPplot - Additional modules missing")
+      return
+    sample += np.round(sample*v).astype(int)
+    
   #duration = np.int(np.round(puls.Duration/RES))
   duration = downsample * puls['Downfact']
   spectra_border = 20

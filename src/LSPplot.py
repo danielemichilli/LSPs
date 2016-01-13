@@ -142,7 +142,7 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
     DynamicSpectrum(ax5,puls.iloc[0].copy(),idL,sap,beam)
     
     plt.tight_layout()
-    store = '{}/sp/candidates'.format(folder)
+    store = '{}/candidates'.format(folder)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
     plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
@@ -214,7 +214,7 @@ def repeated_candidates(pulses,cands,meta_data,folder,idL):
     except ValueError: pass
     
     plt.tight_layout()
-    store = '{}/sp/candidates'.format(folder)
+    store = '{}/candidates'.format(folder)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
     plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
