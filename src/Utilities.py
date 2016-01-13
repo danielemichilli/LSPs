@@ -9,6 +9,7 @@ try:
   import filterbank
   import sigproc
   import pyfits
+  import presto
 except ImportError: pass
 
 from Parameters import *
@@ -277,83 +278,47 @@ def rrat_period(times, numperiods=20000):
   return p, diff_max
   
   
-def DynamicSpectrum(pulses,idL,sap,beam,store):    #Creare una copia di pulses quando si chiama la funzione!
-  plt.clf()
-  
-  if beam==12: stokes = 'incoherentstokes'
-  else: stokes = 'stokes'
-  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+
+def DynamicSpectrum(ax,puls,filename):
   if not os.path.isfile(filename): return
   
-  
-  pulses.Sample[pulses.DM>141.71] *= 4
-  pulses.Sample[(pulses.DM>40.47)&(pulses.DM<=141.71)] *= 2
-  
-  #controllare che questo vada dopo downsampling correction!
+  sample = puls['Sample'] * puls['Downfact']
+
   header = Utilities.read_header(filename)
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-  bin_idx = np.int(np.round(1./v))
-  pulses.Sample += pulses.Sample/bin_idx
+  try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  except NameError: 
+    logging.warning("LSPplot - Additional modules missing")
+    return
+  sample += np.round(sample*v).astype(int)
   
+  #duration = np.int(np.round(puls.Duration/RES))
+  duration = downsample * puls['Downfact']
+  spectra_border = 20
+  offset = duration*spectra_border
   
+  #Load the spectrum
+  spectrum = Utilities.read_fits(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
   
-  #fig = plt.figure()
-  
-  freq = np.arange(151,118,-1,dtype=np.float)
-  offset = 300
-  
-  #for i,(idx,puls) in enumerate(pulses.iterrows()):
-    #spectrum, bin_start, bin_end = read_fits(filename,puls.DM,puls.Sample,offset)
-    ##if RFIexcision.Multimoment() > FILTERS['Multimoment']: 
-      ##pulses.Pulse += 1
-      ##continue
-    #extent = [bin_start*RES,bin_end*RES,119,151]
-    #ax = plt.subplot2grid((2,5),(i/5,i%5))
-    #ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-    #time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2)
-    #ax.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
-    ##ax.plot((time[0],time[0]+puls.Sample*RES),(freq[0],freq[0]),'r',(time[-1],time[-1]+puls.Sample*RES),(freq[-1],freq[-1]),'r')
-    #ax.axis(extent)
-    #ax.set_title('Sigma = {0:.1f}, Rank = {1}'.format(puls.Sigma,i))
-
-
-
-  puls = pulses
-  spectrum, bin_start, bin_end = read_fits(filename,puls.DM,puls.Sample,offset)
-  extent = [bin_start*RES,bin_end*RES,119,151]
-  
-  vmin,vmax = color_range(spectrum)
-  
-  plt.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent,vmin=vmin,vmax=vmax)     #provare anche pcolormesh
-  time = 4149 * puls.DM * (np.power(freq,-2) - 151.**-2) + bin_start*RES
-  plt.plot(time-offset*RES,freq,'r',time+offset*RES,freq,'r')
-  plt.axis(extent)
-  
-  
-  
-  
-  
-  #allineamento perfetto
-  #problema di contrasto: provare a diminuire range di colori, azzerare minori di soglia, mediare in duration del pulse, etc
-  #prova di de-dispersione (forse inutile):
-  freq = np.linspace(F_MIN,F_MAX,2430)
-  time = (4149 * DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  #De-dispersion
+  freq = np.linspace(F_MIN,F_MAX,2592)
+  time = (4149 * puls['DM'] * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
-
+  spectrum = spectrum[:2*offset+duration]
   
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
   
-  
-  
-  # Set common labels
-  #fig.text(0.5, 0.05, 'Time (s)', ha='center', va='center', fontsize=8)
-  #fig.text(0.08, 0.5, 'DM (pc/cm3)', ha='left', va='center', rotation='vertical', fontsize=8)
-  #fig.text(0.5, 0.95, str(idL), ha='center', va='center', fontsize=12)
-  
-  #plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
-  
+  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
+  ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+  ax.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
+  ax.axis(extent)
+  ax.set_xlabel('Time (s)')
+  ax.set_ylabel('Frequency (MHz)')
+      
   return 
+
 
 
 

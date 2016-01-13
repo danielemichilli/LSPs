@@ -57,7 +57,7 @@ def sp_shape(pulses,store,folder,idL):
   plt.clf()
   fig = plt.figure()
   
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==pulses.index.tolist()'])
+  events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder),'events',where=['Pulse==pulses.index.tolist()'])
   for i,(idx,puls) in enumerate(pulses.iterrows()):
     event = events[events.Pulse==idx]
     ax = plt.subplot2grid((2,5),(i/5,i%5))
@@ -112,7 +112,7 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
   idx = pulses[pulses.Candidate.isin(cands.index)].groupby('Candidate',sort=False).head(1).index
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==idx.tolist()'])
+  events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder),'events',where=['Pulse==idx.tolist()'])
   for idx,cand in cands.iterrows():
     puls = pulses[pulses.Candidate==idx]
     event = events[events.Pulse==puls.index[0]]
@@ -142,7 +142,7 @@ def single_candidates(pulses,cands,meta_data,folder,idL):
     DynamicSpectrum(ax5,puls.iloc[0].copy(),idL,sap,beam)
     
     plt.tight_layout()
-    store = '{}{}/sp/candidates'.format(folder,idL)
+    store = '{}/sp/candidates'.format(folder)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
     plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
@@ -153,7 +153,7 @@ def repeated_candidates(pulses,cands,meta_data,folder,idL):
   pulses_top = pulses[pulses.Pulse==0]
   rfi = pulses[pulses.Pulse>0]
   idx = pulses[pulses.Candidate.isin(cands.index)].groupby('Candidate',sort=False).head(2).index
-  events = pd.read_hdf('{}{}/sp/SinglePulses.hdf5'.format(folder,idL),'events',where=['Pulse==idx.tolist()'])
+  events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder),'events',where=['Pulse==idx.tolist()'])
   for idx,cand in cands.iterrows():
     puls1 = pulses[pulses.Candidate==idx].iloc[0]
     puls2 = pulses[pulses.Candidate==idx].iloc[1]
@@ -214,7 +214,7 @@ def repeated_candidates(pulses,cands,meta_data,folder,idL):
     except ValueError: pass
     
     plt.tight_layout()
-    store = '{}{}/sp/candidates'.format(folder,idL)
+    store = '{}/sp/candidates'.format(folder)
     plt.savefig('{}/{}.png'.format(store,cand.id),format='png',bbox_inches='tight',dpi=200)
     plt.close('all')  #Maybe possible to reuse the figure without close it, should be faster
   return
