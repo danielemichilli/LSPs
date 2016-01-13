@@ -69,8 +69,7 @@ def upload_sheet(cands,idL):
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".png");"Plot")'.format(idL)
-    date_mod = '=timestamp(OFFSET($M$1;ROW()-1;0))'
-    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', date_mod, 'ToProcess', '', link]    
+    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', '', 'ToProcess', '', link]    
     wks.append_row(row)
 
   #Sort spreadsheet

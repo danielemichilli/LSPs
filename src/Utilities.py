@@ -15,7 +15,7 @@ except ImportError: pass
 from Parameters import *
 
 
-def read_filterbank(filename,DM,bin_start):
+def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False):
   if (not 'filterbank' in sys.modules) or (not 'sigproc' in sys.modules):
     logging.warning("Utilities - Additional modules missing")
     return
@@ -25,7 +25,6 @@ def read_filterbank(filename,DM,bin_start):
 
   nbits = head['nbits']
   nchans = head['nchans']
-
   dtype = filterbank.get_dtype(nbits)
 
   filfile = open(filename, 'rb')
@@ -39,12 +38,13 @@ def read_filterbank(filename,DM,bin_start):
   data_size = file_size - header_size
   bytes_per_spectrum= nchans * nbits / 8
   nspec = data_size / bytes_per_spectrum
-
   spectrum = np.memmap(filename, dtype=dtype, mode='r', offset=header_size, shape=(nspec, nchans))
   spectrum = np.fliplr(spectrum)
 
-  bin_start -= DS_OFFSET
-  bin_end = bin_start + DM2delay(DM) + DS_OFFSET
+  bin_start -= offset
+  if bin_start<0: bin_start = 0
+  
+  bin_end = bin_start + DM2delay(DM) + duration + 2*offset
   
   spectrum = spectrum[bin_start:bin_end]
   #ind = np.arange(0,2592,16)
@@ -56,6 +56,7 @@ def read_filterbank(filename,DM,bin_start):
 
 def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   bin_start = np.int(bin_start)
+  
   duration = np.int(duration/RES+1)
   
   if isinstance(fits,str):
@@ -279,7 +280,7 @@ def rrat_period(times, numperiods=20000):
   
   
 
-def DynamicSpectrum(ax,puls,filename,bary=True):
+def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
   if not os.path.isfile(filename): return
   
   sample = puls['Sample'] * puls['Downfact']
@@ -293,27 +294,34 @@ def DynamicSpectrum(ax,puls,filename,bary=True):
       return
     sample += np.round(sample*v).astype(int)
     
-  #duration = np.int(np.round(puls.Duration/RES))
-  duration = downsample * puls['Downfact']
+  if isinstance(puls['Duration'], float):
+    puls['Duration'] = np.int(np.round(puls.Duration/RES)) * puls['Downfact']
+  else: puls['Duration'] = puls['Downsample'] * puls['Downfact']
   spectra_border = 20
-  offset = duration*spectra_border
+  offset = puls['Duration']*spectra_border
   
   #Load the spectrum
-  spectrum = Utilities.read_fits(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
+  if filename.endswith('.fits'):
+    spectrum = read_fits(filename,puls['DM'].copy(),sample.copy(),puls['Duration'],offset,RFI_reduct=True)
+  elif filename.endswith('.fits'):
+    spectrum = read_fil(filename,puls['DM'].copy(),sample.copy(),puls['Duration'],offset,RFI_reduct=True)
+  else:
+    print "File type not recognised. This script only works with fits or fil files."
+    return
   
   #De-dispersion
   freq = np.linspace(F_MIN,F_MAX,2592)
   time = (4149 * puls['DM'] * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
-  spectrum = spectrum[:2*offset+duration]
+  spectrum = spectrum[:2*offset+puls['Duration']]
   
-  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/puls['Duration'],puls['Duration'],spectrum.shape[1]]),axis=1)
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
   
-  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
+  extent = [(sample-offset)*RES,(sample+puls['Duration']+offset)*RES,F_MIN,F_MAX]
   ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
+  ax.scatter((sample+puls['Duration']/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
   ax.axis(extent)
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('Frequency (MHz)')

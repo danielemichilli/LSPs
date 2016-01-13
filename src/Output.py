@@ -24,7 +24,7 @@ def output(idL,pulses,meta_data,candidates):
   beams_parallel(pulses,meta_data,folder,idL)
 
   pulses = pulses[pulses.Pulse==0]
-  output_pointing(pulses,folder,idL)
+  output_pointing(pulses,folder)
   
   return
 
@@ -46,7 +46,7 @@ def beams_parallel(pulses,meta_data,folder,idL):
 
 def output_beams(pulses,meta_data,folder,idL,dirs):
   for (sap,beam) in dirs:
-    store = '{}{}/sp/diagnostics'.format(folder,idL)
+    store = '{}/diagnostics'.format(folder)
     name = 'SAP{}_BEAM{}'.format(sap,beam)
     os.makedirs('{}/{}'.format(store,name))
     
@@ -71,7 +71,7 @@ def output_beams(pulses,meta_data,folder,idL,dirs):
   
   
 
-def output_pointing(pulses,folder,idL):
+def output_pointing(pulses,folder):
   
   top_candidates = pulses[pulses.BEAM>12].groupby(['SAP','BEAM'],sort=False).head(10)
   top_candidates = top_candidates.append(pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30),ignore_index=False)
@@ -83,16 +83,16 @@ def output_pointing(pulses,folder,idL):
     top_candidates.index = b
   top_candidates.Duration *= 1000
   top_candidates['void'] = ''
-  top_candidates.to_csv('{}{}/sp/diagnostics/top_candidates.inf'.format(folder,idL),sep='\t',float_format='%.2f',\
+  top_candidates.to_csv('{}/diagnostics/top_candidates.inf'.format(folder),sep='\t',float_format='%.2f',\
     columns=['SAP','BEAM','Sigma','DM','void','Time','void','Duration','void','code'],\
     header=['SAP','BEAM','Sigma','DM (pc/cm3)','Time (s)','Duration (ms)','code','','',''],index_label='rank',encoding='utf-8')
   
   puls = pulses[pulses.BEAM==12].groupby('SAP',sort=False).head(30)
-  if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/inc_top_candidates.png'.format(folder,idL),incoherent=True)
+  if not puls.empty: LSPplot.obs_top_candidates(puls,'{}/diagnostics/inc_top_candidates.png'.format(folder),incoherent=True)
   
   for sap in pulses.SAP.unique():
     puls = pulses[(pulses.SAP==sap)&(pulses.BEAM>12)].groupby('BEAM',sort=False).head(10)
-    if not puls.empty: LSPplot.obs_top_candidates(puls,'{}{}/sp/diagnostics/top_candidates(SAP{}).png'.format(folder,idL,sap))
+    if not puls.empty: LSPplot.obs_top_candidates(puls,'{}/diagnostics/top_candidates(SAP{}).png'.format(folder,sap))
 
   return
 
