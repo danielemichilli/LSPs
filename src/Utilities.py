@@ -15,7 +15,7 @@ except ImportError: pass
 from Parameters import *
 
 
-def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False):
+def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False,mask=False):
   if (not 'filterbank' in sys.modules) or (not 'sigproc' in sys.modules):
     logging.warning("Utilities - Additional modules missing")
     return
@@ -43,12 +43,26 @@ def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False):
 
   bin_start -= offset
   if bin_start<0: bin_start = 0
-  
   bin_end = bin_start + DM2delay(DM) + duration + 2*offset
+  if bin_end >= spectra_per_file: bin_end = nspec
   
+  if mask:
+    #Zap the channels from the mask file
+    zap_chans, zap_ints, chans_per_int, ptsperint = read_mask(mask,bin_start,bin_end)
+    med_value = np.median(spectrum)
+    spectrum[:,zap_chans] = med_value
+    zap_ints = zap_ints[(zap_ints>=bin_start)&(zap_ints<=bin_end)]
+    spectrum[zap_ints,:] = med_value
+    
+    mask_start = int(np.floor(float(bin_start)/ptsperint)) * ptsperint
+    for i,chans in enumerate(chans_per_int):
+      idx = mask_start + i * ptsperint
+      spectrum[idx:idx+1,chans] = med_value
+
   spectrum = spectrum[bin_start:bin_end]
-  #ind = np.arange(0,2592,16)
-  #spectrum = np.delete(spectrum,ind,axis=1)
+        
+  if RFI_reduct:
+      np.clip(spectrum - np.median(spectrum,axis=0) + 128, 0, 255, out=spectrum)    
   
   return spectrum
  
@@ -113,31 +127,33 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
 
 
 
-def read_mask(filename,subint_start,subint_end):
-  f = open(filename,'r')
-  timesigma, freqsigma, mjd, dtint, lofreq, dfreq = np.fromfile(f,count=6,dtype=np.double)
-  numchan, numint, ptsperint = np.fromfile(f,count=3,dtype=np.intc)
-  
-  num_zap_chans, = np.fromfile(f,count=1,dtype=np.intc)
-  zap_chans = np.fromfile(f,count=num_zap_chans,dtype=np.intc)
+def read_mask(filename,bin_start,bin_end):
+  with open(filename,'r') as f:
+    timesigma, freqsigma, mjd, dtint, lofreq, dfreq = np.fromfile(f,count=6,dtype=np.double)
+    numchan, numint, ptsperint = np.fromfile(f,count=3,dtype=np.intc)
+    
+    num_zap_chans, = np.fromfile(f,count=1,dtype=np.intc)
+    zap_chans = np.fromfile(f,count=num_zap_chans,dtype=np.intc)
 
-  num_zap_ints, = np.fromfile(f,count=1,dtype=np.intc)
-  zap_ints = np.fromfile(f,count=num_zap_ints,dtype=np.intc)
+    num_zap_ints, = np.fromfile(f,count=1,dtype=np.intc)
+    zap_ints = np.fromfile(f,count=num_zap_ints,dtype=np.intc)
+    
+    num_chans_per_int = np.fromfile(f,count=numint,dtype=np.intc)
+    num_chans_per_int[num_chans_per_int==numchan] = 0
+    num_chans_cum = np.cumsum(num_chans_per_int)
+    chans = np.fromfile(f,dtype=np.intc)
   
-  num_chans_per_int = np.fromfile(f,count=numint,dtype=np.intc)
-  num_chans_per_int[num_chans_per_int==numchan] = 0
-  num_chans_cum = np.cumsum(num_chans_per_int)
-  chans = np.fromfile(f,dtype=np.intc)
-  f.close()
+  subint_start = int(np.floor(float(bin_start)/ptsperint))
+  subint_end = int(np.ceil(float(bin_end)/ptsperint))
   
   chans_per_int = []
-  for i in range(subint_start,subint_end+1):
+  for i in range(subint_start,subint_end):
     if i==0:
       chans_per_int.append(chans[:num_chans_cum[i]])
     else:
       chans_per_int.append(chans[num_chans_cum[i-1]:num_chans_cum[i]])
     
-  return zap_chans, zap_ints, chans_per_int
+  return zap_chans, zap_ints, chans_per_int, ptsperint
   
 
 
@@ -281,9 +297,12 @@ def rrat_period(times, numperiods=20000):
   
 
 def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
+  '''
+  puls = {'DM':, 'Sigma':, 'Time':, 'Sample':, 'Downfact':, 'Downsample':, }
+  '''
   if not os.path.isfile(filename): return
   
-  sample = puls['Sample'] * puls['Downfact']
+  sample = puls['Sample'] * puls['Downsample']
   
   if bary:
     header = Utilities.read_header(filename)
@@ -294,17 +313,17 @@ def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
       return
     sample += np.round(sample*v).astype(int)
     
-  if isinstance(puls['Duration'], float):
-    puls['Duration'] = np.int(np.round(puls.Duration/RES)) * puls['Downfact']
-  else: puls['Duration'] = puls['Downsample'] * puls['Downfact']
+  if isinstance(puls['Downfact'], float):
+    duration = np.int(np.round(puls.Duration/RES)) * puls['Downsample']
+  else: duration = puls['Downsample'] * puls['Downfact']
   spectra_border = 20
-  offset = puls['Duration']*spectra_border
+  offset = duration*spectra_border
   
   #Load the spectrum
   if filename.endswith('.fits'):
-    spectrum = read_fits(filename,puls['DM'].copy(),sample.copy(),puls['Duration'],offset,RFI_reduct=True)
+    spectrum = read_fits(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
   elif filename.endswith('.fits'):
-    spectrum = read_fil(filename,puls['DM'].copy(),sample.copy(),puls['Duration'],offset,RFI_reduct=True)
+    spectrum = read_fil(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
   else:
     print "File type not recognised. This script only works with fits or fil files."
     return
@@ -314,14 +333,14 @@ def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
   time = (4149 * puls['DM'] * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
-  spectrum = spectrum[:2*offset+puls['Duration']]
+  spectrum = spectrum[:2*offset+duration]
   
-  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/puls['Duration'],puls['Duration'],spectrum.shape[1]]),axis=1)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
   
-  extent = [(sample-offset)*RES,(sample+puls['Duration']+offset)*RES,F_MIN,F_MAX]
+  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
   ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax.scatter((sample+puls['Duration']/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
+  ax.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
   ax.axis(extent)
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('Frequency (MHz)')
