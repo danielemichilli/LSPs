@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-t0 = 0  #s
-file_name = '/projects/lotaas/test/Daniele/raw/L204720_red/stokes/SAP1/BEAM38/L204720_SAP1_BEAM38.fits'
+t0 = 20  #s
+file_name = 'L337502_SAP0_BEAM0.fits'
 
 import numpy as np
 import matplotlib as mpl
@@ -44,6 +44,7 @@ for DM in [366,458,546]:
   plt.plot(time,freq,'w-')
   plt.annotate(str(DM),(time[-1],122),color='white')
 
-plt.savefig('test.png',format='png',bbox_inches='tight')
+plt.show()
+#plt.savefig('test.png',format='png',bbox_inches='tight')
 
 

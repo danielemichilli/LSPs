@@ -4,6 +4,7 @@ import os
 import math
 import logging
 import sys
+import matplotlib.pyplot as plt
 
 try:
   import filterbank
@@ -38,29 +39,32 @@ def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False,mask=
   data_size = file_size - header_size
   bytes_per_spectrum= nchans * nbits / 8
   nspec = data_size / bytes_per_spectrum
-  spectrum = np.memmap(filename, dtype=dtype, mode='r', offset=header_size, shape=(nspec, nchans))
-  spectrum = np.fliplr(spectrum)
-
+  
   bin_start -= offset
   if bin_start<0: bin_start = 0
   bin_end = bin_start + DM2delay(DM) + duration + 2*offset
-  if bin_end >= spectra_per_file: bin_end = nspec
+  if bin_end >= nspec: bin_end = nspec
+  
+  spectrum = np.memmap(filename, dtype=dtype, mode='r', offset=header_size, shape=(nspec, nchans))
+  spectrum = spectrum[bin_start:bin_end].copy()
+  spectrum = np.fliplr(spectrum)
   
   if mask:
     #Zap the channels from the mask file
     zap_chans, zap_ints, chans_per_int, ptsperint = read_mask(mask,bin_start,bin_end)
     med_value = np.median(spectrum)
+    
     spectrum[:,zap_chans] = med_value
     zap_ints = zap_ints[(zap_ints>=bin_start)&(zap_ints<=bin_end)]
+    zap_ints -= bin_start
     spectrum[zap_ints,:] = med_value
     
-    mask_start = int(np.floor(float(bin_start)/ptsperint)) * ptsperint
+    mask_start = int(np.floor(float(bin_start)/ptsperint)) * ptsperint - bin_start
     for i,chans in enumerate(chans_per_int):
-      idx = mask_start + i * ptsperint
-      spectrum[idx:idx+1,chans] = med_value
+      idx_start = mask_start + i * ptsperint
+      idx_end = mask_start + (i + 1) * ptsperint
+      spectrum[idx_start:idx_end,chans] = med_value
 
-  spectrum = spectrum[bin_start:bin_end]
-        
   if RFI_reduct:
       np.clip(spectrum - np.median(spectrum,axis=0) + 128, 0, 255, out=spectrum)    
   
@@ -142,7 +146,7 @@ def read_mask(filename,bin_start,bin_end):
     num_chans_per_int[num_chans_per_int==numchan] = 0
     num_chans_cum = np.cumsum(num_chans_per_int)
     chans = np.fromfile(f,dtype=np.intc)
-  
+
   subint_start = int(np.floor(float(bin_start)/ptsperint))
   subint_end = int(np.ceil(float(bin_end)/ptsperint))
   
@@ -196,16 +200,16 @@ def read_header(filename):
     try: fits = pyfits.open(filename,memmap=True)
     except NameError: 
       logging.warning("Utilities - Additional modules missing")
-      return    
+      return None, None
     header = fits['SUBINT'].header + fits['PRIMARY'].header
     fits.close()
-    return header
+    return 'fits', header
   elif ext == '.fil':
     if not 'filterbank' in sys.modules:
       logging.warning("Utilities - Additional modules missing")
-      return
-    return filterbank.read_header(filename)[0]
-  else: return None
+      return None, None
+    return 'fil', filterbank.read_header(filename)[0]
+  else: return None, None
 
 
 
@@ -294,9 +298,23 @@ def rrat_period(times, numperiods=20000):
   diff_max = np.max(np.abs(np.round(rotations) - rotations))
   return p, diff_max
   
+
+
+def closest_int_above(lenght, n=1, divisor=False):
+  '''
+  Return the closest int above the initial guess which is divisor of lenght.
+  The initial guess is based either on a provided divisor or on the number n that is wanted as output
+  '''
+  lenght = int(lenght)
+  n = int(n)
+  if divisor: divisor = int(divisor)
+  else: divisor = lenght / n
+  while lenght % divisor != 0: divisor += 1 #find the closest integer divisor to average
+  return divisor
+  
   
 
-def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
+def DynamicSpectrum(puls,filename,bary=True,mask=False,ax=False,res=RES,f_min=F_MIN,f_max=F_MAX):
   '''
   puls = {'DM':, 'Sigma':, 'Time':, 'Sample':, 'Downfact':, 'Downsample':, }
   '''
@@ -305,46 +323,75 @@ def DynamicSpectrum(ax,puls,filename,bary=True,res=RES):
   sample = puls['Sample'] * puls['Downsample']
   
   if bary:
-    header = Utilities.read_header(filename)
-    MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-    try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+    file_type, header = Utilities.read_header(filename)
+    if file_type == 'fil':
+      MJD = header['tstart']
+      RA = str(header['src_raj'])
+      if header['src_raj'] >= 100000:
+        RA = '{hh}:{mm}:{ss}'.format(hh=RA[:2], mm=RA[2:4], ss=RA[4:])
+      else:
+        RA = '{hh}:{mm}:{ss}'.format(hh=RA[:1], mm=RA[1:3], ss=RA[3:])
+      DEC = str(header['src_dej'])
+      if header['src_dej'] >= 100000:
+        DEC = '{hh}:{mm}:{ss}'.format(hh=DEC[:2], mm=DEC[2:4], ss=DEC[4:])
+      else:
+        DEC = '{hh}:{mm}:{ss}'.format(hh=DEC[:1], mm=DEC[1:3], ss=DEC[3:])
+    elif file_type == 'fits':
+      MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+      RA = header['RA']
+      DEC = header['DEC']
+    else: raise KeyError('File format not supported')
+    
+    try: v = presto.get_baryv(RA,DEC,MJD,1800.,obs='LF')
     except NameError: 
       logging.warning("LSPplot - Additional modules missing")
       return
     sample += np.round(sample*v).astype(int)
     
   if isinstance(puls['Downfact'], float):
-    duration = np.int(np.round(puls.Duration/RES)) * puls['Downsample']
+    duration = np.int(np.round(puls.Duration/res)) * puls['Downsample']
   else: duration = puls['Downsample'] * puls['Downfact']
   spectra_border = 20
   offset = duration*spectra_border
   
   #Load the spectrum
   if filename.endswith('.fits'):
-    spectrum = read_fits(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
-  elif filename.endswith('.fits'):
-    spectrum = read_fil(filename,puls['DM'].copy(),sample.copy(),duration,offset,RFI_reduct=True)
+    spectrum = read_fits(filename,puls['DM'],sample,duration,offset,RFI_reduct=True)
+  elif filename.endswith('.fil'):
+    spectrum = read_filterbank(filename,puls['DM'],sample,duration,offset,RFI_reduct=True,mask=mask)
   else:
     print "File type not recognised. This script only works with fits or fil files."
     return
   
   #De-dispersion
-  freq = np.linspace(F_MIN,F_MAX,2592)
-  time = (4149 * puls['DM'] * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
+  freq = np.linspace(f_min,f_max,spectrum.shape[1])
+  time = (4149 * puls['DM'] * (f_max**-2 - np.power(freq,-2)) / res).round().astype(np.int)
   for i in range(spectrum.shape[1]):
     spectrum[:,i] = np.roll(spectrum[:,i], time[i])
   spectrum = spectrum[:2*offset+duration]
   
   spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
-  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
+  div = closest_int_above(spectrum.shape[1], n=64)
+  spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/div,div]),axis=2)
   
-  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
-  ax.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
-  ax.axis(extent)
-  ax.set_xlabel('Time (s)')
-  ax.set_ylabel('Frequency (MHz)')
-      
+  fig = plt.figure(figsize=(16,9))
+  ax1 = plt.subplot2grid((4,1),(0,0),rowspan=3)
+  ax2 = plt.subplot2grid((4,1),(3,0))
+
+  #if not ax: ax = plt.subplot(111)
+  extent = [(sample-offset)*res,(sample+duration+offset)*res,f_min,f_max]
+  ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+  ax1.scatter((sample+duration/2)*res,f_min+1,marker='^',s=1000,c='r')
+  ax1.axis(extent)
+  ax1.set_ylabel('Frequency (MHz)')
+  
+  flux =  spectrum.mean(axis=1)
+  flux -= np.median(flux)
+  flux /= flux.max()
+  ax2.plot(flux,'k-')
+  ax2.set_ylabel('Flux (rel.)')
+  ax2.set_xlabel('Time (s)')
+  
   return 
 
 

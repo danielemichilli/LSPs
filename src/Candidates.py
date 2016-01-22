@@ -26,7 +26,7 @@ def candidates(pulses,idL):
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
+    cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
     new_cand = cands.index
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)

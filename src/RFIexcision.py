@@ -9,7 +9,6 @@
 import numpy as np
 import pandas as pd
 import logging
-from scipy.optimize import curve_fit
 from scipy import special
 from scipy import stats
 import os

@@ -15,11 +15,11 @@ def output(idL,pulses,meta_data,candidates):
   
     #Repeated candidates
     if candidates[candidates.N_pulses>1].shape[0] > 0:
-      LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1].head(10),meta_data,folder,idL)
+      LSPplot.repeated_candidates(pulses,candidates[candidates.N_pulses>1],meta_data,folder,idL)
   
     #Single candidates
     if candidates[candidates.N_pulses==1].shape[0] > 0:
-      LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1].head(10),meta_data,folder,idL)
+      LSPplot.single_candidates(pulses,candidates[candidates.N_pulses==1],meta_data,folder,idL)
 
   beams_parallel(pulses,meta_data,folder,idL)
 

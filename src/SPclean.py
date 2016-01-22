@@ -96,7 +96,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'a')
   store.append('pulses',pulses,data_columns=['Pulse'])
   if not cands.empty:
-    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
+    cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
     store.append('candidates',cands,data_columns=['Candidate'])
     cands = cands[cands.main_cand==0].head(30)
   store.close()
@@ -178,7 +178,7 @@ def lists_creation(idL,dirs):
         #Apply local RFI filters to the pulses
         RFIexcision.local_filters(pulses,events)
         pulses = pulses[pulses.Pulse <= RFI_percent]
-        #events = events[events.Pulse.isin(pulses.index)]
+        events = events[events.Pulse.isin(pulses.index)]
         
         #A set of known pulses is necessary
         #Apply multimoment analysis to the pulses

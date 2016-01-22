@@ -21,7 +21,7 @@ data_size = file_size - header_size
 bytes_per_spectrum= nchans * nbits / 8
 nspec = data_size / bytes_per_spectrum
 
-spectra = np.memmap(filename, dtype=dtype, mode='r', offset=header_size, shape=(nspec, nchans))
+spectra = np.memmap(filename, dtype=dtype, mode='readwrite', offset=header_size, shape=(nspec, nchans))
 spectra = np.fliplr(spectra)
 
 

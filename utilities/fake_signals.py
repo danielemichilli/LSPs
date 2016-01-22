@@ -1,21 +1,31 @@
 import numpy as np
-from Parameters import *
 
 spectra = read_filterbank(filename)
 
-t0 = 1000 #bins
-DM = 12.5
-duration = 20 #bins
+
+
+t0 = 400000 #bins
+DM = 56.
+duration = 1 #bins
 
 #filterbank file
-freq = np.linspace(F_MIN,F_MAX,2592)
+freq = np.linspace(F_MIN,F_MAX,spectra.shape[1])
 time = (4149 * DM * (np.power(freq,-2) - F_MAX**-2) / RES).round().astype(np.int) + t0
 
-for i in range(duration):
-  spectra[time+i,np.arange(2591,-1,-1)] = np.random.randint(0,255,2592)
 
-ind = np.arange(15,2592,16)
-spectra[:10000,ind] = 0
+
+for i in range(duration):
+  spectra[time+i,np.arange(spectra.shape[1])] += 50 #np.random.randint(0,4,spectra.shape[1])
+
+
+
+
+
+
+#np.arange(spectra.shape[1]-1,-1,-1)
+
+#ind = np.arange(15,2592,16)
+#spectra[:10000,ind] = 0
 
 
 
