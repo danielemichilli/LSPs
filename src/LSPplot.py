@@ -374,7 +374,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   else: sample = puls.Sample
 
   #controllare che questo vada dopo downsampling correction!
-  header = Utilities.read_header(filename)
+  filetype, header = Utilities.read_header(filename)
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   except NameError: 

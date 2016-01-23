@@ -90,7 +90,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   pulses = pulses[pulses.Pulse <= RFI_percent]
   '''
   
-  
+  pulses.Candidate = pulses.Candidate.astype(np.int32)
   cands = Candidates.candidates(pulses,idL)
   
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'a')
