@@ -235,12 +235,23 @@ def Compare_candidates(float[::1] DM not None,
       
       if abs(DM[j]-DM[i]) < 1.:
       
-        if (abs(Time[j]-Time[i]) < 1.) | (Time[i]<float_err) | (Time[j]<float_err):
+        if (abs(Time[j]-Time[i]) < 1.):
         
+          cand[i] = idx[j]
+
+          break
+          
+        elif Time[i] < float_err:
+          
+          cand[j] = idx[i]
+          
+          break
+          
+        elif Time[j] < float_err:
+          
           cand[i] = idx[j]
           
           break
-
       
   return
   
