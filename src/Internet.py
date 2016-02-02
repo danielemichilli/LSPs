@@ -20,9 +20,9 @@ def upload(cands,idL):
 
 
 def upload_plots(idL):
-  folder = '{}/sp/candidates'.format(TEMP_FOLDER.format(idL))
+  folder = '{}/sp/candidates/.'.format(TEMP_FOLDER.format(idL))
   FNULL = open(os.devnull, 'w')
-  error = subprocess.call(['scp','-r',folder,'ag004:/var/www/lofarpwg/lotaas-sp/observations/{}'.format(idL)], stdout=FNULL, stderr=FNULL)
+  error = subprocess.call(['scp','-prq',folder,'ag004:/var/www/lofarpwg/lotaas-sp/observations/{}/'.format(idL)], stdout=FNULL, stderr=FNULL)
   if error: raise ConnectionError("ATTENTION! Website currently down. Try to upload the observation later with Upload.py")
   return
 
