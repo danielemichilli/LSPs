@@ -21,6 +21,7 @@ import Utilities
 from Parameters import *
 import Paths
 import RFIexcision
+from Paths import *
 
 mpl.rc('font',size=5)
 
@@ -387,7 +388,8 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   offset = duration*spectra_border
   
   #Load the spectrum
-  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True)
+  mask_name = MASK_FILE.format(idL=idL,sap=sap,beam=beam)
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True,mask=mask_name)
   
   #De-dispersion
   freq = np.linspace(F_MIN,F_MAX,2592)
