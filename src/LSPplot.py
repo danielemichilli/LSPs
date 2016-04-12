@@ -363,6 +363,45 @@ def discrete_cmap(N, base_cmap):
   return base.from_list(cmap_name, color_list, N)  
   
   
+def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,dm=False,time=False):
+  ra = np.array([ 
+        499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
+        742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
+        873,  869,  865,  862,  740,  619,  499,  380,  259,  137,  134,
+        129,  126,  249,  374,  499,  627,  752,  876, 1000,  995,  990,
+        985,  981,  859,  738,  618,  499,  381,  261,  140,   18,   14,
+          9,    4,    0,  123,  247,  372])
+  dec = np.array([ 
+        500,  625,  562,  437,  375,  437,  562,  750,  687,  625,  500,
+        375,  312,  250,  312,  375,  500,  625,  687,  875,  812,  750,
+        687,  562,  437,  312,  250,  187,  125,  187,  250,  312,  437,
+        562,  687,  750,  812, 1000,  937,  875,  812,  750,  625,  500,
+        375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
+        500,  625,  750,  812,  875,  937])
+  
+  SNR = events.groupby('BEAM').Sigma.sum()
+  ind = pd.Series(np.zeros(61))
+  ind.index += 13
+  SNR = SNR.reindex_like(ind)
+
+  plt.scatter(ra,dec,s=800,edgecolor='none',c=SNR,cmap='hot_r')
+  bar = plt.colorbar()
+  
+  bar.set_label('Cumulative SNR')
+  plt.xlabel('RA (h)')
+  plt.ylabel('DEC (deg)')
+  if idL: plt.title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=sap,beam=beam,cand=cand,puls=pulse))
+  if dm: plt.annotate('DM: {} +- 0.5, Time: {} +- 0.1'.format(dm,time), xy=(np.nanmin(ra)-0.02,np.nanmax(dec)+0.1))
+  
+  if beam: plt.scatter(ra[beam-13],dec[beam-13],s=600,linewidths=[0.,],marker='*',c='w')
+  [plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
+
+  plt.xlim(np.nanmin(ra)-0.025,np.nanmax(ra)+0.025)
+  plt.ylim(np.nanmin(dec)-0.25,np.nanmax(dec)+0.25)
+
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+
+
 
 def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   if beam==12: stokes = 'incoherentstokes'
