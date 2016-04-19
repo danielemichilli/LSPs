@@ -111,7 +111,12 @@ def obs_events(folder,idL,load_events=False,conf=False):
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     #Store the best candidates online
-    Internet.upload(cands,idL)
+    try: Internet.upload(cands,idL)
+    except: 
+      logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
+      with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
+        f.write("ATTENTION! Connession problemwith obs. {}\n".format(idL))
+
     
   return
 

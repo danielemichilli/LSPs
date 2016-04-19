@@ -363,7 +363,9 @@ def discrete_cmap(N, base_cmap):
   return base.from_list(cmap_name, color_list, N)  
   
   
-def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,dm=False,time=False):
+def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,dm=False,time=False,duration=False):
+  plt.clf()
+
   ra = np.array([ 
         499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
         742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
@@ -382,7 +384,7 @@ def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,d
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
   ind.index += 13
-  SNR = SNR.reindex_like(ind)
+  SNR = SNR.reindex_like(ind)i
 
   plt.scatter(ra,dec,s=800,edgecolor='none',c=SNR,cmap='hot_r')
   bar = plt.colorbar()
@@ -391,13 +393,13 @@ def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,d
   plt.xlabel('RA (h)')
   plt.ylabel('DEC (deg)')
   if idL: plt.title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=sap,beam=beam,cand=cand,puls=pulse))
-  if dm: plt.annotate('DM: {} +- 0.5, Time: {} +- 0.1'.format(dm,time), xy=(np.nanmin(ra)-0.02,np.nanmax(dec)+0.1))
+  if dm: plt.annotate('DM: {:.2f}$\pm$0.5, Time: {:.2f}$\pm${:.2f}'.format(dm,time,duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   if beam: plt.scatter(ra[beam-13],dec[beam-13],s=600,linewidths=[0.,],marker='*',c='w')
   [plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
 
-  plt.xlim(np.nanmin(ra)-0.025,np.nanmax(ra)+0.025)
-  plt.ylim(np.nanmin(dec)-0.25,np.nanmax(dec)+0.25)
+  plt.xlim(-100,1100)
+  plt.ylim(-100,1100)
 
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
 
