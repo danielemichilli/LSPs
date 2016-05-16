@@ -30,9 +30,6 @@ def output(idL,pulses,meta_data,candidates):
 
 
 def beams_parallel(pulses,meta_data,folder,idL):
-  gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
-  dirs = [n for n in gb_puls.indices.iterkeys()]
-  
   CPUs = mp.cpu_count()
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
 

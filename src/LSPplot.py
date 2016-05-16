@@ -424,6 +424,23 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
     return
   sample += np.round(sample*v).astype(int)
   
+  
+  
+  def bug_correction(DM):
+    DM_steps = np.array(((2.525, 5.055, 7.585, 10.115, 12.645, 15.175, 17.705, 20.235, 22.765, 25.295, 27.825, 30.355, 32.885, 35.415, 37.945, 40.475, 65.815, 91.115, 116.415, 141.715, 242.965, 344.165, 445.365, 546.565),
+                         (1    , 2    , 3    , 4     , 5     , 6     , 7     , 8     , 9     , 11    , 12    , 13    , 14    , 15    ,     , 17    , 18    , 19    , 20     , 21     , 22     , 23     , 24     , 26)))
+    
+    idx = np.where(DM < DM_steps[0])[0][0]
+    DM_n = DM_steps[1,idx]
+    
+    sample_correction = DM_n * 512
+    
+    return sample_correction
+  
+  
+  
+  sample += bug_correction(DM)
+  
   duration = np.int(np.round(puls.Duration/RES))
   spectra_border = 20
   offset = duration*spectra_border

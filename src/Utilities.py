@@ -124,12 +124,11 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False,mask=False):
           chunk = subint[i*N_spectra:(i+1)*N_spectra]
           np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
 
-  else:  
-    if RFI_reduct:
-      for i in range(subint_end-subint_start):
-        chunk = subint[i*N_spectra:(i+1)*N_spectra]
-        np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
-          
+  elif RFI_reduct:
+    for i in range(subint_end-subint_start):
+      chunk = subint[i*N_spectra:(i+1)*N_spectra]
+      np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+        
   bin_start = bin_start%N_spectra
   bin_end = (subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1
   subint = subint[bin_start%N_spectra:(subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1]
