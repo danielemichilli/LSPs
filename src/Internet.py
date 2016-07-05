@@ -1,3 +1,4 @@
+from requests import ConnectionError
 import logging
 import subprocess
 try:
@@ -13,24 +14,25 @@ from Paths import *
 import Parameters
 
 
-def upload(cands,idL):
+def upload(cands,idL,folder):
   upload_sheet(cands,idL)
-  upload_plots(idL)
+  upload_plots(idL,folder)
   return
 
 
-def upload_plots(idL):
-  folder = '{}/sp/candidates/.'.format(TEMP_FOLDER.format(idL))
+def upload_plots(idL,folder):
   FNULL = open(os.devnull, 'w')
   error = subprocess.call(['scp','-prq',folder,'ag004:/var/www/lofarpwg/lotaas-sp/observations/{}/'.format(idL)], stdout=FNULL, stderr=FNULL)
-  if error: raise ConnectionError("ATTENTION! Website currently down. Try to upload the observation later with Upload.py")
+  if error: 
+    subprocess.call(['ssh','ag004','rm -rf /var/www/lofarpwg/lotaas-sp/observations/{}'.format(idL)], stdout=FNULL, stderr=FNULL)
+    raise ConnectionError("ATTENTION! Impossible to upload plots to the website. Try to upload the observation later with Upload.py")
   return
 
 
 def upload_sheet(cands,idL):
   try: json_key = json.load(open(SITE_CERT))
   except IOError:
-    logging.warning("Spreadsheet cannot be uploaded - Google certificate missing")
+    ConnectionError("Spreadsheet cannot be uploaded - Google certificate missing")
     return
   scope = ['https://spreadsheets.google.com/feeds']
   credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)

@@ -2,7 +2,6 @@ import os
 import multiprocessing as mp
 import numpy as np
 
-import Internet
 import LSPplot
 from Paths import *
 

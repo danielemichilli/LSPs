@@ -384,7 +384,7 @@ def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,d
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
   ind.index += 13
-  SNR = SNR.reindex_like(ind)i
+  SNR = SNR.reindex_like(ind)
 
   plt.scatter(ra,dec,s=800,edgecolor='none',c=SNR,cmap='hot_r')
   bar = plt.colorbar()
@@ -393,7 +393,7 @@ def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,d
   plt.xlabel('RA (h)')
   plt.ylabel('DEC (deg)')
   if idL: plt.title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=sap,beam=beam,cand=cand,puls=pulse))
-  if dm: plt.annotate('DM: {:.2f}$\pm$0.5, Time: {:.2f}$\pm${:.2f}'.format(dm,time,duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
+  if dm: plt.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(dm,time,duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   if beam: plt.scatter(ra[beam-13],dec[beam-13],s=600,linewidths=[0.,],marker='*',c='w')
   [plt.annotate(str(i+13),(ra[i],dec[i]),horizontalalignment='center',verticalalignment='center') for i in range(0,61)]
@@ -428,7 +428,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   
   def bug_correction(DM):
     DM_steps = np.array(((2.525, 5.055, 7.585, 10.115, 12.645, 15.175, 17.705, 20.235, 22.765, 25.295, 27.825, 30.355, 32.885, 35.415, 37.945, 40.475, 65.815, 91.115, 116.415, 141.715, 242.965, 344.165, 445.365, 546.565),
-                         (1    , 2    , 3    , 4     , 5     , 6     , 7     , 8     , 9     , 11    , 12    , 13    , 14    , 15    ,     , 17    , 18    , 19    , 20     , 21     , 22     , 23     , 24     , 26)))
+                         (1    , 2    , 3    , 4     , 5     , 6     , 7     , 8     , 9     , 11    , 12    , 13    , 14    , 15    , 16    , 17    , 18    , 19    , 20     , 21     , 22     , 23     , 24     , 26)))
     
     idx = np.where(DM < DM_steps[0])[0][0]
     DM_n = DM_steps[1,idx]
