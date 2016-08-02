@@ -402,6 +402,55 @@ def heatmap(events,store,idL=False,sap=False,beam=False,cand=False,pulse=False,d
   plt.ylim(-100,1100)
 
   plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+  
+  
+def dedispersed(puls,store):
+  plt.clf()
+
+  #Image plot
+  plt.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,nBins*scrunch_fact,DM_range[0], DM_range[-1]])
+  plt.ylim((DM_range[0], DM_range[-1]))
+  plt.ylabel('DM (pc/cc)')
+  plt.title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=OBS,sap=SAP,beam=BEAM,cand=CAND,puls=i), y=1.08)
+
+  #Time axis
+  plt.twiny()
+  plt.xlim((0,nBins*scrunch_fact))
+  xticks_pos = x[::(nBins*scrunch_fact)/6]
+  xticks_val = (xticks_pos + bin_start) * RES
+  plt.xticks(xticks_pos, ["%.3f" % n for n in xticks_val])
+  plt.xlabel('Time (s)')
+  
+  #Plot contours
+  y = (x - nBins * scrunch_fact / 2.) / k + DM_peak
+  plt.plot(x, y,'r--')
+  plt.axvline(scrunch_fact / 2. * (nBins - 1), color='r', ls='--')
+
+  #Sample axis
+  plt.xlim((0,nBins*scrunch_fact))
+  plt.xticks(xticks_pos, (xticks_pos + bin_start) % 10000 )
+  plt.xlabel('Sample - {}0000'.format(bin_start / 10000))
+  
+  #Inset profile
+  nPlotBins = 20
+  nProfBins = 5
+  nBins = nPlotBins * nProfBins
+  scrunch_fact = int(np.round(duration / float(nProfBins)))
+  if scrunch_fact < 1: scrunch_fact = 1
+  x = np.arange(nBins)
+  bin_start = bin_peak - nBins/2 * scrunch_fact
+  
+  filename = '/timeseries/{0}_SAP{1}_BEAM{2}_DM{3:.2f}.dat'.format(OBS, SAP, BEAM, DM_peak)
+  ts = np.memmap(WKDIR + filename, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
+  ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
+  
+  plt.axes([.7, .7, .15, .15])
+  plt.plot(x, ts, 'k')
+  plt.xticks([])
+  plt.yticks([])
+
+  plt.savefig(store,format='png',bbox_inches='tight',dpi=200)
+
 
 
 
@@ -439,7 +488,7 @@ def DynamicSpectrum(ax1,puls,idL,sap,beam,sharey=False):
   
   
   
-  sample += bug_correction(DM)
+  #sample += bug_correction(DM)
   
   duration = np.int(np.round(puls.Duration/RES))
   spectra_border = 20
