@@ -21,7 +21,6 @@ import Events
 import Pulses
 import RFIexcision
 import LSPplot
-import Output
 import Candidates
 import Internet
 from Parameters import *
@@ -53,14 +52,14 @@ def obs_events(folder,idL,load_events=False,conf=False):
   pulses = pulses_parallel(idL,file_list)
   
   def merge_temp_databases(idL,store):
-    store.append('events',pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse'])
-    meta_data = pd.read_hdf('{}/{}'.format(TEMP_FOLDER.format(idL),file),'meta_data')
+    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM'])
+    meta_data = pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
     store.append('meta_data',meta_data)    
-    os.remove('{}/{}'.format(TEMP_FOLDER.format(idL),file))
+    os.remove('{}/{}'.format(TMP_FOLDER.format(idL),file))
     
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'w')
-  for file in os.listdir(TEMP_FOLDER.format(idL)):
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'w')
+  for file in os.listdir(TMP_FOLDER.format(idL)):
     if file.endswith('.tmp'):
       merge_temp_databases(idL,store)
   store.close()
@@ -93,31 +92,27 @@ def obs_events(folder,idL,load_events=False,conf=False):
   pulses.Candidate = pulses.Candidate.astype(np.int32)
   cands = Candidates.candidates(pulses,idL)
   
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'a')
-  store.append('pulses',pulses,data_columns=['Pulse'])
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'a')
+  store.append('pulses',pulses)
   if not cands.empty:
     cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
-    store.append('candidates',cands,data_columns=['Candidate'])
+    store.append('candidates',cands)
     cands = cands[cands.main_cand==0].head(30)
   store.close()
-  
-  if pulses[pulses.Pulse==0].empty: logging.warning("Any reliable pulse detected!")
-  else:
-    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(TEMP_FOLDER.format(idL)),'meta_data')
-    
-    #Produce the output
-    Output.output(idL,pulses,meta_data,cands)
-    
+      
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
+    #Produce the output
+    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'meta_data')
+    LSPplot.output(idL,pulses,meta_data,cands)    
+    
     #Store the best candidates online
-    try: Internet.upload(cands,idL,'{}/sp/candidates/.'.format(TEMP_FOLDER.format(idL)))
+    try: Internet.upload(cands,idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(idL)))
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
       with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
         f.write("ATTENTION! Connession problem with obs. {}\n".format(idL))
 
-    
   return
 
 
@@ -159,8 +154,8 @@ def lists_creation(idL,dirs):
         events.sort(['DM','Time'],inplace=True)
         Events.Group(events)
         
-        events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TEMP_FOLDER.format(idL),sap,beam),'events',mode='w')
-        meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TEMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
+        events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+        meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
 
         #Apply the thresholds to the events
         events = events[events.Pulse>=0]

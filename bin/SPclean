@@ -51,13 +51,14 @@ def parser():
 
 
 def create_DB(folder,idL,args):
-  try: shutil.rmtree(TEMP_FOLDER.format(idL))
+  try: shutil.rmtree(WRK_FOLDER.format(idL))
   except OSError: pass
   os.makedirs('{}{}/sp'.format(folder,idL))
-  os.makedirs(TEMP_FOLDER.format(idL))
-  os.makedirs('{}/sp'.format(TEMP_FOLDER.format(idL)))
-  os.makedirs('{}/sp/diagnostics'.format(TEMP_FOLDER.format(idL)))
-  os.makedirs('{}/sp/candidates'.format(TEMP_FOLDER.format(idL)))
+  os.makedirs(WRK_FOLDER.format(idL))
+  os.makedirs('{}/sp'.format(WRK_FOLDER.format(idL)))
+  #os.makedirs('{}/sp/diagnostics'.format(WRK_FOLDER.format(idL)))
+  os.makedirs('{}/sp/candidates'.format(WRK_FOLDER.format(idL)))
+  os.makedirs(TMP_FOLDER.format(idL))
   
   #ALERTS = 0
   #if os.path.exists('{}{}/sp'.format(folder,idL)): 
@@ -99,14 +100,15 @@ def create_DB(folder,idL,args):
     SPclean.obs_events(folder,idL,conf=args.conf)
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.time() - time0))
-    shutil.copytree('{}/sp'.format(TEMP_FOLDER.format(idL)),'{}/{}/sp/products'.format(folder,idL))
-    shutil.rmtree(TEMP_FOLDER.format(idL))
+    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(idL)),'{}/{}/sp/products'.format(folder,idL))
+    shutil.rmtree(WRK_FOLDER.format(idL))
+    shutil.rmtree(TMP_FOLDER.format(idL))
     
   except:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
     with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
       f.write("ATTENTION! Error in processing obs. {}\n".format(idL))
-    shutil.rmtree(TEMP_FOLDER.format(idL))
+    shutil.rmtree(WRK_FOLDER.format(idL))
     
   return
     
