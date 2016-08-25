@@ -52,7 +52,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   pulses = pulses_parallel(idL,file_list)
   
   def merge_temp_databases(idL,store):
-    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM'])
+    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
     meta_data = pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
     store.append('meta_data',meta_data)    
