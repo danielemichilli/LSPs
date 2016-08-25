@@ -53,12 +53,15 @@ def parser():
 def create_DB(folder,idL,args):
   try: shutil.rmtree(WRK_FOLDER.format(idL))
   except OSError: pass
-  os.makedirs('{}{}/sp'.format(folder,idL))
   os.makedirs(WRK_FOLDER.format(idL))
   os.makedirs('{}/sp'.format(WRK_FOLDER.format(idL)))
-  #os.makedirs('{}/sp/diagnostics'.format(WRK_FOLDER.format(idL)))
   os.makedirs('{}/sp/candidates'.format(WRK_FOLDER.format(idL)))
+  try: shutil.rmtree(TMP_FOLDER.format(idL))
+  except OSError: pass
   os.makedirs(TMP_FOLDER.format(idL))
+  try: shutil.rmtree('{}{}/sp'.format(folder,idL))
+  except OSError: pass
+  os.makedirs('{}{}/sp'.format(folder,idL))
   
   #ALERTS = 0
   #if os.path.exists('{}{}/sp'.format(folder,idL)): 
@@ -126,7 +129,7 @@ def main():
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isfile('{}{}/sp/SinglePulses.hdf5'.format(folder,idL)):
+  if not os.path.isdir('{}{}/sp'.format(folder,idL)):
     create_DB(folder,idL,args)
     
   #Otherwise create a new DataBase
