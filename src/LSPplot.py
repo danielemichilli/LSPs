@@ -41,9 +41,9 @@ def output(idL,pulses,meta_data,candidates):
       pulses_cand = pulses[pulses.Candidate == idx_c]
       beam_plot(pdf, cand, pulses_cand, pulses, meta_data)
       
-      for idx_p, puls in pulses_cand.head(5).iterrows():
+      for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         ev = events[events.Pulse == idx_p]
-        puls_plot(pdf, puls, ev, idL)
+        puls_plot(pdf, puls, ev, idL, i)
     plt.close('all')
   return
 
@@ -75,21 +75,25 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
 
 
 
-def puls_plot(pdf, puls, ev, idL):
+def puls_plot(pdf, puls, ev, idL, i):
   ax1 = plt.subplot2grid((2,5),(0,0))
-  ax2 = plt.subplot2grid((2,5),(0,1), colspan=2)
-  ax3 = plt.subplot2grid((2,5),(0,3), colspan=2)
-  ax4 = plt.subplot2grid((2,5),(1,0))
-  ax5 = plt.subplot2grid((2,5),(1,1), colspan=2)
-  ax6 = plt.subplot2grid((2,5),(1,3), colspan=2)
+  ax2 = plt.subplot2grid((2,5),(0,1))
+  ax2b = ax2.twinx()
+  ax3 = plt.subplot2grid((2,5),(0,2), colspan=2)
+  ax4 = plt.subplot2grid((2,5),(0,4))
+  ax5 = plt.subplot2grid((2,5),(1,0))
+  ax6 = plt.subplot2grid((2,5),(1,1), colspan=2)
+  ax7 = plt.subplot2grid((2,5),(1,3), colspan=2)
+  ax7b = ax7.twinx()
   
-  ax1.set_title("Pulse {}".format(ev.Pulse.iloc[0]))
   puls_DM_Time(ax1, ev, puls)
-  puls_SNR_DM(ax2, ev)
-  puls_heatmap(ax3, puls, idL, pulseN=events.Pulse.iloc[0])
-  puls_dynSpec(ax4, ax5, puls, idL)
-  puls_dedispersed(ax6, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL, pulseN=events.Pulse.iloc[0])
+  puls_SNR_DM(ax2, ax2b, ev)
+  puls_heatmap(ax3, puls, idL)
+  puls_meta_data(ax4, puls, ev.Pulse.iloc[0], i)
+  puls_dynSpec(ax5, ax6, puls, idL)
+  puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
   
+  plt.suptitle("Pulse n. {}".format(i))  
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
   return
@@ -99,8 +103,8 @@ def puls_plot(pdf, puls, ev, idL):
 def scatter_beam(ax, pulses, pulses_beam, cand):
   def circle_size(values):
     new_val = np.clip(values,6.5,20)
-    m = 28.15
-    q = -162.975
+    m = 31.85
+    q = -137.025
     return new_val * m + q
   sig = circle_size(pulses_beam.Sigma)
 
@@ -158,7 +162,7 @@ def meta_data_plot(ax,meta_data,pulses,cand):
 
 
 def hist_DM(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='--', linewidth=1., zorder=2)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
   ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=3)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
@@ -173,7 +177,7 @@ def hist_DM(ax,pulses,cand):
 
 
 def hist_SNR(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='--', linewidth=1., zorder=2)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
   ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=3)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
@@ -188,10 +192,10 @@ def hist_SNR(ax,pulses,cand):
 
 
 def scatter_SNR(ax, pulses, pulses_beam,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='--', linewidth=1., zorder=2)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
   colors = ['g','y','r']
   col = pulses_beam.Pulse.replace([0,1,2], colors)  
-  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c=col,s=6.,linewidths=[0.,], zorder=3)
+  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c=col,s=20.,linewidths=[0.,], zorder=3)
   ax.set_xscale('log')
   ax.set_ylabel('SNR')
   ax.set_xlabel('DM (pc/cm3)')
@@ -209,19 +213,29 @@ def scatter_SNR(ax, pulses, pulses_beam,cand):
 
 
 def puls_DM_Time(ax, event, puls):
-  sig = circle_size(event.Sigma/event.Sigma.max())
-  ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,])  
-  ax.errorbar(puls.Time, puls.DM, xerr=puls.dTime/2, yerr=puls.dDM/2, fmt='none', ecolor='r')
+  #def circle_size(val):
+    #m = 4824.
+    #q = 17.59
+    #return val * m + q
+  #sig = circle_size(event.Duration)
+  #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)  
+  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=2)  
+  ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=0.1, fmt='none', ecolor='r', zorder=1)
   ax.set_xlabel('Time (s)')  
   ax.set_ylabel('DM (pc/cm3)')
   return
 
 
 
-def puls_SNR_DM(ax, event):
+def puls_SNR_DM(ax, ax2, event):
   ax.plot(event.DM, event.Sigma, 'k')
   ax.set_xlabel('DM (pc/cm3)')    
   ax.set_ylabel('SNR')
+  
+  ax2.plot(event.DM, event.Duration*1000, 'r')
+  ax2.set_ylabel('Duration (ms)', color='r')
+  for tl in ax2.get_yticklabels():
+    tl.set_color('r')
   return
 
 
@@ -242,28 +256,53 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
         375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
         500,  625,  750,  812,  875,  937])
   
-  select = '((DM > puls.DM - 0.201) & (DM < puls.DM + 0.201)) & ((Time >= puls.Time - 2. * puls.Duration) & (DM <= puls.Time + 2. * puls.Duration))'
-  events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'events',where=[select])
+  dDM = 0.4
+  dm_l = float(puls.DM - dDM/2. - 0.001)
+  dm_h = float(puls.DM + dDM/2. + 0.001)
+  t_l = float(puls.Time - 2. * puls.Duration)
+  t_h = float(puls.Time + 2. * puls.Duration)
+  select = '(SAP == puls.SAP) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
+  
+  events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
   ind.index += 13
   SNR = SNR.reindex_like(ind)
 
-  plot = ax.scatter(ra,dec,s=800,edgecolor='none',c=SNR,cmap='hot_r')
-  bar = plt.colorbar(plot)
+  plot = ax.scatter(ra,dec,s=400,edgecolor='none',c=SNR,cmap='hot_r')
+  bar = plt.colorbar(plot, ax=ax)
   
   bar.set_label('Cumulative SNR')
   ax.set_xlabel('RA (rel.)')
   ax.set_ylabel('DEC (rel.)')
-  ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
-  ax.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(puls.DM,puls.Time,puls.Duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
+  if pulseN: 
+    ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
+    ax.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(puls.DM,puls.Time,puls.Duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
+  else:
+    ax.annotate('dDM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   beam = puls.BEAM
-  ax.scatter(ra[beam-13],dec[beam-13],s=600,linewidths=[0.,],marker='*',c='w')
+  ax.scatter(ra[beam-13],dec[beam-13],s=300,linewidths=[0.,],marker='*',c='w')
   [ax.annotate(str(i+13),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,61)]
 
   ax.set_xlim(-100,1100)
   ax.set_ylim(-100,1100)
+  return
+
+
+
+def puls_meta_data(ax, puls, idx, i):
+  ax.axis([0,10,0,10])
+  ax.annotate('Pulse: {}'.format(idx), xy=(0,9))
+  ax.annotate('DM (pc/cm2): {0:.2f}'.format(puls.DM), xy=(0,8))
+  ax.annotate('dDM (pc/cm2): {0:.2f}'.format(puls.dDM), xy=(0,7))
+  ax.annotate('Time (s): {0:.2f}'.format(puls.Time), xy=(0,6))
+  ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,5))
+  ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,4))
+  ax.annotate('N events: {}'.format(puls.N_events), xy=(0,3))
+  ax.annotate('Rank: {}'.format(puls.Rank), xy=(0,1))
+
+  ax.axis('off')
   return
 
 
@@ -376,33 +415,32 @@ def load_ts(puls, filename):
 
 
 
-def puls_dedispersed(ax, puls, filename, idL=False, pulseN=False):
+def puls_dedispersed(ax, ax2, puls, filename, idL=False, pulseN=False):
   data, params = load_ts(puls, filename)
   
   #Image plot
   ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_range'][0], params['DM_range'][-1]])
   ax.set_ylim((params['DM_range'][0], params['DM_range'][-1]))
   ax.set_ylabel('DM (pc/cc)')
-  ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
+  if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
   #Time axis
   x = np.arange(params['bins_out'])
-  ax.twiny()
-  ax.set_xlim((0,params['bins_out']))
+  ax2.set_xlim((0,params['bins_out']))
   xticks_pos = x[::(params['bins_out'])/6]
   xticks_val = (xticks_pos + params['bin_start']) * RES
-  ax.set_xticks(xticks_pos, ["%.3f" % n for n in xticks_val])
-  ax.set_xlabel('Time (s)')
+  ax2.set_xticks(xticks_pos, ["%.3f" % n for n in xticks_val])
+  ax2.set_xlabel('Time (s)')
   
   #Plot contours
   y = (x - params['bins_out'] / 2.) / params['k'] + puls.DM
-  ax.plot(x, y,'r--')
-  ax.axvline((params['bins_out'] - params['scrunch_fact']) / 2., color='r', ls='--')
+  ax2.plot(x, y,'r--')
+  ax2.axvline((params['bins_out'] - params['scrunch_fact']) / 2., color='r', ls='--')
 
   #Sample axis
-  ax.set_xlim((0,params['bins_out']))
-  ax.set_xticks(xticks_pos, ((xticks_pos + params['bin_start']) % 10000).tolist() )
-  ax.set_xlabel('Sample - {}0000'.format(params['bin_start'] / 10000))
+  ax2.set_xlim((0,params['bins_out']))
+  ax2.set_xticks(xticks_pos, ((xticks_pos + params['bin_start']) % 10000).tolist() )
+  ax2.set_xlabel('Sample - {}0000'.format(params['bin_start'] / 10000))
   
   #Inset profile
   def inset(filename, params, puls):

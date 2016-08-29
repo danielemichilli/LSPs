@@ -159,7 +159,7 @@ def lists_creation(idL,dirs):
 
         #Apply the thresholds to the events
         events = events[events.Pulse>=0]
-        events = Events.Thresh(events)
+        events = Events.Thresh(events)  #Strana posizione: come affects i pulses?
 
         #Generate the pulses
         pulses = Pulses.Generator(events)
