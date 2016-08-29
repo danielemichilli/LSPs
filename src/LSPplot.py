@@ -60,8 +60,8 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
   ax4 = plt.subplot2grid((3,6),(2,2), colspan=2)
   ax5 = plt.subplot2grid((3,6),(2,4), colspan=2)
 
-  scatter_beam(ax1, pulses, pulses_beam, cand)
-  meta_data_plot(ax2,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
+  meta_data_plot(ax1,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
+  scatter_beam(ax2, pulses, pulses_beam, cand)
 
   if not pulses_beam.empty: scatter_SNR(ax4,pulses,pulses_beam,cand)
   try: 
@@ -86,10 +86,10 @@ def puls_plot(pdf, puls, ev, idL, i):
   ax7 = plt.subplot2grid((2,6),(1,3), colspan=3)
   ax7b = ax7.twiny()
   
-  puls_DM_Time(ax1, ev, puls)
-  puls_SNR_DM(ax2, ax2b, ev)
-  puls_heatmap(ax3, puls, idL)
-  puls_meta_data(ax4, puls, ev.Pulse.iloc[0], i)
+  puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
+  puls_DM_Time(ax2, ev, puls)
+  puls_SNR_DM(ax3, ax3b, ev)
+  puls_heatmap(ax4, puls, idL)
   puls_dynSpec(ax5, ax6, puls, idL)
   puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
   
@@ -220,7 +220,7 @@ def puls_DM_Time(ax, event, puls):
   #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)  
   ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)  
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
-  ax.scatter(puls.Time, puls.DM, lw=.2, fmt='x', ecolor='r', zorder=2)
+  ax.scatter(puls.Time, puls.DM, lw=.2, marker='x', color='r', zorder=2)
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('DM (pc/cm3)')
   return
