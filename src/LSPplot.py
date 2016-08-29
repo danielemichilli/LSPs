@@ -54,8 +54,8 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
     
-  ax1 = plt.subplot2grid((3,6),(0,0), colspan=5, rowspan=2)
-  ax2 = plt.subplot2grid((3,6),(0,5), rowspan=2)
+  ax1 = plt.subplot2grid((3,6),(0,0), rowspan=2)
+  ax2 = plt.subplot2grid((3,6),(0,1), colspan=5, rowspan=2)
   ax3 = plt.subplot2grid((3,6),(2,0), colspan=2)
   ax4 = plt.subplot2grid((3,6),(2,2), colspan=2)
   ax5 = plt.subplot2grid((3,6),(2,4), colspan=2)
@@ -76,15 +76,15 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
 
 
 def puls_plot(pdf, puls, ev, idL, i):
-  ax1 = plt.subplot2grid((2,5),(0,0))
-  ax2 = plt.subplot2grid((2,5),(0,1))
-  ax2b = ax2.twinx()
-  ax3 = plt.subplot2grid((2,5),(0,2), colspan=2)
-  ax4 = plt.subplot2grid((2,5),(0,4))
-  ax5 = plt.subplot2grid((2,5),(1,0))
-  ax6 = plt.subplot2grid((2,5),(1,1), colspan=2)
-  ax7 = plt.subplot2grid((2,5),(1,3), colspan=2)
-  ax7b = ax7.twinx()
+  ax1 = plt.subplot2grid((2,6),(0,0))
+  ax2 = plt.subplot2grid((2,6),(0,1))
+  ax3 = plt.subplot2grid((2,6),(0,2))
+  ax3b = ax2.twinx()
+  ax4 = plt.subplot2grid((2,6),(0,3), colspan=3)
+  ax5 = plt.subplot2grid((2,6),(1,0))
+  ax6 = plt.subplot2grid((2,6),(1,1), colspan=2)
+  ax7 = plt.subplot2grid((2,6),(1,3), colspan=3)
+  ax7b = ax7.twiny()
   
   puls_DM_Time(ax1, ev, puls)
   puls_SNR_DM(ax2, ax2b, ev)
@@ -93,7 +93,6 @@ def puls_plot(pdf, puls, ev, idL, i):
   puls_dynSpec(ax5, ax6, puls, idL)
   puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
   
-  plt.suptitle("Pulse n. {}".format(i))  
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
   return
@@ -162,8 +161,8 @@ def meta_data_plot(ax,meta_data,pulses,cand):
 
 
 def hist_DM(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
-  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=3)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
+  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
   ax.set_ylabel('Counts')
@@ -177,8 +176,8 @@ def hist_DM(ax,pulses,cand):
 
 
 def hist_SNR(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
-  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=3)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
+  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
   ax.set_ylabel('Cumulative SNR')
@@ -192,7 +191,7 @@ def hist_SNR(ax,pulses,cand):
 
 
 def scatter_SNR(ax, pulses, pulses_beam,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.1, zorder=2)
+  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
   colors = ['g','y','r']
   col = pulses_beam.Pulse.replace([0,1,2], colors)  
   ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c=col,s=20.,linewidths=[0.,], zorder=3)
@@ -219,9 +218,10 @@ def puls_DM_Time(ax, event, puls):
     #return val * m + q
   #sig = circle_size(event.Duration)
   #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)  
-  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=2)  
-  ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=0.1, fmt='none', ecolor='r', zorder=1)
-  ax.set_xlabel('Time (s)')  
+  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)  
+  #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
+  ax.scatter(puls.Time, puls.DM, lw=.2, fmt='x', ecolor='r', zorder=2)
+  ax.set_xlabel('Time (s)')
   ax.set_ylabel('DM (pc/cm3)')
   return
 
@@ -261,7 +261,8 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
   dm_h = float(puls.DM + dDM/2. + 0.001)
   t_l = float(puls.Time - 2. * puls.Duration)
   t_h = float(puls.Time + 2. * puls.Duration)
-  select = '(SAP == puls.SAP) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
+  sap = int(puls.SAP)
+  select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
   
   events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
   SNR = events.groupby('BEAM').Sigma.sum()
@@ -279,7 +280,7 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
     ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
     ax.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(puls.DM,puls.Time,puls.Duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   else:
-    ax.annotate('dDM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
+    ax.annotate('DM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   beam = puls.BEAM
   ax.scatter(ra[beam-13],dec[beam-13],s=300,linewidths=[0.,],marker='*',c='w')
@@ -293,14 +294,15 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
 
 def puls_meta_data(ax, puls, idx, i):
   ax.axis([0,10,0,10])
-  ax.annotate('Pulse: {}'.format(idx), xy=(0,9))
-  ax.annotate('DM (pc/cm2): {0:.2f}'.format(puls.DM), xy=(0,8))
-  ax.annotate('dDM (pc/cm2): {0:.2f}'.format(puls.dDM), xy=(0,7))
-  ax.annotate('Time (s): {0:.2f}'.format(puls.Time), xy=(0,6))
-  ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,5))
-  ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,4))
-  ax.annotate('N events: {}'.format(puls.N_events), xy=(0,3))
-  ax.annotate('Rank: {}'.format(puls.Rank), xy=(0,1))
+  ax.annotate("Pulse n. {}".format(i), xy=(0,9)) 
+  ax.annotate('Pulse code: {}'.format(idx), xy=(0,8))
+  ax.annotate('DM (pc/cm2): {0:.2f}'.format(puls.DM), xy=(0,7))
+  ax.annotate('dDM (pc/cm2): {0:.2f}'.format(puls.dDM), xy=(0,6))
+  ax.annotate('Time (s): {0:.2f}'.format(puls.Time), xy=(0,5))
+  ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,4))
+  ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
+  ax.annotate('N events: {0:.0f}'.format(puls.N_events), xy=(0,2))
+  ax.annotate('Rank: {0:.0f}'.format(puls.Pulse), xy=(0,1))
 
   ax.axis('off')
   return
