@@ -70,7 +70,7 @@ def upload_sheet(cands,idL):
   for idx,cand in cands.iterrows():
     if cand.N_pulses == 1: kind = 'SP'
     else: kind = 'RC'
-    link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".png");"Plot")'.format(idL)
+    link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".pdf");"Plot")'.format(idL)
     row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', '', 'ToProcess', '', link]    
     wks.append_row(row)
 

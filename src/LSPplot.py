@@ -110,7 +110,7 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
   colors = ['g','y','r']
   col = pulses_beam.Pulse.replace([0,1,2], colors)
 
-  ax.scatter(pulses_beam.Time, pulses_beam.DM, c=col, s=sig, edgecolor='w', zorder=2)
+  ax.scatter(pulses_beam.Time, pulses_beam.DM, c=col, s=sig, edgecolor='w', lw=.2, zorder=2)
   
   def scatter_legend(colors):
     scatter_list = []
