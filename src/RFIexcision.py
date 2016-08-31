@@ -73,6 +73,8 @@ def global_filters(pulses,events):
   DM_extremes_min = 0
   DM_extremes = 0
   
+  #Extremes weaker than threshold
+  
   return
   
   

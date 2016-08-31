@@ -79,7 +79,7 @@ def puls_plot(pdf, puls, ev, idL, i):
   ax1 = plt.subplot2grid((2,6),(0,0))
   ax2 = plt.subplot2grid((2,6),(0,1))
   ax3 = plt.subplot2grid((2,6),(0,2))
-  ax3b = ax2.twinx()
+  ax3b = ax3.twinx()
   ax4 = plt.subplot2grid((2,6),(0,3), colspan=3)
   ax5 = plt.subplot2grid((2,6),(1,0))
   ax6 = plt.subplot2grid((2,6),(1,1), colspan=2)
@@ -263,8 +263,11 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
   t_h = float(puls.Time + 2. * puls.Duration)
   sap = int(puls.SAP)
   select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
-  
-  events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
+  try:
+    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
+  except ValueError:
+    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events')
+    events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
   ind.index += 13
