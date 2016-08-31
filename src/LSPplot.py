@@ -77,24 +77,38 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
 
 def puls_plot(pdf, puls, ev, idL, i):
   ax1 = plt.subplot2grid((2,6),(0,0))
-  ax2 = plt.subplot2grid((2,6),(0,1))
-  ax3 = plt.subplot2grid((2,6),(0,2))
+  ax5 = plt.subplot2grid((2,6),(0,1))
+  ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
+  ax7 = plt.subplot2grid((2,6),(0,4), colspan=2)
+  ax2 = plt.subplot2grid((2,6),(1,0))
+  ax3 = plt.subplot2grid((2,6),(1,1), colspan=2)
   ax3b = ax3.twinx()
-  ax4 = plt.subplot2grid((2,6),(0,3), colspan=3)
-  ax5 = plt.subplot2grid((2,6),(1,0))
-  ax6 = plt.subplot2grid((2,6),(1,1), colspan=2)
-  ax7 = plt.subplot2grid((2,6),(1,3), colspan=3)
-  ax7b = ax7.twiny()
+  ax4 = plt.subplot2grid((2,6),(1,3), colspan=3)
   
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ax3b, ev)
-  puls_heatmap(ax4, puls, idL)
-  puls_dynSpec(ax5, ax6, puls, idL)
-  puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
-  
+  if cand.BEAM > 12: puls_heatmap(ax4, puls, idL)
+  else: plot_not_valid(ax4)
+  flag = puls_dynSpec(ax5, ax6, puls, idL)
+  if flag == -1:
+    plot_not_valid(ax5)
+    plot_not_valid(ax6)
+  if len([n for n in os.listdir(TMP_FOLDER.format(idL) + '/timeseries/') if n.endswith(".txt")]) > 0:
+    ax7b = ax7.twiny()
+    puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
+  else:
+     plot_not_valid(ax7)
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
+  return
+
+
+
+def plot_not_valid(ax):
+  ax.text(.5,.5,'Plot not valid', size=50., horizontalalignment='center', verticalalignment='center')
+  ax.set_xticks([])
+  ax.set_yticks([])
   return
 
 
@@ -267,7 +281,7 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
     events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
   except ValueError:
     events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events')
-    events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))
+    events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
   ind.index += 13
@@ -319,7 +333,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     if beam==12: stokes = 'incoherentstokes'
     else: stokes = 'stokes'
     filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-    if not os.path.isfile(filename): return None, None
+    if not os.path.isfile(filename): return -1, -1
   
     if puls.DM>141.71: sample = puls.Sample * 4
     elif puls.DM>40.47: sample = puls.Sample * 2
@@ -330,7 +344,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
     except NameError: 
       logging.warning("LSPplot - Additional modules missing")
-      return None, None
+      return -1, -1
     sample += np.round(sample*v).astype(int)
   
     duration = np.int(np.round(puls.Duration/RES))
@@ -354,7 +368,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     return spectrum
     
   spectrum, extent = read_spectrum(idL, puls)
-  if spectrum == None: return
+  if spectrum == -1: return -1
   
   #Probabilmente extent da rifare per spettro dispersed
   ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
@@ -371,7 +385,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('Frequency (MHz)')
       
-  return 
+  return 0
 
 
 

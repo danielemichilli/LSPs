@@ -112,6 +112,7 @@ def create_DB(folder,idL,args):
     with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
       f.write("ATTENTION! Error in processing obs. {}\n".format(idL))
     shutil.rmtree(WRK_FOLDER.format(idL))
+    shutil.rmtree(TMP_FOLDER.format(idL))
     
   return
     
