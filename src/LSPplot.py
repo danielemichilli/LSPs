@@ -82,24 +82,21 @@ def puls_plot(pdf, puls, ev, idL, i):
   ax7 = plt.subplot2grid((2,6),(0,4), colspan=2)
   ax2 = plt.subplot2grid((2,6),(1,0))
   ax3 = plt.subplot2grid((2,6),(1,1), colspan=2)
-  ax3b = ax3.twinx()
   ax4 = plt.subplot2grid((2,6),(1,3), colspan=3)
   
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
-  puls_SNR_DM(ax3, ax3b, ev)
+  puls_SNR_DM(ax3, ev)
   if puls.BEAM > 12: puls_heatmap(ax4, puls, idL)
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  dir_ts = TMP_FOLDER.format(idL) + '/timeseries/'
-  if os.path.isdir(dir_ts) and len([n for n in os.listdir(dir_ts) if n.endswith(".txt")]) > 0:
-    ax7b = ax7.twiny()
-    puls_dedispersed(ax7, ax7b, puls, dir_ts + '{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
-  else:
-     plot_not_valid(ax7)
+  flag = puls_dedispersed(ax7, puls, dir_ts + '{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
+  if flag == -1:
+    plot_not_valid(ax7)
+
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
   return
@@ -243,11 +240,12 @@ def puls_DM_Time(ax, event, puls):
 
 
 
-def puls_SNR_DM(ax, ax2, event):
+def puls_SNR_DM(ax, event):
   ax.plot(event.DM, event.Sigma, 'k')
   ax.set_xlabel('DM (pc/cm3)')    
   ax.set_ylabel('SNR')
   
+  ax2 = ax.twinx()
   ax2.plot(event.DM, event.Duration*1000, 'r')
   ax2.set_ylabel('Duration (ms)', color='r')
   for tl in ax2.get_yticklabels():
@@ -335,7 +333,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     if beam==12: stokes = 'incoherentstokes'
     else: stokes = 'stokes'
     filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-    if not os.path.isfile(filename): return -1, -1
+    if not os.path.isfile(filename): return [], []
   
     if puls.DM>141.71: sample = puls.Sample * 4
     elif puls.DM>40.47: sample = puls.Sample * 2
@@ -343,10 +341,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
 
     filetype, header = Utilities.read_header(filename)
     MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-    try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-    except NameError: 
-      logging.warning("LSPplot - Additional modules missing")
-      return -1, -1
+    v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
     sample += np.round(sample*v).astype(int)
   
     duration = np.int(np.round(puls.Duration/RES))
@@ -370,7 +365,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     return spectrum
     
   spectrum, extent = read_spectrum(idL, puls)
-  if spectrum == -1: return -1
+  if len(spectrum) == 0: return -1
   
   #Probabilmente extent da rifare per spettro dispersed
   ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
@@ -436,7 +431,14 @@ def load_ts(puls, filename):
 
 
 
-def puls_dedispersed(ax, ax2, puls, filename, idL=False, pulseN=False):
+def puls_dedispersed(ax, puls, filename, idL=False, pulseN=False):
+  sap = int(puls.SAP)
+  beam = int(puls.BEAM)
+  if beam==12: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  raw_dir = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return -1
+    
   data, params = load_ts(puls, filename)
   
   #Image plot
@@ -446,6 +448,7 @@ def puls_dedispersed(ax, ax2, puls, filename, idL=False, pulseN=False):
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
   #Time axis
+  ax2 = ax.twiny()
   x = np.arange(params['bins_out'])
   ax2.set_xlim((0,params['bins_out']))
   xticks_pos = x[::(params['bins_out'])/6]
@@ -485,4 +488,4 @@ def puls_dedispersed(ax, ax2, puls, filename, idL=False, pulseN=False):
   ax.set_xticks([])
   ax.set_yticks([])
 
-  return
+  return 0
