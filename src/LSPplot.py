@@ -327,31 +327,39 @@ def puls_meta_data(ax, puls, idx, i):
 
 
 def puls_dynSpec(ax1, ax2, puls, idL):
-  def read_spectrum(idL, puls):
-    sap = int(puls.SAP)
-    beam = int(puls.BEAM)
-    if beam==12: stokes = 'incoherentstokes'
-    else: stokes = 'stokes'
-    filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-    if not os.path.isfile(filename): return [], []
-  
-    if puls.DM>141.71: sample = puls.Sample * 4
-    elif puls.DM>40.47: sample = puls.Sample * 2
-    else: sample = puls.Sample
+  sap = int(puls.SAP)
+  beam = int(puls.BEAM)
+  if beam==12: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return -1
 
-    filetype, header = Utilities.read_header(filename)
-    MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-    v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-    sample += np.round(sample*v).astype(int)
+  if puls.DM>141.71: sample = puls.Sample * 4
+  elif puls.DM>40.47: sample = puls.Sample * 2
+  else: sample = puls.Sample
+
+  filetype, header = Utilities.read_header(filename)
+  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
+  sample += np.round(sample*v).astype(int)
+
+  duration = np.int(np.round(puls.Duration/RES))
+  spectra_border = 20
+  offset = duration*spectra_border
+
+  #Load the spectrum
+  mask_name = MASK_FILE.format(idL=idL,sap=sap,beam=beam)
+  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True,mask=mask_name)
+  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
+
+  if len(spectrum) == 0: return -1
   
-    duration = np.int(np.round(puls.Duration/RES))
-    spectra_border = 20
-    offset = duration*spectra_border
-  
-    #Load the spectrum
-    mask_name = MASK_FILE.format(idL=idL,sap=sap,beam=beam)
-    spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True,mask=mask_name)
-    return spectrum, [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
+  #Probabilmente extent da rifare per spettro dispersed
+  ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
+  ax2.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r') #Sostituire con linee
+  ax2.axis(extent)
+  ax2.set_xlabel('Time (s)')
+  ax2.set_ylabel('Frequency (MHz)')  
 
   def dedispersion(spectrum):
     freq = np.linspace(F_MIN,F_MAX,2592)
@@ -363,16 +371,6 @@ def puls_dynSpec(ax1, ax2, puls, idL):
     spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
     spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
     return spectrum
-    
-  spectrum, extent = read_spectrum(idL, puls)
-  if len(spectrum) == 0: return -1
-  
-  #Probabilmente extent da rifare per spettro dispersed
-  ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax2.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r') #Sostituire con linee
-  ax2.axis(extent)
-  ax2.set_xlabel('Time (s)')
-  ax2.set_ylabel('Frequency (MHz)')  
   
   spectrum = dedispersion(spectrum)
      
@@ -417,9 +415,10 @@ def load_ts(puls, filename):
   bin_start = bin_peak - nBins/2 * scrunch_fact
 
   for j,DM in enumerate(DM_range):
+    #if not os.path.isfile(filename.format(DM)): 
+    
     try:
-      filename.format(DM)
-      ts = np.memmap(filename, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
+      ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
       ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: ts = np.zeros(nBins) + np.nan
 
