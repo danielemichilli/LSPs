@@ -88,15 +88,16 @@ def puls_plot(pdf, puls, ev, idL, i):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ax3b, ev)
-  if cand.BEAM > 12: puls_heatmap(ax4, puls, idL)
+  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL)
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  if len([n for n in os.listdir(TMP_FOLDER.format(idL) + '/timeseries/') if n.endswith(".txt")]) > 0:
+  dir_ts = TMP_FOLDER.format(idL) + '/timeseries/'
+  if os.path.isdir(dir_ts) and len([n for n in os.listdir(dir_ts) if n.endswith(".txt")]) > 0:
     ax7b = ax7.twiny()
-    puls_dedispersed(ax7, ax7b, puls, TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
+    puls_dedispersed(ax7, ax7b, puls, dir_ts + '{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
   else:
      plot_not_valid(ax7)
   plt.tight_layout()
@@ -106,7 +107,8 @@ def puls_plot(pdf, puls, ev, idL, i):
 
 
 def plot_not_valid(ax):
-  ax.text(.5,.5,'Plot not valid', size=50., horizontalalignment='center', verticalalignment='center')
+  #ax.text(.5,.5,'Plot not valid', size=50., horizontalalignment='center', verticalalignment='center', clip_on=True)
+  ax.plot([0,0], [1,1], 'k-')
   ax.set_xticks([])
   ax.set_yticks([])
   return
@@ -328,8 +330,8 @@ def puls_meta_data(ax, puls, idx, i):
 
 def puls_dynSpec(ax1, ax2, puls, idL):
   def read_spectrum(idL, puls):
-    sap = puls.SAP
-    beam = puls.BEAM
+    sap = int(puls.SAP)
+    beam = int(puls.BEAM)
     if beam==12: stokes = 'incoherentstokes'
     else: stokes = 'stokes'
     filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
