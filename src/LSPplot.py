@@ -16,6 +16,8 @@ import matplotlib.gridspec as gridspec
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
 import presto
+import subprocess
+import shutil
 
 import Utilities
 from Parameters import *
@@ -32,6 +34,8 @@ def output(idL,pulses,meta_data,candidates):
   candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
   plt.clf()
+  out_dir = TMP_FOLDER.format(idL) + '/timeseries'
+  if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
@@ -44,7 +48,10 @@ def output(idL,pulses,meta_data,candidates):
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         ev = events[events.Pulse == idx_p]
         puls_plot(pdf, puls, ev, idL, i)
+    
     plt.close('all')
+    if os.path.isdir(out_dir): shutil.rmtree(out_dir)
+    
   return
 
 
@@ -93,7 +100,8 @@ def puls_plot(pdf, puls, ev, idL, i):
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  flag = puls_dedispersed(ax7, puls, dir_ts + '{}_SAP{}_BEAM{}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM), idL=idL)
+  dir_ts = TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{:.0f}_BEAM{:.0f}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM)
+  flag = puls_dedispersed(ax7, puls, dir_ts, idL)
   if flag == -1:
     plot_not_valid(ax7)
 
@@ -105,7 +113,8 @@ def puls_plot(pdf, puls, ev, idL, i):
 
 def plot_not_valid(ax):
   #ax.text(.5,.5,'Plot not valid', size=50., horizontalalignment='center', verticalalignment='center', clip_on=True)
-  ax.plot([0,0], [1,1], 'k-')
+  ax.plot([0,1], [0,1], 'k-', lw=2.)
+  ax.plot([0,1], [1,0], 'k-', lw=2.)
   ax.set_xticks([])
   ax.set_yticks([])
   return
@@ -356,7 +365,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
   
   #Probabilmente extent da rifare per spettro dispersed
   ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax2.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r') #Sostituire con linee
+  #Plottare contorni!
   ax2.axis(extent)
   ax2.set_xlabel('Time (s)')
   ax2.set_ylabel('Frequency (MHz)')  
@@ -375,7 +384,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
   spectrum = dedispersion(spectrum)
      
   ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=1000,c='r')
+  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=100,c='r',lw=0.)
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('Frequency (MHz)')
@@ -384,7 +393,7 @@ def puls_dynSpec(ax1, ax2, puls, idL):
 
 
 
-def load_ts(puls, filename):
+def load_ts(puls, filename, idL):
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES  #Theoretical factor between time and DM
 
   bin_peak = int(puls['Sample'])
@@ -414,8 +423,11 @@ def load_ts(puls, filename):
 
   bin_start = bin_peak - nBins/2 * scrunch_fact
 
+  out_dir = TMP_FOLDER.format(idL) + '/timeseries'
+  FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
-    #if not os.path.isfile(filename.format(DM)): 
+    if not os.path.isfile(filename.format(DM)):
+      error = subprocess.call(['sh', '/home/danielem/spdspsr_DANIELE.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), '1', out_dir], stdout=FNULL, stderr=FNULL)
     
     try:
       ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
@@ -430,15 +442,15 @@ def load_ts(puls, filename):
 
 
 
-def puls_dedispersed(ax, puls, filename, idL=False, pulseN=False):
+def puls_dedispersed(ax, puls, filename, idL, pulseN=False):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   if beam==12: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   raw_dir = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  if not os.path.isfile(filename): return -1
+  if not os.path.isfile(raw_dir): return -1
     
-  data, params = load_ts(puls, filename)
+  data, params = load_ts(puls, filename, idL)
   
   #Image plot
   ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_range'][0], params['DM_range'][-1]])
