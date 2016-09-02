@@ -94,7 +94,7 @@ def puls_plot(pdf, puls, ev, idL, i):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL)
+  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL))
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL)
   if flag == -1:
@@ -263,7 +263,7 @@ def puls_SNR_DM(ax, event):
 
 
 
-def puls_heatmap(ax, puls, idL, pulseN=False):
+def puls_heatmap(ax, puls, idL, folder, pulseN=False):
   ra = np.array([ 
         499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
         742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
@@ -287,9 +287,9 @@ def puls_heatmap(ax, puls, idL, pulseN=False):
   sap = int(puls.SAP)
   select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
   try:
-    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events', where=select)
+    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(folder), 'events', where=select)
   except ValueError:
-    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)), 'events')
+    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(folder), 'events')
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
@@ -423,6 +423,8 @@ def load_ts(puls, filename, idL):
 
   bin_start = bin_peak - nBins/2 * scrunch_fact
 
+  sap = int(puls.SAP)
+  beam = int(puls.BEAM)
   out_dir = TMP_FOLDER.format(idL) + '/timeseries'
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
