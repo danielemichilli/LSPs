@@ -94,7 +94,7 @@ def puls_plot(pdf, puls, ev, idL, i):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL))
+  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp')
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL)
   if flag == -1:
@@ -287,9 +287,9 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False):
   sap = int(puls.SAP)
   select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
   try:
-    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(folder), 'events', where=select)
+    events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events', where=select)
   except ValueError:
-    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(folder), 'events')
+    events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events')
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(61))
