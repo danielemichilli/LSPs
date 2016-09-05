@@ -251,7 +251,7 @@ def local_filters(pulses,events):
   return
 
 
-def multimoment(pulses,idL):
+def multimoment(pulses,idL,inc=12):
   pulses.sort(['SAP','BEAM'],inplace=True)
   last_beam = -1
   last_sap = -1
@@ -265,7 +265,7 @@ def multimoment(pulses,idL):
       sap = puls.SAP.astype(int)
       
       #Open the fits file
-      if beam==12: stokes = 'incoherentstokes'
+      if beam==inc: stokes = 'incoherentstokes'
       else: stokes = 'stokes'
       filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
       try: fits = pyfits.open(filename,memmap=True)

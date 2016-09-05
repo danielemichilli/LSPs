@@ -29,7 +29,7 @@ mpl.rc('font',size=5)
 
 
 
-def output(idL,pulses,meta_data,candidates):
+def output(idL, pulses, meta_data, candidates, inc=12):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
   
@@ -47,7 +47,7 @@ def output(idL,pulses,meta_data,candidates):
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         ev = events[events.Pulse == idx_p]
-        puls_plot(pdf, puls, ev, idL, i)
+        puls_plot(pdf, puls, ev, idL, i, inc)
     
     plt.close('all')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -82,7 +82,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
 
 
 
-def puls_plot(pdf, puls, ev, idL, i):
+def puls_plot(pdf, puls, ev, idL, i, inc=12):
   ax1 = plt.subplot2grid((2,6),(0,0))
   ax5 = plt.subplot2grid((2,6),(0,1))
   ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
@@ -94,14 +94,14 @@ def puls_plot(pdf, puls, ev, idL, i):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > 12: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp')
+  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp')
   else: plot_not_valid(ax4)
-  flag = puls_dynSpec(ax5, ax6, puls, idL)
+  flag = puls_dynSpec(ax5, ax6, puls, idL, inc)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
   dir_ts = TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{:.0f}_BEAM{:.0f}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM)
-  flag = puls_dedispersed(ax7, puls, dir_ts, idL)
+  flag = puls_dedispersed(ax7, puls, dir_ts, idL, inc)
   if flag == -1:
     plot_not_valid(ax7)
 
@@ -335,10 +335,10 @@ def puls_meta_data(ax, puls, idx, i):
 
 
 
-def puls_dynSpec(ax1, ax2, puls, idL):
+def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
-  if beam==12: stokes = 'incoherentstokes'
+  if beam == inc: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return -1
@@ -444,10 +444,10 @@ def load_ts(puls, filename, idL):
 
 
 
-def puls_dedispersed(ax, puls, filename, idL, pulseN=False):
+def puls_dedispersed(ax, puls, filename, idL, pulseN=False, inc=12):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
-  if beam==12: stokes = 'incoherentstokes'
+  if beam == inc: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   raw_dir = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
@@ -490,7 +490,7 @@ def puls_dedispersed(ax, puls, filename, idL, pulseN=False):
     bin_start = int(puls.Sample) - nBins/2 * scrunch_fact
   
     try:
-      ts = np.memmap(filename.format(puls.DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(params['bins_out'],))
+      ts = np.memmap(filename.format(puls.DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
       ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: x = ts = None
     return x, ts

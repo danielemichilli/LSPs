@@ -31,6 +31,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
+  if conf: inc = 0
+  else: inc = 12
+  
   def file_list(folder,idL):
     file_list = []
     file_names = []
@@ -76,12 +79,12 @@ def obs_events(folder,idL,load_events=False,conf=False):
   '''
   #Remove time-spans affectd by RFI
   pulses.sort_index(inplace=True)
-  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM==12])] += 1
-  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM>12])] += 1
+  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM == inc])] += 1
+  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM > inc])] += 1
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
   #Compare different beams
-  pulses.Pulse.loc[RFIexcision.Compare_Beams(pulses[pulses.BEAM>12].copy())] += 1
+  pulses.Pulse.loc[RFIexcision.Compare_Beams(pulses[pulses.BEAM > inc].copy())] += 1
   pulses = pulses[pulses.Pulse <= RFI_percent]
 
   #Remove pulses appearing in too many beams
@@ -104,7 +107,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   else:
     #Produce the output
     meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'meta_data')
-    LSPplot.output(idL,pulses,meta_data,cands)    
+    LSPplot.output(idL, pulses, meta_data, cands, inc=inc)    
     
     #Store the best candidates online
     try: Internet.upload(cands,idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(idL)))
