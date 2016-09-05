@@ -60,7 +60,7 @@ def upload_sheet(cands,idL):
   for row_num in row_list:
     cells = wks.range('A{row}:{col}{row}'.format(row=row_num,col=col_size_letter))
     for cell in cells : cell.value = ''
-    wks.update_cells(cells)
+    wks.update_cells(cells)  #Possible to append all together (faster)?
       
   #Append candidates
   date = time.strftime("%m/%d/%Y")
@@ -72,7 +72,7 @@ def upload_sheet(cands,idL):
     else: kind = 'RC'
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".pdf");"Plot")'.format(idL)
     row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', '', 'ToProcess', '', link]    
-    wks.append_row(row)
+    wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet
   wks = sh.worksheet("Candidates")
@@ -83,7 +83,14 @@ def upload_sheet(cands,idL):
   new_cells = list(old_cells)
   old_col = wks.col_values(1)
   new_idx = [old_col.index(i) for i in sorted(old_col, reverse=True)]
-  for i, i_new in enumerate(new_idx):
+  #Move repeated at the end
+  format_idx = []
+  temp = []
+  for n in new_idx:
+    if n in format_idx: temp.append(n)
+    else: format_idx.append(n)
+  format_idx.extend(temp)
+  for i, i_new in enumerate(format_idx):
     for col in range(col_size):
       new_cells[i*col_size+col].value = old_cells[i_new*col_size+col].input_value
   wks.update_cells(new_cells)
