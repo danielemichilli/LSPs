@@ -167,34 +167,34 @@ def space_fft(CPU):
     stds *= 1.148
     ts /= stds
 
-    beams_map = griddata(ra, dec, ts, grid, grid, interp='nn')
-    beams_map[beams_map.mask==True] = 0
-    conv = signal.convolve2d(beams_map,np.ones((fill,fill))/fill,mode='same')  #Check the statistics!
-    
-    
+
+    #Create the convolved matrix
+    beams_map = np.zeros((9,9))
+    kern1 =  = np.ones((2,3))
+    kern2 =  = np.ones((3,2))
+    conv1 = signal.convolve2d(beams_map,kern1,mode='full')
+    conv2 = signal.convolve2d(beams_map,kern2,mode='full')
+
+    conv1[1:-1,1] /= 2
+    conv1[1:-1,-2] /= 2
+    conv1[0,2:-2:2] /= 2
+    conv1[-1,2:-2:2] /= 2
+    conv1[1:-1,2:-2] /= 3
+
+    conv2[1,1:-1] /= 2
+    conv2[-2,1:-1] /= 2
+    conv2[2:-2:2,0] /= 2
+    conv2[2:-2:2,-1] /= 2
+    conv2[2:-2,1:-1] /= 3
+
+    conv = #Bisogna prendere il massimo per ogni beam
+
+
+
     #Condizioni per salvare il bin
 
 
     if cand_idx[cand_idx>=0].size == 0: break
   
   
-#Create the convolved matrix
-beams_map = np.zeros((9,9))
-kern1 =  = np.ones((2,3))
-kern2 =  = np.ones((3,2))
-conv1 = signal.convolve2d(beams_map,kern1,mode='full')
-conv2 = signal.convolve2d(beams_map,kern2,mode='full')
-
-conv1[1:-1,1] /= 2
-conv1[1:-1,-2] /= 2
-conv1[0,2:-2:2] /= 2
-conv1[-1,2:-2:2] /= 2
-conv1[1:-1,2:-2] /= 3
-
-conv2[1,1:-1] /= 2
-conv2[-2,1:-1] /= 2
-conv2[2:-2:2,0] /= 2
-conv2[2:-2:2,-1] /= 2
-conv2[2:-2,1:-1] /= 3
-
-conv = #Bisogna prendere il massimo per ogni beam
+  

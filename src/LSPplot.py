@@ -94,16 +94,16 @@ def puls_plot(pdf, puls, ev, idL, i, inc=12):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp')
+  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc)
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL, inc)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  dir_ts = TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{:.0f}_BEAM{:.0f}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM)
-  flag = puls_dedispersed(ax7, puls, dir_ts, idL, inc)
-  if flag == -1:
-    plot_not_valid(ax7)
+  #dir_ts = TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{:.0f}_BEAM{:.0f}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM)
+  #flag = puls_dedispersed(ax7, puls, dir_ts, idL, inc)
+  #if flag == -1:
+  plot_not_valid(ax7)
 
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
@@ -263,21 +263,51 @@ def puls_SNR_DM(ax, event):
 
 
 
-def puls_heatmap(ax, puls, idL, folder, pulseN=False):
-  ra = np.array([ 
-        499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
-        742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
-        873,  869,  865,  862,  740,  619,  499,  380,  259,  137,  134,
-        129,  126,  249,  374,  499,  627,  752,  876, 1000,  995,  990,
-        985,  981,  859,  738,  618,  499,  381,  261,  140,   18,   14,
-          9,    4,    0,  123,  247,  372])
-  dec = np.array([ 
-        500,  625,  562,  437,  375,  437,  562,  750,  687,  625,  500,
-        375,  312,  250,  312,  375,  500,  625,  687,  875,  812,  750,
-        687,  562,  437,  312,  250,  187,  125,  187,  250,  312,  437,
-        562,  687,  750,  812, 1000,  937,  875,  812,  750,  625,  500,
-        375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
-        500,  625,  750,  812,  875,  937])
+def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
+  if inc == 12:
+    n_beams = 61
+    
+    ra = np.array([ 
+          499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
+          742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
+          873,  869,  865,  862,  740,  619,  499,  380,  259,  137,  134,
+          129,  126,  249,  374,  499,  627,  752,  876, 1000,  995,  990,
+          985,  981,  859,  738,  618,  499,  381,  261,  140,   18,   14,
+            9,    4,    0,  123,  247,  372])
+    dec = np.array([ 
+          500,  625,  562,  437,  375,  437,  562,  750,  687,  625,  500,
+          375,  312,  250,  312,  375,  500,  625,  687,  875,  812,  750,
+          687,  562,  437,  312,  250,  187,  125,  187,  250,  312,  437,
+          562,  687,  750,  812, 1000,  937,  875,  812,  750,  625,  500,
+          375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
+          500,  625,  750,  812,  875,  937])
+  else:
+    n_beams = 126
+
+    ra = np.array([   0,  668,  582,  582,  165,  165,  834,  582,  748,  251,  417,
+        497,  165,  834,  668,  668,  994,  662,  834,  662,  668,  497,
+        828,   85,  251,  251,  417,  331,    5,  497,  914, 1000,  497,
+        337,  165,  582,  497,  582,  582,  914,   85,   85,  497,  331,
+        165,  251,  748,  582,  251,   85,  251,  417,  582,  331,  834,
+        914,    0,  914,  748,  165,  417,   85,  497,  417,    0, 1000,
+        417,   85,  251,  497,  331,  337,  417,  582,  417,  331,  417,
+        834,  497, 1000,  171,    0,  165,  582,  582,  748,  748,  417,
+        834, 1000,  914,  914,  668,  497,  337,  668,    0,  834,  251,
+        582,  668,  417,  662,  251,  331,  497,   85,  171,  748,  748,
+         85, 1000,  497,  497,  417,    0,  748,  668,  914,  331,  497,
+       1000,  828,  748,  748,  914,  331,  251])
+    dec = array([ 583,  333,   42,  291,  583,  499,  416,  208,  541,  708,  125,
+        499,  333,  583,  499,  750,  249,  166,  833,   83,  583,  333,
+        249,  375,  624,  375,  375,  499,  249,    0,  541,  416,  249,
+        166,  416,  957,  166,  125,  791,  708,  458,  708,  833,  583,
+        750,  458,  375,  541,  291,  791,  791,   42,  708,  833,  333,
+        291,  416,  791,  624,  833,  291,  541,   83,  874,  333,  750,
+        541,  208,  125,  416,  916,   83,  458,  375,  957,  750,  624,
+        499,  916,  666,  249,  666,  666,  624,  458,  791,  708,  708,
+        750,  499,  208,  624,  833,  499,  249,  416,  750,  666,  874,
+        874,  916,  791,  249,  208,  416,  666,  291,  166,  208,  125,
+        624,  583,  750, 1000,  208,  499,  291,  666,  375,  333,  583,
+        333,  166,  458,  874,  458,  666,  541])
   
   dDM = 0.4
   dm_l = float(puls.DM - dDM/2. - 0.001)
@@ -292,8 +322,9 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False):
     events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events')
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.sum()
-  ind = pd.Series(np.zeros(61))
-  ind.index += 13
+  if inc == 12: ind = pd.Series(np.zeros(n_beams))
+    
+  ind.index += inc + 1
   SNR = SNR.reindex_like(ind)
 
   plot = ax.scatter(ra,dec,s=400,edgecolor='none',c=SNR,cmap='hot_r')
@@ -309,8 +340,8 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False):
     ax.annotate('DM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   beam = puls.BEAM
-  ax.scatter(ra[beam-13],dec[beam-13],s=300,linewidths=[0.,],marker='*',c='w')
-  [ax.annotate(str(i+13),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,61)]
+  ax.scatter(ra[beam-(inc+1)],dec[beam-(inc+1)],s=300,linewidths=[0.,],marker='*',c='w')
+  [ax.annotate(str(i+(inc+1)),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,n_beams)]
 
   ax.set_xlim(-100,1100)
   ax.set_ylim(-100,1100)
