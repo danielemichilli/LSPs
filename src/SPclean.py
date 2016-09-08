@@ -31,14 +31,8 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
-  if conf: 
-    inc = 0
-    global OBS_FOLDER
-    global RAW_FOLDER
-    OBS_FOLDER += 'confirmations/'
-    RAW_FOLDER += 'confirmations/'
-  else: 
-    inc = 12
+  if conf: inc = 0
+  else: inc = 12
   
   def file_list(folder,idL):
     file_list = []

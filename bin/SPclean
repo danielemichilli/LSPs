@@ -126,7 +126,14 @@ def main():
   
 
   if args.folder: folder = args.folder[0] + '/'
-  else: folder = OBS_FOLDER + '/'
+  else: 
+    if args.conf:
+      global OBS_FOLDER
+      global RAW_FOLDER
+      OBS_FOLDER += 'confirmations/'
+      RAW_FOLDER += 'confirmations/'
+    folder = OBS_FOLDER
+    
   idL = args.idL[0] #os.path.basename(os.getcwd())
 
   #If the DataBase exists and the -w option is abstent plots it
