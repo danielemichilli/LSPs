@@ -25,12 +25,14 @@ def candidates(pulses,idL):
     new_cand = cands.index
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
-    
-    #selezionare solo top 2 signle candidates
+        
+    cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
+    best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)
+    best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(3).groupby('SAP').head(6))
   
-  else: cands = pd.DataFrame()
+  else: best_cands = pd.DataFrame()
   
-  return cands
+  return best_cands
 
 
 def Repeated_candidates_beam(pulses):
@@ -89,9 +91,4 @@ def candidates_generator(pulses,idL):
   cands = cands.drop('Candidate',axis=1)
   cands.Time[cands.N_pulses>1] = 0
   cands['id'] = idL + '_' + cands.SAP.astype(str) + '_' + cands.BEAM.astype(str) + '_' + cands.index.astype(str)
-  
-  cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
-  best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
-  best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
-  
-  return best_cands
+  return cands
