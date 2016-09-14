@@ -8,7 +8,7 @@ import Utilities
 
 
 def candidates(pulses,idL):
-  pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
+  pulses.sort(['Sigma','Pulse'],ascending=[0,1],inplace=True)
   
   pulses.Candidate = Repeated_candidates_beam(pulses).astype(pulses.Candidate.dtype)
   
@@ -20,7 +20,7 @@ def candidates(pulses,idL):
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
+    cands.sort(['Sigma','Rank'],ascending=[1,0],inplace=True)
     new_cand = cands.index
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
@@ -89,7 +89,7 @@ def candidates_generator(pulses,idL):
   cands.Time[cands.N_pulses>1] = 0
   cands['id'] = idL + '_' + cands.SAP.astype(str) + '_' + cands.BEAM.astype(str) + '_' + cands.index.astype(str)
   
-  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
+  cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
   best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
   best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
   
