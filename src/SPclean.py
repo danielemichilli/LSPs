@@ -98,7 +98,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'a')
   store.append('pulses',pulses)
   if not cands.empty:
-    cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
+    cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
     store.append('candidates',cands)
     cands = cands[cands.main_cand==0].head(30)
   store.close()
