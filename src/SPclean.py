@@ -100,7 +100,7 @@ def obs_events(folder,idL,load_events=False,conf=False):
   if not cands.empty:
     cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
     store.append('candidates',cands)
-    cands = cands[cands.main_cand==0].head(30)
+    #cands = cands[cands.main_cand==0].head(30)
   store.close()
       
   if cands.empty: logging.warning("Any reliable candidate detected!")

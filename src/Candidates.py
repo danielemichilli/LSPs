@@ -10,7 +10,7 @@ import Utilities
 def candidates(pulses,idL):
   pulses.sort(['Sigma','Pulse'],ascending=[0,1],inplace=True)
   
-  pulses.Candidate = Repeated_candidates_beam(pulses).astype(pulses.Candidate.dtype)
+  Repeated_candidates_beam(pulses)
   
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(5).astype(np.int32)
   pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = 2 * (np.arange(cands_unique.shape[0]) * 10000 + cands_unique.SAP * 1000 + cands_unique.BEAM)
@@ -27,8 +27,8 @@ def candidates(pulses,idL):
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
         
     cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
-    best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)
-    best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(3).groupby('SAP').head(6))
+    best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
+    best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
   
   else: best_cands = pd.DataFrame()
   
@@ -38,7 +38,7 @@ def candidates(pulses,idL):
 def Repeated_candidates_beam(pulses):
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   dirs = [n for n in gb_puls.indices.iterkeys()]
-  pulses['cand'] = -1
+  pulses.Candidate[:] = -1
 
   for (sap,beam) in dirs:
     puls = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
@@ -58,14 +58,14 @@ def Repeated_candidates_beam(pulses):
       DM = top_sum.argmax()
       #Sigma = top_sum.loc[DM-span:DM+span].sum()
       #N_puls = top_count.loc[DM-span:DM+span].sum()
-      selected_pulses = puls.cand[(puls.DM>=DM-span)&(puls.DM<=DM+span)]
+      selected_pulses = puls.Candidate[(puls.DM>=DM-span)&(puls.DM<=DM+span)]
       if selected_pulses.shape[0] > 1:
-        pulses.cand.loc[selected_pulses.index] = 1 + 2 * (i * 10000 + sap * 1000 + beam)  #Repeated candidates have odd ID
+        pulses.Candidate.loc[selected_pulses.index] = 1 + 2 * (i * 10000 + sap * 1000 + beam)  #Repeated candidates have odd ID
       #top_count.loc[DM-span:DM+span] = 0
       top_sum.loc[DM-span:DM+span] = 0
       i += 1    
 
-  return pulses.cand
+  return
 
 
 def period(x):
