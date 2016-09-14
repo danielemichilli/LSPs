@@ -13,7 +13,8 @@ def candidates(pulses,idL):
   pulses.Candidate = Repeated_candidates_beam(pulses).astype(pulses.Candidate.dtype)
   
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(5).astype(np.int32)
-  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = np.arange(cands_unique.shape[0]) * 1000 + cands_unique.SAP * 100 + cands_unique.BEAM
+  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = 2 * (np.arange(cands_unique.shape[0]) * 10000 + cands_unique.SAP * 1000 + cands_unique.BEAM)
+  #Unique candidates have even ID
   
   if not pulses[pulses.Candidate>=0].empty:
     cands = candidates_generator(pulses[pulses.Candidate>=0].copy(),idL)
@@ -57,7 +58,7 @@ def Repeated_candidates_beam(pulses):
       #N_puls = top_count.loc[DM-span:DM+span].sum()
       selected_pulses = puls.cand[(puls.DM>=DM-span)&(puls.DM<=DM+span)]
       if selected_pulses.shape[0] > 1:
-        pulses.cand.loc[selected_pulses.index] = i * 100000 + sap * 1000 + beam * 10
+        pulses.cand.loc[selected_pulses.index] = 1 + 2 * (i * 10000 + sap * 1000 + beam)  #Repeated candidates have odd ID
       #top_count.loc[DM-span:DM+span] = 0
       top_sum.loc[DM-span:DM+span] = 0
       i += 1    
