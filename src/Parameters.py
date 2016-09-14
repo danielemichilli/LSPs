@@ -63,6 +63,7 @@ FILTERS = {
   'number_events': 1.,
   'monotonic': 0.0000001,
   'sigma_jumps': 0.3,
-  'fit1_brightest': 0.09}
+  'fit1_brightest': 0.09,
+  'extreme_min': 7.}
 
 

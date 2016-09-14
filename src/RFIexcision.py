@@ -108,7 +108,14 @@ def local_filters(pulses,events):
       number_events(ev) < FILTERS['number_events'],
       monotonic(ev.Sigma) < FILTERS['monotonic'],
       sigma_jumps(ev.Sigma) > FILTERS['sigma_jumps'],
-      fit1_brightest(ev) < FILTERS['fit1_brightest']))
+      fit1_brightest(ev) < FILTERS['fit1_brightest'],
+      extreme_min(ev.Sigma) > FILTERS['extreme_min']))
+  
+  def extreme_min(ev):
+    ev_len = ev.shape[0] / 4
+    SNR_min_a = ev[:ev_len].min()
+    SNR_min_b = ev[-ev_len:].min()
+    return np.max((SNR_min_a, SNR_min_b))
  
   def sigma_std_largest(ev):
     sigma = ev.Sigma.nlargest(ev.Sigma.size*2/3)
