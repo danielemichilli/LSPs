@@ -45,6 +45,7 @@ def upload_sheet(cands,idL):
   row_size = wks.row_count
   
   #Create a new backup sheet
+  '''
   backup = sh.worksheet("Backup")
   sh.del_worksheet(backup)
   backup = sh.add_worksheet(title="Backup", rows=row_size, cols=col_size)
@@ -53,6 +54,7 @@ def upload_sheet(cands,idL):
   for i in range(len(old_cells)):         
     old_cells[i].value = new_cells[i].input_value
   backup.update_cells(old_cells)
+  '''
       
   #Remove old rows for the same observation
   obs_list = wks.col_values(4)

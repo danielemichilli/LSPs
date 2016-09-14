@@ -24,9 +24,12 @@ In LSPs:
 
 '''
 
-#datacube(61,500,100000)
+#datacube(61,500,100000) #beam, DM, time
 
 Number_of_candidates = 10
+DM_BINS = 500
+TIME_BINS = 36000
+BEAM_BINS = 61
 
 
 def beam_matrix():
@@ -39,11 +42,11 @@ def beam_matrix():
   time_fft_parallel()
   
   #Create and save the signal datacube
-  for idx,DM in enumerate(np.arange(0,500)):
+  for idx,DM in enumerate(np.arange(0,DM_BINS)):
     file = glob.glob('*_DM{}.dat'.format(DM))[0]
     if idx == 0: 
       beam0 = np.fromfile(file,dtype=np.float32)
-      beam = np.zeros((500,beam0.size))
+      beam = np.zeros((DM_BINS,beam0.size))
       beam[0] = beam0
     else:
       beam[idx] = np.fromfile(file,dtype=np.float32)
@@ -74,17 +77,17 @@ def time_fft(CPU):
   Create the SNR datacube 
   '''
   CPUs = mp.cpu_count()
-  DM_range = int(np.ceil(500/float()))  #Number of DMs in each CPU
+  DM_range = int(np.ceil(DM_BINS/float()))  #Number of DMs in each CPU
   
-  if DM_range * CPU > 500: timeseries = np.zeros((500%CPUs,36000))
-  else: timeseries = np.zeros((DM_range,36000))
+  if DM_range * CPU > DM_BINS: timeseries = np.zeros((DM_BINS%CPUs,TIME_BINS))
+  else: timeseries = np.zeros((DM_range,TIME_BINS))
   downfacts = [2, 5, 10, 20, 50, 100, 200, 500, 1000]
   chunklen = timeseries.shape[1]
   
   #Produce the datacube
-  for idx,DM in enumerate(np.arange(CPU*DM_range,np.clip((CPU+1)*DM_range,0,500))):
+  for idx,DM in enumerate(np.arange(CPU*DM_range,np.clip((CPU+1)*DM_range,0,DM_BINS))):
     file = glob.glob('*_DM{}.dat'.format(DM))[0]
-    ts = np.fromfile(file,dtype=np.float32)[:36000]
+    ts = np.fromfile(file,dtype=np.float32)[:TIME_BINS]
     
     if idx == 0:
       timeseries = np.zeros((DM_range,ts.size))
@@ -152,49 +155,48 @@ def space_fft_parallel()
   
   
 def space_fft(CPU):
-  t_range = 36000 / (mp.cpu_count())
+  t_range = TIME_BINS / (mp.cpu_count())
   
-  beams = data[:,:,CPU*t_range:(CPU+1)*t_range]
+  values = values[:,:,CPU*t_range:(CPU+1)*t_range]
   
-  for time in times:
-    #DM_idx = np.unravel_index(np.argmax(datacube[:,:,time_idx],datacube.shape)[1]
-    
-    ts = datacube[:,DM_idx,time_idx]
-    ts = signal.detrend(ts, type='constant')
-    tmpchunk = ts.copy()
-    tmpchunk.sort()
-    stds = np.sqrt((tmpchunk[chunklen/40:-chunklen/40]**2.0).sum() / (0.95*chunklen))
-    stds *= 1.148
-    ts /= stds
+  for ii in range(values.shape[1]):
+    for jj in range(values.shape[2]):
+      ts = datacube[:,ii,jj]
+      ts = signal.detrend(ts, type='constant')
+      tmpchunk = ts.copy()
+      tmpchunk.sort()
+      stds = np.sqrt((tmpchunk[chunklen/40:-chunklen/40]**2.0).sum() / (0.95*chunklen))
+      stds *= 1.148
+      ts /= stds
 
 
-    #Create the convolved matrix
-    beams_map = np.zeros((9,9))
-    kern1 =  = np.ones((2,3))
-    kern2 =  = np.ones((3,2))
-    conv1 = signal.convolve2d(beams_map,kern1,mode='full')
-    conv2 = signal.convolve2d(beams_map,kern2,mode='full')
+      #Create the convolved matrix
+      beams_map = np.array(0, ts[1], ) #np.zeros((9,9))
+      kern1 = np.ones((2,3))
+      kern2 = np.ones((3,2))
+      conv1 = signal.convolve2d(beams_map,kern1,mode='full')
+      conv2 = signal.convolve2d(beams_map,kern2,mode='full')
 
-    conv1[1:-1,1] /= 2
-    conv1[1:-1,-2] /= 2
-    conv1[0,2:-2:2] /= 2
-    conv1[-1,2:-2:2] /= 2
-    conv1[1:-1,2:-2] /= 3
+      conv1[1:-1,1] /= 2
+      conv1[1:-1,-2] /= 2
+      conv1[0,2:-2:2] /= 2
+      conv1[-1,2:-2:2] /= 2
+      conv1[1:-1,2:-2] /= 3
 
-    conv2[1,1:-1] /= 2
-    conv2[-2,1:-1] /= 2
-    conv2[2:-2:2,0] /= 2
-    conv2[2:-2:2,-1] /= 2
-    conv2[2:-2,1:-1] /= 3
+      conv2[1,1:-1] /= 2
+      conv2[-2,1:-1] /= 2
+      conv2[2:-2:2,0] /= 2
+      conv2[2:-2:2,-1] /= 2
+      conv2[2:-2,1:-1] /= 3
 
-    conv = #Bisogna prendere il massimo per ogni beam
-
-
-
-    #Condizioni per salvare il bin
+      conv = #Bisogna prendere il massimo per ogni beam
 
 
-    if cand_idx[cand_idx>=0].size == 0: break
-  
-  
+
+      #Condizioni per salvare il bin
+
+
+      if cand_idx[cand_idx>=0].size == 0: break
+
+
   
