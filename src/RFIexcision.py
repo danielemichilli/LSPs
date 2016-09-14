@@ -104,7 +104,7 @@ def local_filters(pulses,events):
       bright_events_abs(ev) > FILTERS['bright_extremes_abs'],
       bright_events_rel(ev) > FILTERS['bright_extremes_rel'],
       pulse_simmetric(ev) < FILTERS['pulse_simmetric'],
-      flat_SNR_extremes(ev) < FILTERS['flat_SNR_extremes'],
+      flat_SNR_extremes(ev) > FILTERS['flat_SNR_extremes'],
       number_events(ev) < FILTERS['number_events'],
       monotonic(ev.Sigma) < FILTERS['monotonic'],
       sigma_jumps(ev.Sigma) > FILTERS['sigma_jumps'],

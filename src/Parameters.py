@@ -43,7 +43,7 @@ FILTERS = {
   'q': -60.86842105263156,
   'flat_SNR': 0.78,
   'flat_SNR_simmetric': 0.79,
-  'flat_SNR_extremes': 0.68,
+  'flat_SNR_extremes': 0.77,
   'DM_extremes': 0.9,
   'sigma_min': 0.95,
   'cum_scatter': 0.0045,
