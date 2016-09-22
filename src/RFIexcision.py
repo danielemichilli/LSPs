@@ -53,8 +53,8 @@ def global_filters(pulses,events):
   pulses.Pulse[pulses.dDM / (steps * (pulses.N_events - 1)) > FILTERS['holes']] += 1
   steps = 0
 
-  #Flat Duration: Duration_min / Duration_max
-  pulses.Pulse[ gb.Duration.min() / gb.Duration.max() > FILTERS['flat_duration']] += 1 
+  #Flat Duration: Duration_ax / Duration
+  pulses.Pulse[ gb.Duration.max() / pulses.Duration < FILTERS['flat_duration']] += 1   #TO TEST
 
   #Flat SNR: SNR_min / SNR
   pulses.Pulse[gb.Sigma.min() / pulses.Sigma > FILTERS['flat_SNR']] += 1   #Da testare meglio: alcune volte elimina i pulse
@@ -109,7 +109,14 @@ def local_filters(pulses,events):
       monotonic(ev.Sigma) < FILTERS['monotonic'],
       sigma_jumps(ev.Sigma) > FILTERS['sigma_jumps'],
       fit1_brightest(ev) < FILTERS['fit1_brightest'],
-      extreme_min(ev.Sigma) > FILTERS['extreme_min']))
+      extreme_min(ev.Sigma) > FILTERS['extreme_min'],
+      crosses(ev.Sigma)))
+  
+  #Remove pulses intersecting half the maximum SNR different than 2 or 4 times
+  def crosses(sig):  #TO TEST
+    diff = sig - (sig.max() + sig.min()) / 2.
+    count = np.count_nonzero(np.diff(np.sign(diff)))
+    return (count != 2) & (count != 4)
   
   def extreme_min(ev):
     ev_len = ev.shape[0] / 4

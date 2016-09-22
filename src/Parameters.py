@@ -38,7 +38,7 @@ FILTERS = {
   'duration_central': 1,
   'holes': 0.75,
   'variance': 0.06,
-  'flat_duration': 0.9,
+  'flat_duration': 1.68,
   'm': 23.684210526315788,
   'q': -60.86842105263156,
   'flat_SNR': 0.78,

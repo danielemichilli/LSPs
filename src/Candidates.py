@@ -22,7 +22,6 @@ def candidates(pulses,idL):
   
     #Unify the same repeated candidates in different beams
     cands.sort(['Sigma','Rank'],ascending=[1,0],inplace=True)
-    new_cand = cands.index
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
         
@@ -72,9 +71,11 @@ def period(x):
   if x.size<=1: return 0
   else: return Utilities.rrat_period(x)[0]
 
+
 def period_err(x):
   if x.size<=1: return 0
   else: return Utilities.rrat_period(x)[1]
+
 
 def candidates_generator(pulses,idL):
   pulses['Period'] = pulses.Time

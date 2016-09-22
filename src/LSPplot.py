@@ -264,9 +264,7 @@ def puls_SNR_DM(ax, event):
 
 
 def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
-  if inc == 12:
-    n_beams = 61
-    
+  if inc == 12:    
     ra = np.array([ 
           499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
           742,  620,  499,  379,  257,  254,  251,  375,  499,  625,  750,
@@ -282,8 +280,6 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
           375,  250,  187,  125,   62,    0,   62,  125,  187,  250,  375,
           500,  625,  750,  812,  875,  937])
   else:
-    n_beams = 128
-
     ra = np.array([ 497,  497,  582,  582,  497,  417,  417,  497,  582,  668,  668,
         668,  582,  497,  417,  331,  331,  331,  417,  497,  582,  668,
         748,  748,  748,  748,  668,  582,  497,  417,  331,  251,  251,
@@ -309,6 +305,7 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
          42,   83,  125,  166,  208,  249,  333,  416,  499,  583,  666,
         750,  791,  833,  874,  916,  957])
   
+  n_beams = ra.size
   dDM = 0.4
   dm_l = float(puls.DM - dDM/2. - 0.001)
   dm_h = float(puls.DM + dDM/2. + 0.001)

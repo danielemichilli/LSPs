@@ -1,10 +1,7 @@
 import numpy as np
 import pandas as pd
 
-import C_Funct
-import RFIexcision
 from Parameters import *
-import Utilities
 
 
 def Generator(events):

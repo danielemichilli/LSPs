@@ -80,6 +80,7 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False,mask=False):
     return
   
   bin_start = np.int(bin_start)
+  duration = np.int(duration)
     
   if isinstance(fits,str):
     fits = pyfits.open(fits,memmap=True)
