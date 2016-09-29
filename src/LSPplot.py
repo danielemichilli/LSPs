@@ -102,7 +102,7 @@ def puls_plot(pdf, puls, ev, idL, i, inc=12):
     plot_not_valid(ax6)
   flag = puls_dedispersed(ax7, puls, idL, inc)
   if flag == -1:
-  plot_not_valid(ax7)
+    plot_not_valid(ax7)
 
   plt.tight_layout()
   pdf.savefig(bbox_inches='tight',dpi=200)
