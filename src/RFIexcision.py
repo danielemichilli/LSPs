@@ -94,7 +94,7 @@ def local_filters(pulses,events):
     s2.iloc[0] = 0
     s = pd.concat((s1[s1<s2],s2[s2<=s1]))
     ev = ev[s>-5]
-    if ev.shape[0] < 5: return 1
+    if ev.shape[0] < 5: return RFI_percent
     return np.sum((
       np.mean(np.fabs( ev.Sigma - ev.Sigma.shift(-1) ) / ev.Sigma) < FILTERS['sigma_scatter'],
       (np.mean(np.abs(ev.Time - ev.Time.shift(1))) > FILTERS['cum_scatter']) |
@@ -113,10 +113,10 @@ def local_filters(pulses,events):
       crosses(ev.Sigma)))
   
   #Remove pulses intersecting half the maximum SNR different than 2 or 4 times
-  def crosses(sig):  #TO TEST
+  def crosses(sig):  #TO TEST, probably better to smooth over three events
     diff = sig - (sig.max() + sig.min()) / 2.
     count = np.count_nonzero(np.diff(np.sign(diff)))
-    return (count != 2) & (count != 4)
+    return (count != 2) & (count != 4) & (count != 6) & (count != 8)
   
   def extreme_min(ev):
     ev_len = ev.shape[0] / 4

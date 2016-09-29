@@ -100,9 +100,8 @@ def puls_plot(pdf, puls, ev, idL, i, inc=12):
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  #dir_ts = TMP_FOLDER.format(idL) + '/timeseries/{}_SAP{:.0f}_BEAM{:.0f}_DM{{0:.2f}}.dat'.format(idL, puls.SAP, puls.BEAM)
-  #flag = puls_dedispersed(ax7, puls, dir_ts, idL, inc)
-  #if flag == -1:
+  flag = puls_dedispersed(ax7, puls, idL, inc)
+  if flag == -1:
   plot_not_valid(ax7)
 
   plt.tight_layout()
@@ -421,7 +420,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
 
 
 
-def load_ts(puls, filename, idL):
+def load_ts(puls, idL, filename):
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES  #Theoretical factor between time and DM
 
   bin_peak = int(puls['Sample'])
@@ -453,11 +452,12 @@ def load_ts(puls, filename, idL):
 
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
-  out_dir = TMP_FOLDER.format(idL) + '/timeseries'
+  out_dir = TMP_FOLDER.format(idL) + '/timeseries/{}'.format(idL)
+  if not os.path.isdir(TMP_FOLDER.format(idL) + '/timeseries'): os.makedirs(TMP_FOLDER.format(idL) + '/timeseries')
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
     if not os.path.isfile(filename.format(DM)):
-      error = subprocess.call(['sh', '/home/danielem/spdspsr_DANIELE.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), '1', out_dir], stdout=FNULL, stderr=FNULL)
+      error = subprocess.call(['sh', '/home/sanidas/lotaasgit/LOTAAS-Scripts/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
     
     try:
       ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
@@ -466,47 +466,35 @@ def load_ts(puls, filename, idL):
 
     data[j] = ts
     
-  params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': duration, 'DM_range': DM_range, 'k': k}
+  params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': duration, 'DM_min': DM_range[0], 'DM_max': DM_range[-1], 'k': k}
   
   return data, params
 
 
 
-def puls_dedispersed(ax, puls, filename, idL, pulseN=False, inc=12):
+def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
   raw_dir = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
-    
-  data, params = load_ts(puls, filename, idL)
   
+  filename = TMP_FOLDER.format(idL) + '/timeseries/{}/manual_fold_DM{{0:.2f}}.dat'.format(idL)
+  data, params = load_ts(puls, idL, filename)
+
   #Image plot
   ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_range'][0], params['DM_range'][-1]])
   ax.set_ylim((params['DM_range'][0], params['DM_range'][-1]))
   ax.set_ylabel('DM (pc/cc)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
-  #Time axis
-  ax2 = ax.twiny()
-  x = np.arange(params['bins_out'])
-  ax2.set_xlim((0,params['bins_out']))
-  xticks_pos = x[::(params['bins_out'])/6]
-  xticks_val = (xticks_pos + params['bin_start']) * RES
-  ax2.set_xticks(xticks_pos, ["%.3f" % n for n in xticks_val])
-  ax2.set_xlabel('Time (s)')
-  
   #Plot contours
+  x = np.arange(params['bins_out'])
   y = (x - params['bins_out'] / 2.) / params['k'] + puls.DM
-  ax2.plot(x, y,'r--')
-  ax2.axvline((params['bins_out'] - params['scrunch_fact']) / 2., color='r', ls='--')
+  ax.plot(x, y,'r--')
+  ax.axvline((params['bins_out'] - params['scrunch_fact']) / 2., color='r', ls='--')
 
-  #Sample axis
-  ax2.set_xlim((0,params['bins_out']))
-  ax2.set_xticks(xticks_pos, ((xticks_pos + params['bin_start']) % 10000).tolist() )
-  ax2.set_xlabel('Sample - {}0000'.format(params['bin_start'] / 10000))
-  
   #Inset profile
   def inset(filename, params, puls):
     nPlotBins = 20
@@ -522,11 +510,27 @@ def puls_dedispersed(ax, puls, filename, idL, pulseN=False, inc=12):
       ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: x = ts = None
     return x, ts
-  
   x, ts = inset(filename, params, puls)
-  ax.axis([.7, .7, .15, .15])
-  ax.plot(x, ts, 'k')
-  ax.set_xticks([])
-  ax.set_yticks([])
+  
+  ax3 = plt.axes([.6, .6, .3, .3])
+  ax3.plot(x1, ts, 'k')
+  ax3.set_xticks([])
+  ax3.set_yticks([])
+
+  #Time axis
+  ax.set_xlim((0,params['bins_out']))
+  labels = ax.get_xticks().tolist()
+  new_labels = ["%.3f" % (n + params['bin_start'] * RES) for n in labels]
+  ax.set_xticklabels(new_labels)
+  ax.set_xlabel('Time (s)')
+
+  #Sample axis
+  ax2 = ax.twiny()
+  ax2.set_xlim((0,params['bins_out']))
+  labels = ax.get_xticks().tolist()
+  new_labels = [int((n + params['bin_start']) % 100000) for n in labels]
+  ax2.set_xticklabels(new_labels)
+  ax2.set_xlabel('Sample - {}00000'.format(params['bin_start'] / 100000))
+  
 
   return 0
