@@ -457,7 +457,7 @@ def load_ts(puls, idL, filename):
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
     if not os.path.isfile(filename.format(DM)):
-      error = subprocess.call(['sh', '/home/sanidas/lotaasgit/LOTAAS-Scripts/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
+      error = subprocess.call(['sh', '/home/danielem/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
     
     try:
       ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
