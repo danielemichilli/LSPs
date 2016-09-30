@@ -513,7 +513,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   x, ts = inset(filename, params, puls)
   
   ax3 = plt.axes([.6, .6, .3, .3])
-  ax3.plot(x1, ts, 'k')
+  ax3.plot(x, ts, 'k')
   ax3.set_xticks([])
   ax3.set_yticks([])
 
