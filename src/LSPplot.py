@@ -484,8 +484,8 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   data, params = load_ts(puls, idL, filename)
 
   #Image plot
-  ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_min'], params['DM_max'])
-  ax.set_ylim((params['DM_min'], params['DM_max'))
+  ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_min'], params['DM_max']])
+  ax.set_ylim((params['DM_min'], params['DM_max']))
   ax.set_ylabel('DM (pc/cc)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
