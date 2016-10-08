@@ -31,7 +31,7 @@ def parser():
   #---------------------
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
-  parser.add_argument('idL', nargs=1, help='Observation ID')
+  parser.add_argument('idL' help='Observation ID')
   parser.add_argument('-folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
@@ -50,34 +50,34 @@ def parser():
 
 
 
-def create_DB(folder,idL,args):
-  try: shutil.rmtree(WRK_FOLDER.format(idL))
+def create_DB(args):
+  try: shutil.rmtree(WRK_FOLDER.format(args.idL))
   except OSError: pass
-  os.makedirs(WRK_FOLDER.format(idL))
-  os.makedirs('{}/sp'.format(WRK_FOLDER.format(idL)))
-  os.makedirs('{}/sp/candidates'.format(WRK_FOLDER.format(idL)))
-  try: shutil.rmtree(TMP_FOLDER.format(idL))
+  os.makedirs(WRK_FOLDER.format(args.idL))
+  os.makedirs('{}/sp'.format(WRK_FOLDER.format(args.idL)))
+  os.makedirs('{}/sp/candidates'.format(WRK_FOLDER.format(args.idL)))
+  try: shutil.rmtree(TMP_FOLDER.format(args.idL))
   except OSError: pass
-  os.makedirs(TMP_FOLDER.format(idL))
-  try: shutil.rmtree('{}{}/sp'.format(folder,idL))
+  os.makedirs(TMP_FOLDER.format(args.idL))
+  try: shutil.rmtree('{}{}/sp'.format(args.folder,args.idL))
   except OSError: pass
-  os.makedirs('{}{}/sp'.format(folder,idL))
+  os.makedirs('{}{}/sp'.format(args.folder,args.idL))
   
   #ALERTS = 0
-  #if os.path.exists('{}{}/sp'.format(folder,idL)): 
-    #if os.path.exists('{}{}/sp/ALERTS'.format(folder,idL)):
+  #if os.path.exists('{}{}/sp'.format(args.folder,args.idL)): 
+    #if os.path.exists('{}{}/sp/ALERTS'.format(args.folder,args.idL)):
        #shutil.move('{}{}/sp/ALERTS','{}{}')
        #ALERTS = 1
-    #shutil.rmtree('{}{}/sp'.format(folder,idL))
-  #os.makedirs('{}{}/sp/diagnostics'.format(folder,idL))
-  #os.makedirs('{}{}/sp/candidates'.format(folder,idL))
+    #shutil.rmtree('{}{}/sp'.format(args.folder,args.idL))
+  #os.makedirs('{}{}/sp/diagnostics'.format(args.folder,args.idL))
+  #os.makedirs('{}{}/sp/candidates'.format(args.folder,args.idL))
   #if ALERTS == 1:
     #shutil.move('{}{}/ALERTS','{}{}/sp')
   
   TIME_FORMAT = '%Y/%m/%d - %H:%M:%S'
   logformat = '[%(asctime)s] - %(message)s'
   formatter = logging.Formatter(fmt=logformat, datefmt=TIME_FORMAT) 
-  fh = logging.FileHandler('{}{}/sp/processing.log'.format(folder,idL))
+  fh = logging.FileHandler('{}{}/sp/processing.log'.format(args.folder,args.idL))
   fh.setLevel(logging.WARNING)
   fh.setFormatter(formatter)
   logging.getLogger('').addHandler(fh)
@@ -100,19 +100,19 @@ def create_DB(folder,idL,args):
   
   try:
     time0 = time.time()
-    SPclean.obs_events(folder,idL,conf=args.conf)
+    SPclean.obs_events(args)
     logging.warning("The DataBase has been created.")
     logging.warning("Time spent: %.2f s"%(time.time() - time0))
-    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(idL)),'{}/{}/sp/products'.format(folder,idL))
-    shutil.rmtree(WRK_FOLDER.format(idL))
-    shutil.rmtree(TMP_FOLDER.format(idL))
+    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.idL)),'{}/{}/sp/products'.format(args.folder,args.idL))
+    shutil.rmtree(WRK_FOLDER.format(args.idL))
+    shutil.rmtree(TMP_FOLDER.format(args.idL))
     
   except:
     logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
-    with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
-      f.write("ATTENTION! Error in processing obs. {}\n".format(idL))
-    shutil.rmtree(WRK_FOLDER.format(idL))
-    shutil.rmtree(TMP_FOLDER.format(idL))
+    with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.idL),'a') as f:
+      f.write("Unknown error arised in processing the observation \nConsider to use the -debug option\n")
+    shutil.rmtree(WRK_FOLDER.format(args.idL))
+    shutil.rmtree(TMP_FOLDER.format(args.idL))
     
   return
     
@@ -134,21 +134,19 @@ def main():
       RAW_FOLDER += 'confirmations/'
     folder = OBS_FOLDER
     
-  idL = args.idL[0] #os.path.basename(os.getcwd())
-
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isdir('{}{}/sp'.format(folder,idL)):
-    create_DB(folder,idL,args)
+  if not os.path.isdir('{}{}/sp'.format(folder,args.idL)):
+    create_DB(args)
     
   #Otherwise create a new DataBase
   elif args.w:
     logging.info("\nA new DataBase will be created.\nATTENTION: The old DataBase will be deleted!")
 
     if args.pipeline>logging.INFO:
-      create_DB(folder,idL,args)
+      create_DB(args)
 
     elif raw_input("A DataBase is already present.\nDo you want to overwrite it? [y/n] ") == 'y':
-      create_DB(folder,idL,args)
+      create_DB(args)
 
   else:
     logging.info("The DataBase already exists!\nUse the command LSPplot to plot it or the -w option to overwrite it.")

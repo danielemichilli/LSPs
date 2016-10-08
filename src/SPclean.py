@@ -27,17 +27,17 @@ from Parameters import *
 from Paths import *
 
 
-def obs_events(folder,idL,load_events=False,conf=False):
+def obs_events(args):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
-  if conf: inc = 0
+  if args.conf: inc = 0
   else: inc = 12
   
-  def file_list(folder,idL):
+  def file_list(args.folder,args.idL):
     file_list = []
     file_names = []
-    for root, dirnames, filenames in os.walk(folder+idL):
+    for root, dirnames, filenames in os.walk(args.folder+args.idL):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
           logging.warning("ATTENTION!: Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename))
@@ -50,21 +50,21 @@ def obs_events(folder,idL,load_events=False,conf=False):
     
     return file_list
   
-  file_list = file_list(folder,idL)
+  file_list = file_list(args.folder,args.idL)
     
-  pulses = pulses_parallel(idL,file_list)
+  pulses = pulses_parallel(args.idL,file_list,args.folder)
   
-  def merge_temp_databases(idL,store,file):
-    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
-    meta_data = pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'meta_data')
+  def merge_temp_databases(args.idL,store,file):
+    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(args.idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
+    meta_data = pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(args.idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
     store.append('meta_data',meta_data)    
-    os.remove('{}/{}'.format(TMP_FOLDER.format(idL),file))
+    os.remove('{}/{}'.format(TMP_FOLDER.format(args.idL),file))
     
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'w')
-  for file in os.listdir(TMP_FOLDER.format(idL)):
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'w')
+  for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.tmp'):
-      merge_temp_databases(idL,store,file)
+      merge_temp_databases(args.idL,store,file)
   store.close()
   
   if pulses.empty: 
@@ -77,6 +77,12 @@ def obs_events(folder,idL,load_events=False,conf=False):
   #TO BE TESTED
 
   '''
+  # Nuove idee: 
+  # filtro 1 - rimuove pulses in cui, escludedno i beam vicini, ci sono piu di 1/10 di pulses in altri beam in dt, dDM
+  # filtro 2 - rimuove pulses in cui ci sono piu' di 1/10 di beams aventi la meta' del SNR del beam con il massimo segnale entro dt, dDM
+  # filtro 3 - raggruppa i pulses vicini in t,DM e applica statistiche simili agli eventi con i pulses. nel raggruppamento, se ci sono due pulses entro dt,dDM si raggruppa il piu' vicino
+  
+  
   #Remove time-spans affectd by RFI
   pulses.sort_index(inplace=True)
   pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM == inc])] += 1
@@ -93,9 +99,9 @@ def obs_events(folder,idL,load_events=False,conf=False):
   '''
   
   pulses.Candidate = pulses.Candidate.astype(np.int32)
-  cands = Candidates.candidates(pulses,idL)
+  cands = Candidates.candidates(pulses,args.idL)
   
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'a')
+  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'a')
   store.append('pulses',pulses)
   if not cands.empty:
     cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
@@ -106,94 +112,103 @@ def obs_events(folder,idL,load_events=False,conf=False):
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     #Produce the output
-    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'meta_data')
-    LSPplot.output(idL, pulses, meta_data, cands, inc=inc)    
+    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'meta_data')
+    LSPplot.output(args.idL, pulses, meta_data, cands, inc=inc)    
     
     #Store the best candidates online
-    try: Internet.upload(cands,idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(idL)))
+    try: Internet.upload(cands,args.idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(args.idL)))
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
-      with open('/home/danielem/LOTAAS_ERRORS.txt','a') as f:
-        f.write("ATTENTION! Connession problem with obs. {}\n".format(idL))
+      with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.args.idL),'a') as f:
+        f.write("Connession problem \nConsider to run Upload.py script\n")
 
   return
 
 
-def pulses_parallel(idL,dirs):    
+def pulses_parallel(idL,dirs,folder):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
   pool = mp.Pool(CPUs)
-  results = [pool.apply_async(lists_creation, args=(idL,dirs[i*dirs_range:(i+1)*dirs_range])) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
+  results = [pool.apply_async(lists_creation, args=(idL,dirs[i*dirs_range:(i+1)*dirs_range],folder)) for i in range(CPUs) if len(dirs[i*dirs_range:(i+1)*dirs_range]) > 0]
   pool.close()
   pool.join()
   return pd.concat([p.get() for p in results])
 
 
-def lists_creation(idL,dirs):
+def lists_creation(idL,dirs,folder):
   result = pd.DataFrame()
   
   for directory in dirs:
-    try:
-      def coord_from_path(directory):
-        elements = os.path.basename(directory).split('_')
-        sap = int(re.findall('\d', elements[1])[0])
-        beam = int(re.findall('\d+', elements[2])[0])
-        return sap, beam
-      
-      sap, beam = coord_from_path(directory)
+    def coord_from_path(directory):
+      elements = os.path.basename(directory).split('_')
+      sap = int(re.findall('\d', elements[1])[0])
+      beam = int(re.findall('\d+', elements[2])[0])
+      return sap, beam
+    sap, beam = coord_from_path(directory)
 
+    try:
       #Import the events
       events, meta_data = Events.Loader(directory,sap,beam)
       pulses = pd.DataFrame()
     
       if not events.empty:
-        #Correct for the time misalignment of events
-        events.sort(['DM','Time'],inplace=True)
-        events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
-        
-        #Group the events
-        events.sort(['DM','Time'],inplace=True)
-        Events.Group(events)
-        
+        #Store the events        
         events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
         meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
-
-        #Apply the thresholds to the events
-        events = events[events.Pulse>=0]
-        events = Events.Thresh(events)  #Strana posizione: come affects i pulses?
-
-        #Generate the pulses
-        pulses = Pulses.Generator(events)
-        pulses = pulses[pulses.Sigma >= 6.5]
-        events = events[events.Pulse.isin(pulses.index)]
-              
-        #Apply global RFI filters to the pulses
-        RFIexcision.global_filters(pulses,events)
-        pulses = pulses[pulses.Pulse <= RFI_percent]
-
-        #Set a maximum amout of pulses to prevent bad observations to block the pipeline
-        pulses.sort('Sigma',ascending=False,inplace=True)
-        pulses = pulses.iloc[:3e4]
-        events = events[events.Pulse.isin(pulses.index)]
         
-        #Apply local RFI filters to the pulses
-        RFIexcision.local_filters(pulses,events)
-        pulses = pulses[pulses.Pulse <= RFI_percent]
-        events = events[events.Pulse.isin(pulses.index)]
-        
-        #A set of known pulses is necessary
-        #Apply multimoment analysis to the pulses
-        #RFIexcision.multimoment(pulses,idL)
-        #pulses = pulses[pulses.Pulse <= RFI_percent]
-        #events = events[events.Pulse.isin(pulses.index)]
+        pulses = pulses_from_events(events)
         
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
+      with open('{}/{}/SP_ERROR.txt'.format(folder,idL),'a') as f:
+        f.write("SAP {} - BEAM {} not processed due to some unknown error\n".format(sap, beam))
       pulses = pd.DataFrame()
       
     result = pd.concat((pulses,result))
   
   return result
+
+
+def pulses_from_events(events):
+  #Correct for the time misalignment of events
+  events.sort(['DM','Time'],inplace=True)
+  events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
+
+  #Apply the thresholds to the events
+  events = Events.Thresh(events)
+  
+  #Group the events
+  events.sort(['DM','Time'],inplace=True)
+  Events.Group(events)
+  events = events[events.Pulse>=0]
+
+  #Generate the pulses
+  pulses = Pulses.Generator(events)
+  pulses = pulses[pulses.Sigma >= 6.5]
+        
+  #Apply global RFI filters to the pulses
+  events = events[events.Pulse.isin(pulses.index)]
+  RFIexcision.global_filters(pulses,events)
+  pulses = pulses[pulses.Pulse <= RFI_percent]
+
+  #Set a maximum amout of pulses to prevent bad observations to block the pipeline
+  events = events[events.Pulse.isin(pulses.index)]
+  pulses.sort('Sigma',ascending=False,inplace=True)
+  pulses = pulses.iloc[:3e4]
+  
+  #Apply local RFI filters to the pulses
+  events = events[events.Pulse.isin(pulses.index)]
+  RFIexcision.local_filters(pulses,events)
+  pulses = pulses[pulses.Pulse <= RFI_percent]
+  
+  #A set of known pulses is necessary
+  #Apply multimoment analysis to the pulses
+  #events = events[events.Pulse.isin(pulses.index)]
+  #RFIexcision.multimoment(pulses,idL)
+  #pulses = pulses[pulses.Pulse <= RFI_percent]
+  #events = events[events.Pulse.isin(pulses.index)]
+
+  return pulses
 
