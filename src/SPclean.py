@@ -171,15 +171,17 @@ def lists_creation(idL,dirs,folder):
   return result
 
 
-def pulses_from_events(events):
+def pulses_from_events(events, new_version=True):
+  #new_version is for compatibility
+  
   #Correct for the time misalignment of events
-  events.sort(['DM','Time'],inplace=True)
-  events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
+  if new_version: events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
 
   #Apply the thresholds to the events
   events = Events.Thresh(events)
   
   #Group the events
+  if not new_version: events.Pulse = np.int32(0)
   events.sort(['DM','Time'],inplace=True)
   Events.Group(events)
   events = events[events.Pulse>=0]
