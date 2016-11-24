@@ -34,10 +34,10 @@ def obs_events(args):
   if args.conf: inc = 0
   else: inc = 12
   
-  def file_list(args.folder,args.idL):
+  def file_list(folder, idL):
     file_list = []
     file_names = []
-    for root, dirnames, filenames in os.walk(args.folder+args.idL):
+    for root, dirnames, filenames in os.walk(folder+idL):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
           logging.warning("ATTENTION!: Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename))
