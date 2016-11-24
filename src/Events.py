@@ -104,7 +104,7 @@ def TimeAlign(Time,DM):
   
   # Quantifies the misalignment for a broad-band pulse
   # Only the extreme frequencies are taken into account
-  k = 4149. #s-1
+  k = 4148.808 #s-1
   delay = k * (F_MIN**-2 - F_MAX**-2)
 
   DM_steps = np.array((

@@ -158,7 +158,7 @@ def lists_creation(idL,dirs,folder):
         events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
         meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
         
-        pulses = pulses_from_events(events)
+        pulses = pulses_from_events(events, idL, sap, beam)
         
     except:
       logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
@@ -171,39 +171,31 @@ def lists_creation(idL,dirs,folder):
   return result
 
 
-def pulses_from_events(events, new_version=True):
-  #new_version is for compatibility
-  
+def pulses_from_events(events, idL, sap, beam):
   #Correct for the time misalignment of events
-  if new_version: events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
+  events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
+  events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
 
   #Apply the thresholds to the events
   events = Events.Thresh(events)
   
   #Group the events
-  if not new_version: events.Pulse = np.int32(0)
-  events.sort(['DM','Time'],inplace=True)
+  events.sort(['DM','Time'],inplace=True) #Needed by Group
   Events.Group(events)
   events = events[events.Pulse>=0]
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
   pulses = pulses[pulses.Sigma >= 6.5]
-        
-  #Apply global RFI filters to the pulses
-  events = events[events.Pulse.isin(pulses.index)]
-  RFIexcision.global_filters(pulses,events)
-  pulses = pulses[pulses.Pulse <= RFI_percent]
 
   #Set a maximum amout of pulses to prevent bad observations to block the pipeline
-  events = events[events.Pulse.isin(pulses.index)]
   pulses.sort('Sigma',ascending=False,inplace=True)
   pulses = pulses.iloc[:3e4]
-  
-  #Apply local RFI filters to the pulses
   events = events[events.Pulse.isin(pulses.index)]
-  RFIexcision.local_filters(pulses,events)
-  pulses = pulses[pulses.Pulse <= RFI_percent]
+  
+  #Apply RFI filters to the pulses
+  pulses = RFIexcision.sift_pulses(pulses, events, idL, sap, beam)
+  
   
   #A set of known pulses is necessary
   #Apply multimoment analysis to the pulses

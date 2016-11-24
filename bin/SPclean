@@ -31,7 +31,7 @@ def parser():
   #---------------------
 
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
-  parser.add_argument('idL' help='Observation ID')
+  parser.add_argument('idL', help='Observation ID')
   parser.add_argument('-folder', nargs=1, help='Path of the folder containig the observation')
   parser.add_argument('-pl','--pipeline',help="Automate the procedure",action='store_const',const=logging.ERROR,default=logging.INFO)
   parser.add_argument('-w', help="Force the creation of a DataBase also if another is already present.",action='store_true')
