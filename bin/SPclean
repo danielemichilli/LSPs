@@ -125,17 +125,16 @@ def main():
   if not args.debug: warnings.filterwarnings("ignore")
   
 
-  if args.folder: folder = args.folder[0] + '/'
-  else: 
+  if not args.folder: 
     if args.conf:
       global OBS_FOLDER
       global RAW_FOLDER
       OBS_FOLDER += 'confirmations/'
       RAW_FOLDER += 'confirmations/'
-    folder = OBS_FOLDER
+    args.folder = OBS_FOLDER
     
   #If the DataBase exists and the -w option is abstent plots it
-  if not os.path.isdir('{}{}/sp'.format(folder,args.idL)):
+  if not os.path.isdir(os.path.join(args.folder, args.idL, 'sp')):
     create_DB(args)
     
   #Otherwise create a new DataBase
