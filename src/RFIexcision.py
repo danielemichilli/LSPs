@@ -34,7 +34,7 @@ def sift_pulses(pulses, events, idL, sap, beam):
   
 
 def select_real_pulses(filename, out_name):
-  subprocess.call(['java', '-jar', 'ML.jar', '-v', '-m{}'.format(MODEL_FILE), '-p{}'.format(filename), '-o{}'.format(out_name), '-a1'])
+  subprocess.call(['java', '-jar', 'ML.jar', '-v', '-m{}'.format(Paths.MODEL_FILE), '-p{}'.format(filename), '-o{}'.format(out_name), '-a1'])
   pulses_list = np.genfromtxt(out_name, dtype=int)
   pulses = pulses.loc[pulses_list]
   return pulses
