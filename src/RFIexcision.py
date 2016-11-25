@@ -262,7 +262,7 @@ def filters(pulses, events, filename):
   #values[idx] = (gb.Sigma.min() / DM_extremes_min).astype(np.float16)
   #idx += 1
 
-  values[idx] = '?%' + values.index.astype(str)
+  values[idx] = '?%' + np.array(values.index.astype(str))
 
 
   features_list = ''
