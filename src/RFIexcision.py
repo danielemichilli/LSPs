@@ -25,17 +25,19 @@ from Parameters import *
 
 
 def sift_pulses(pulses, events, idL, sap, beam):
-  arff_name = '{}/thresholds_{}_{}.arff'.format(Paths.TMP_FOLDER.format(idL), sap, beam)
-  filters(pulses, events, arff_name)
+  arff_basename = '{}/thresholds_{}_{}'.format(Paths.TMP_FOLDER.format(idL), sap, beam)
+  filters(pulses, events, arff_basename+'.arff')
   ML_predict = os.path.join(Paths.TMP_FOLDER.format(idL), 'ML_predict.txt')  
-  pulses = select_real_pulses(arff_name, ML_predict)
+  pulses = select_real_pulses(arff_basename, ML_predict)
   return pulses
   
   
 
-def select_real_pulses(filename, out_name):
-  subprocess.call(['java', '-jar', Paths.CLASSIFIER, '-v', '-m{}'.format(Paths.MODEL_FILE), '-p{}'.format(filename), '-o{}'.format(out_name), '-a1'])
-  pulses_list = np.genfromtxt(out_name, dtype=int)
+def select_real_pulses(basename, out_name):
+  subprocess.call(['java', '-jar', Paths.CLASSIFIER, '-v', '-m{}'.format(Paths.MODEL_FILE), '-p{}'.format(basename+'.arff'), '-o{}'.format(basename+'.positive'), '-a1'])
+  os.remove(basename+'.arff')
+  pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
+  os.remove(basename+'.positive')
   pulses = pulses.loc[pulses_list]
   return pulses
 
