@@ -27,7 +27,7 @@ from Parameters import *
 def sift_pulses(pulses, events, idL, sap, beam):
   arff_name = '{}/thresholds_{}_{}.arff'.format(Paths.TMP_FOLDER.format(idL), sap, beam)
   filters(pulses, events, arff_name)
-  ML_predict = os.path.join(TMP_FOLDER.format(idL), 'ML_predict.txt')  
+  ML_predict = os.path.join(Paths.TMP_FOLDER.format(idL), 'ML_predict.txt')  
   pulses = select_real_pulses(arff_name, ML_predict)
   return pulses
   
