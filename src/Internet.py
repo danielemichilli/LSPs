@@ -14,8 +14,8 @@ from Paths import *
 import Parameters
 
 
-def upload(cands,idL,folder):
-  upload_sheet(cands,idL)
+def upload(cands,idL,folder,meta_data):
+  upload_sheet(cands,idL,meta_data)
   upload_plots(idL,folder)
   return
 
@@ -39,7 +39,7 @@ def upload_sheet(cands,idL):
   gc = gspread.authorize(credentials)
   sh = gc.open("LSP_candidates")
   
-  wks = sh.worksheet("Candidates")
+  wks = sh.worksheet("new_classifier")
   col_size = wks.col_count
   col_size_letter = chr(col_size-1 + ord('A'))
   row_size = wks.row_count
@@ -70,14 +70,13 @@ def upload_sheet(cands,idL):
   git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
   vers = subprocess.check_output(['git','--git-dir',git_folder,'describe','--tags','--abbrev=0','--always']).strip()
   for idx,cand in cands.iterrows():
-    if cand.N_pulses == 1: kind = 'SP'
-    else: kind = 'RC'
+    meta = meta_data[(meta_data.SAP == cand.SAP) & (meta_data.BEAM == cand.BEAM)]
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".pdf");"Plot")'.format(idL)
-    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, kind, cand.N_pulses, cand.DM, cand.Rank, '', '', 'ToProcess', '', link]    
+    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, meta.RA[0], meta.DEC[0], cand.DM, cand.Rank, 'ToProcess', '', link]    
     wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet
-  wks = sh.worksheet("Candidates")
+  wks = sh.worksheet("new_classifier")
   col_size = wks.col_count
   col_size_letter = chr(col_size-1 + ord('A'))
   row_size = wks.row_count  

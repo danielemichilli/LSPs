@@ -116,7 +116,7 @@ def obs_events(args):
     LSPplot.output(args.idL, pulses, meta_data, cands, inc=inc)    
     
     #Store the best candidates online
-    try: Internet.upload(cands,args.idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(args.idL)))
+    try: Internet.upload(cands,args.idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(args.idL)),meta_data)
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
       with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.args.idL),'a') as f:
