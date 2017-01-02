@@ -43,7 +43,7 @@ def select_real_pulses(pulses,basename, out_name):
 
 
 
-def filters(pulses, events, filename, validation=False):  
+def filters(pulses, events, filename, validation=False, header=True):  
   values = pd.DataFrame(dtype=np.float16)
   idx = 0
 
@@ -179,15 +179,17 @@ def filters(pulses, events, filename, validation=False):
   if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)
   else: values[idx] = '?%' + np.array(values.index.astype(str))
   
-  features_list = ''
-  for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
-  header = """@relation Training_v3
-  {}
-  @attribute class {{0,1}}
-  @data
-  """.format(features_list[:-1])
-  with open(filename, 'w') as f:
-    f.write(header)
+  if header:
+    features_list = ''
+    for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
+    header = """@relation Training_v3
+    {}
+    @attribute class {{0,1}}
+    @data
+    """.format(features_list[:-1])
+    with open(filename, 'w') as f:
+      f.write(header)
+  
   values.to_csv(filename, sep=',', float_format='%10.5f', header=False, index=False, mode='a')
 
   return

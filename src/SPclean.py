@@ -27,7 +27,7 @@ from Parameters import *
 from Paths import *
 
 
-def obs_events(args):
+def obs_events(args, debug=False):
   #----------------------------------------------------------
   # Creates the clean table for one observation and stores it
   #----------------------------------------------------------
@@ -52,7 +52,12 @@ def obs_events(args):
   
   file_list = file_list(args.folder,args.idL)
     
-  pulses = pulses_parallel(args.idL,file_list,args.folder)
+  if debug:
+    CPUs = mp.cpu_count()
+    dirs_range = int(np.ceil(len(file_list)/float(CPUs)))
+    results = [lists_creation(args.idL,file_list[i*dirs_range:(i+1)*dirs_range],args.folder) for i in range(CPUs) if len(file_list[i*dirs_range:(i+1)*dirs_range]) > 0]
+    pulses = pd.concat(results)
+  else: pulses = pulses_parallel(args.idL,file_list,args.folder)
   
   def merge_temp_databases(idL,store,file):
     store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
@@ -62,10 +67,29 @@ def obs_events(args):
     os.remove('{}/{}'.format(TMP_FOLDER.format(idL),file))
     
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'w')
+  features_list = ''
+  for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
+  header = """@relation Training_v3
+  {}
+  @attribute class {{0,1}}
+  @data
+  """.format(features_list[:-1])
+  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(idL)), 'w'):
+  thresholds.write(header)
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.tmp'):
       merge_temp_databases(args.idL,store,file)
+    if file.endswith('.arff_tmp'):
+      with open(file, 'r') as f:
+        thresholds.write(f.read())
+      os.remove(file)
+  thresholds.close()
   store.close()
+  
+  #Select positive pulses
+  ML_predict = os.path.join(TMP_FOLDER.format(idL), 'ML_predict.txt')  
+  pulses = select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(idL)), ML_predict)
+  
   
   if pulses.empty: 
     logging.warning("No pulse detected!")
@@ -149,16 +173,7 @@ def lists_creation(idL,dirs,folder):
     sap, beam = coord_from_path(directory)
 
     #try:
-    #Import the events
-    events, meta_data = Events.Loader(directory,sap,beam)
-    pulses = pd.DataFrame()
-  
-    if not events.empty:
-      #Store the events        
-      events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
-      meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
-      
-      pulses = pulses_from_events(events, idL, sap, beam)
+      #pulses = load_pulses(idL, directory, sap, beam)
       
     #except:
       #logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
@@ -166,10 +181,24 @@ def lists_creation(idL,dirs,folder):
         #f.write("SAP {} - BEAM {} not processed due to some unknown error\n".format(sap, beam))
       #pulses = pd.DataFrame()
       
-    result = pd.concat((pulses,result))
+    result = pd.concat((load_pulses(idL, directory, sap, beam),result))
   
   return result
 
+
+def load_pulses(idL, directory, sap, beam):
+  #Load the events
+  events, meta_data = Events.Loader(directory,sap,beam)
+  pulses = pd.DataFrame()
+  
+  if events.empty: return pd.DataFrame()
+
+  #Store the events        
+  events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+  meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
+
+  return pulses_from_events(events, idL, sap, beam)
+  
 
 def pulses_from_events(events, idL, sap, beam):
   #Correct for the time misalignment of events
@@ -194,8 +223,9 @@ def pulses_from_events(events, idL, sap, beam):
   events = events[events.Pulse.isin(pulses.index)]
   
   #Apply RFI filters to the pulses
-  pulses = RFIexcision.sift_pulses(pulses, events, idL, sap, beam)
-  
+  arff_basename = '{}/thresholds_{}_{}.arff_tmp'.format(TMP_FOLDER.format(idL), sap, beam)
+  RFIexcision.filters(pulses, events, arff_basename, header=False)
+ 
   ##Remove weaker pulses within a temporal window
   #def simultaneous(p):                            
     #puls = pulses.Pulse[np.abs(pulses.Time-p.Time) < 0.02]
