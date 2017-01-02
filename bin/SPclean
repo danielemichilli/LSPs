@@ -98,21 +98,21 @@ def create_DB(args):
   
   logging.warning("The DataBase is being created.\n")
   
-  try:
-    time0 = time.time()
-    SPclean.obs_events(args)
-    logging.warning("The DataBase has been created.")
-    logging.warning("Time spent: %.2f s"%(time.time() - time0))
-    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.idL)),'{}/{}/sp/products'.format(args.folder,args.idL))
-    shutil.rmtree(WRK_FOLDER.format(args.idL))
-    shutil.rmtree(TMP_FOLDER.format(args.idL))
+  #try:
+  time0 = time.time()
+  SPclean.obs_events(args)
+  logging.warning("The DataBase has been created.")
+  logging.warning("Time spent: %.2f s"%(time.time() - time0))
+  shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.idL)),'{}/{}/sp/products'.format(args.folder,args.idL))
+  shutil.rmtree(WRK_FOLDER.format(args.idL))
+  shutil.rmtree(TMP_FOLDER.format(args.idL))
     
-  except:
-    logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
-    with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.idL),'a') as f:
-      f.write("Unknown error arised in processing the observation \nConsider to use the -debug option\n")
-    shutil.rmtree(WRK_FOLDER.format(args.idL))
-    shutil.rmtree(TMP_FOLDER.format(args.idL))
+  #except:
+    #logging.exception("ATTENTION!\n\nProcessing Error: \n\n")
+    #with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.idL),'a') as f:
+      #f.write("Unknown error arised in processing the observation \nConsider to use the -debug option\n")
+    #shutil.rmtree(WRK_FOLDER.format(args.idL))
+    #shutil.rmtree(TMP_FOLDER.format(args.idL))
     
   return
     

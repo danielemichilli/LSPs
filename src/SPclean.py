@@ -148,23 +148,23 @@ def lists_creation(idL,dirs,folder):
       return sap, beam
     sap, beam = coord_from_path(directory)
 
-    try:
-      #Import the events
-      events, meta_data = Events.Loader(directory,sap,beam)
-      pulses = pd.DataFrame()
-    
-      if not events.empty:
-        #Store the events        
-        events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
-        meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
-        
-        pulses = pulses_from_events(events, idL, sap, beam)
-        
-    except:
-      logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
-      with open('{}/{}/SP_ERROR.txt'.format(folder,idL),'a') as f:
-        f.write("SAP {} - BEAM {} not processed due to some unknown error\n".format(sap, beam))
-      pulses = pd.DataFrame()
+    #try:
+    #Import the events
+    events, meta_data = Events.Loader(directory,sap,beam)
+    pulses = pd.DataFrame()
+  
+    if not events.empty:
+      #Store the events        
+      events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+      meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
+      
+      pulses = pulses_from_events(events, idL, sap, beam)
+      
+    #except:
+      #logging.warning("Some problem arised processing SAP "+str(sap)+" - BEAM "+str(beam)+", it will be discarded")
+      #with open('{}/{}/SP_ERROR.txt'.format(folder,idL),'a') as f:
+        #f.write("SAP {} - BEAM {} not processed due to some unknown error\n".format(sap, beam))
+      #pulses = pd.DataFrame()
       
     result = pd.concat((pulses,result))
   

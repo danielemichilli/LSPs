@@ -97,20 +97,20 @@ def filters(pulses, events, filename, validation=False):
     sigma_argmax = sigma.argmax()
     sigma_max = sigma.max()
     try: lim_max = np.max((sigma[:sigma_argmax].min(),sigma[sigma_argmax:].min()))
-    except ValueError: return 0
+    except ValueError: return 1
     lim_max = lim_max+(sigma_max-lim_max)/5.
     l = np.where(sigma[:sigma_argmax]<=lim_max)[0][-1]+1
     r = (np.where(sigma[sigma_argmax:]<=lim_max)[0]+sigma_argmax)[0]-1
     duration = np.convolve(ev.Duration, np.ones(dim), mode='valid')/dim
     duration = duration[sigma_argmax]
     try: dDM = dm.iloc[sigma_argmax] - dm.iloc[l]
-    except IndexError: return 0
+    except IndexError: return 1
     y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
     diff_l = lim_max/sigma_max/y
     dDM = dm.iloc[r] - dm.iloc[sigma_argmax]
     y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
     diff_r = lim_max/sigma_max/y
-    if np.isnan(diff_l) & np.isnan(diff_r): return 0
+    if np.isnan(diff_l) & np.isnan(diff_r): return 1
     return np.nanmax((diff_l,diff_r))
   values[idx] = (gb.apply(lambda x: number_events(x))).astype(np.float16)
   idx += 1
@@ -181,7 +181,7 @@ def filters(pulses, events, filename, validation=False):
   
   features_list = ''
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
-  header = """@relation Training_v2
+  header = """@relation Training_v3
   {}
   @attribute class {{0,1}}
   @data
