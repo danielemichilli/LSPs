@@ -55,10 +55,10 @@ def filters(pulses, events, filename, validation=False, header=True):
   def fit_simm(x,y):
     lim = y.argmax()
     xl = x.loc[:lim]
-    if xl.shape[0] < 2: return -1000
+    if xl.shape[0] < 2: return 10000
     pl = np.polyfit(xl, y.loc[:lim], 1)[0]
     xr = x.loc[lim:]
-    if xr.shape[0] < 2: return -1000
+    if xr.shape[0] < 2: return 10000
     pr = np.polyfit(xr, y.loc[lim:], 1)[0]
     return pl*pr
   values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)

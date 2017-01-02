@@ -68,6 +68,13 @@ def obs_events(args, debug=False):
     
   store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'w')
   features_list = ''
+  for file in os.listdir(TMP_FOLDER.format(args.idL)):
+    if file.endswith('.arff_tmp'):
+      with open(file, 'r') as f:
+        line = f.readline()
+        idx = len(line.split(',')) - 1
+        break
+  
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
   header = """@relation Training_v3
   {}
@@ -223,8 +230,9 @@ def pulses_from_events(events, idL, sap, beam):
   events = events[events.Pulse.isin(pulses.index)]
   
   #Apply RFI filters to the pulses
-  arff_basename = '{}/thresholds_{}_{}.arff_tmp'.format(TMP_FOLDER.format(idL), sap, beam)
-  RFIexcision.filters(pulses, events, arff_basename, header=False)
+  if not pulses.empty:
+    arff_basename = '{}/thresholds_{}_{}.arff_tmp'.format(TMP_FOLDER.format(idL), sap, beam)
+    RFIexcision.filters(pulses, events, arff_basename, header=False)
  
   ##Remove weaker pulses within a temporal window
   #def simultaneous(p):                            
