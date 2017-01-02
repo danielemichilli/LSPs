@@ -52,32 +52,24 @@ def filters(pulses, events, filename, validation=False, header=True):
   pulses.sort_index(inplace=True)
 
 
+  def fit_simm(x,y):
+    lim = y.argmax()
+    try:
+      pl = np.polyfit(x.iloc[:lim], y.iloc[:lim], 1)
+      pr = np.polyfit(x.iloc[lim:], y.iloc[lim:], 1)
+    except TypeError: return 0
+    return pl*pr
+  values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1
+
+
   values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
   idx += 1
 
-  def bright_events_rel(ev):
-    return np.max((ev.Sigma[ev.DM.argmin()],ev.Sigma[ev.DM.argmax()]))/ev.Sigma.max()
-  values[idx] = (gb.apply(lambda x: bright_events_rel(x))).astype(np.float16)
-  idx += 1
-
-  DM_extremes = pd.DataFrame()
-  DM_extremes['Sigma_min'] = gb.Sigma.first()
-  DM_extremes['Sigma_max'] = gb.Sigma.last()
-  DM_extremes_max = DM_extremes.max(axis=1)
-  values[idx] = (DM_extremes_max / pulses.Sigma).astype(np.float16)
-  idx += 1
-
-  def SNR_simmetric(ev):
-    DM_c = ev.DM.loc[ev.Sigma.idxmax()]
-    l = ev[ev.DM<=DM_c]
-    r = ev[ev.DM>=DM_c]
-    return np.max((l.Sigma.min(),r.Sigma.min())) / ev.Sigma.max()
-  values[idx] = (gb.apply(lambda x: SNR_simmetric(x))).astype(np.float16)
-  idx += 1
-
-  def flat_SNR_extremes(ev):                                            
-    return np.max((ev.Sigma.iloc[1],ev.Sigma.iloc[-2]))/ev.Sigma.max()
-  values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x))).astype(np.float16)
+  def flat_SNR_extremes(sigma):                                            
+    dim = np.max((1,sigma.shape[0]/5))
+    return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
+  values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma))).astype(np.float16)
   idx += 1
 
   def fit1(x,y):

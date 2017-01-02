@@ -74,7 +74,7 @@ def obs_events(args, debug=False):
   @attribute class {{0,1}}
   @data
   """.format(features_list[:-1])
-  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(idL)), 'w'):
+  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(idL)), 'w')
   thresholds.write(header)
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.tmp'):
