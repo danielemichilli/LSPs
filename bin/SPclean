@@ -100,7 +100,7 @@ def create_DB(args):
   
   #try:
   time0 = time.time()
-  SPclean.obs_events(args)
+  SPclean.obs_events(args, debug=args.debug)
   logging.warning("The DataBase has been created.")
   logging.warning("Time spent: %.2f s"%(time.time() - time0))
   shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.idL)),'{}/{}/sp/products'.format(args.folder,args.idL))
