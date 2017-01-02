@@ -43,7 +43,7 @@ def select_real_pulses(pulses,basename, out_name):
 
 
 
-def filters(pulses, events, filename):  
+def filters(pulses, events, filename, validation=False):  
   values = pd.DataFrame(dtype=np.float16)
   idx = 0
 
@@ -51,26 +51,13 @@ def filters(pulses, events, filename):
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
 
-  values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
-  idx += 1
-  
-  values[idx] = (gb.Sigma.min() / pulses.Sigma).astype(np.float16)
-  idx += 1
-
-  values[idx] = (pulses.dTime / pulses.dDM).astype(np.float16)
-  idx += 1
-
-  values[idx] = (np.fabs(pulses.DM-pulses.DM_c)/pulses.dDM).astype(np.float16)
-  idx += 1
-
-  #steps = pd.Series()
-  #steps = steps.reindex_like(pulses).fillna(0.01)
-  #steps[pulses.DM>40.48] = 0.05
-  #steps[pulses.DM>141.68] = 0.1
-  #values[idx] = (pulses.dDM / (steps * (pulses.N_events - 1))).astype(np.float16)
-  #idx += 1
 
   values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
+  idx += 1
+
+  def bright_events_rel(ev):
+    return np.max((ev.Sigma[ev.DM.argmin()],ev.Sigma[ev.DM.argmax()]))/ev.Sigma.max()
+  values[idx] = (gb.apply(lambda x: bright_events_rel(x))).astype(np.float16)
   idx += 1
 
   DM_extremes = pd.DataFrame()
@@ -80,90 +67,6 @@ def filters(pulses, events, filename):
   values[idx] = (DM_extremes_max / pulses.Sigma).astype(np.float16)
   idx += 1
 
-  #def monotonic(y):
-    #sigma = np.convolve(y, np.ones(y.shape[0]/5), mode='same')/y.shape[0]*5
-    #sigma_max = sigma.argmax()
-    #l = sigma[:sigma_max].size*2/3
-    #r = sigma[sigma_max:].size*2/3
-    #if (l == 0) | (r == 0): return 0
-    #sigma = sigma[l:-r]
-    #sigma_max = sigma.argmax()
-    #sigma = np.diff(sigma)
-    #sigma[sigma_max:] *= -1
-    #if sigma.size == 1: return sigma[0]
-    #return np.partition(sigma,1)[1]
-  #values[idx] = (gb.apply(lambda x: monotonic(x.Sigma))).astype(np.float16)
-  #idx += 1
-
-  #def sigma_jumps(ev_sigma):
-    #sigma = np.convolve(ev_sigma, np.ones(5), mode='same')/5.
-    #sigma_max = sigma.argmax()
-    #sigma = np.diff(sigma)
-    #sigma[sigma_max:] *= -1
-    #return sigma[sigma<0].size/float(sigma.size)
-  #values[idx] = (gb.apply(lambda x: sigma_jumps(x.Sigma))).astype(np.float16)
-  #idx += 1
-
-  #def fit1_brightest(ev):
-    #sigma = np.convolve(ev.Sigma, np.ones(3), mode='valid')/3
-    #dm = ev.DM.iloc[3/2:-int(3-1.5)/2]
-    #sigma = pd.Series(sigma,index=dm.index)
-    #DM_c = dm.loc[sigma.argmax()]
-    #l = sigma[dm<=DM_c]
-    #r = sigma[dm>=DM_c]
-    #lim_l = l.min() + np.min((2.,(l.max()-l.min())/4))
-    #lim_r = r.min() + np.min((2.,(r.max()-r.min())/4))
-    #l = l[l>lim_l]
-    #r = r[r>lim_r]
-    #y = pd.concat((l,r))
-    #x = dm.loc[y.index]
-    #if (y.unique().size < 2) & (x.unique().size < 2): return 0
-    #p = np.polyfit(x, y, 1)
-    #return np.sum((np.polyval(p, x) - y) ** 2) / (x.size-1)
-  #values[idx] = (gb.apply(lambda x: fit1_brightest(x))).astype(np.float16)
-  #idx += 1
-
-  def extreme_min(ev):
-    ev_len = ev.shape[0] / 4
-    SNR_min_a = ev[:ev_len].min()
-    SNR_min_b = ev[-ev_len:].min()
-    return np.max((SNR_min_a, SNR_min_b))
-  values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
-  idx += 1
-
-  def mean_SNR(x):
-    return np.mean(np.fabs( x - x.shift(-1) ) / x)
-  values[idx] = (gb.apply(lambda x: mean_SNR(x.Sigma))).astype(np.float16)
-  idx += 1
-
-  def mean_time(x):
-    return np.mean(np.abs(x - x.shift(1)))
-  values[idx] = (gb.apply(lambda x: mean_time(x.Time))).astype(np.float16)
-  idx += 1
-
-  #def std_time(x):
-    #return np.std(x - x.shift(1))
-  #values[idx] = (gb.apply(lambda x: std_time(x.Time))).astype(np.float16)
-  #idx += 1
-
-  #def sigma_std_largest(ev):
-    #sigma = ev.Sigma.nlargest(ev.Sigma.size*2/3)
-    #return np.std(sigma)
-  #values[idx] = (gb.apply(lambda x: sigma_std_largest(x))).astype(np.float16)
-  #idx += 1
-
-  #def fit0(x,y):
-    #p = np.polyfit(x, y, 0)
-    #return np.sum((np.polyval(p, x) - y) ** 2) / x.size
-  #values[idx] = (gb.apply(lambda x: fit0(x.DM, x.Sigma))).astype(np.float16)
-  #idx += 1
-
-  #def fit1(x,y):
-    #p = np.polyfit(x, y, 1)
-    #return np.sum((np.polyval(p, x) - y) ** 2) / x.size
-  #values[idx] = (gb.apply(lambda x: fit1(x.DM, x.Sigma))).astype(np.float16)
-  #idx += 1
-
   def SNR_simmetric(ev):
     DM_c = ev.DM.loc[ev.Sigma.idxmax()]
     l = ev[ev.DM<=DM_c]
@@ -172,57 +75,19 @@ def filters(pulses, events, filename):
   values[idx] = (gb.apply(lambda x: SNR_simmetric(x))).astype(np.float16)
   idx += 1
 
-  def bright_events_abs(ev):
-    DM_c = ev.DM.loc[ev.Sigma.idxmax()]
-    l = ev[ev.DM<=DM_c]
-    r = ev[ev.DM>=DM_c]
-    lim_l = l.Sigma.min() + np.min((2.,(l.Sigma.max()-l.Sigma.min())/4))
-    lim_r = r.Sigma.min() + np.min((2.,(r.Sigma.max()-r.Sigma.min())/4))
-    l = l[l.Sigma>lim_l]
-    r = r[r.Sigma>lim_r]
-    ev = pd.concat((l,r))
-    ev.drop_duplicates(inplace=True)
-    return np.max((ev.Sigma[ev.DM.argmin()],ev.Sigma[ev.DM.argmax()]))/ev.Sigma.max()
-  values[idx] = (gb.apply(lambda x: bright_events_abs(x))).astype(np.float16)
-  idx += 1
-
-  #def bright_events_rel(ev):
-    #DM_c = ev.DM.loc[ev.Sigma.idxmax()]
-    #l = ev[ev.DM<=DM_c]
-    #if l.shape[0] > 0:
-      #l_lim = np.cumsum(l.Sigma-l.Sigma.iloc[0])
-      #l = l[l_lim >= ev.Sigma.max()/8.]
-    #r = ev[ev.DM>DM_c]
-    #if r.shape[0] > 0:
-      #r.sort('DM',inplace=True,ascending=False)
-      #r_lim = np.cumsum(r.Sigma-r.Sigma.iloc[0])
-      #r = r[r_lim >= ev.Sigma.max()/8.]
-    #ev = pd.concat((l,r))
-    #ev.drop_duplicates(inplace=True)
-    #if ev.shape[0] == 0: return 1
-    #return np.max((ev.Sigma[ev.DM.argmin()],ev.Sigma[ev.DM.argmax()]))/ev.Sigma.max()
-  #values[idx] = (gb.apply(lambda x: bright_events_rel(x))).astype(np.float16)
-  #idx += 1
-
-  #def pulse_simmetric(ev):
-    #DM_c = ev.DM.loc[ev.Sigma.idxmax()]
-    #x = ev.DM[ev.DM<=DM_c]
-    #if x.size < 2: return 0
-    #y = ev.Sigma[ev.DM<=DM_c]
-    #ml = np.polyfit(x, y, 1)[0]
-    #if ml < 1e-7: return 0
-    #x = ev.DM[ev.DM>=DM_c]
-    #if x.size < 2: return 0
-    #y = ev.Sigma[ev.DM>=DM_c]
-    #mr = np.polyfit(x, y, 1)[0]
-    #if mr < 1e-7: return 0
-    #return np.min((-ml/mr,-mr/ml))
-  #values[idx] = (gb.apply(lambda x: pulse_simmetric(x))).astype(np.float16)
-  #idx += 1
-
   def flat_SNR_extremes(ev):                                            
     return np.max((ev.Sigma.iloc[1],ev.Sigma.iloc[-2]))/ev.Sigma.max()
   values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x))).astype(np.float16)
+  idx += 1
+
+  def fit1(x,y):
+    p = np.polyfit(x, y, 1)
+    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
+  values[idx] = (gb.apply(lambda x: fit1(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1
+
+  #Remove flat duration pulses. Minimum ratio to have weakest pulses with SNR = 8 (from Eq.6.21 of Pulsar Handbook)
+  values[idx] = gb.Duration.max() / pulses.Duration - (pulses.Sigma / gb.Sigma.min())**2
   idx += 1
 
   def number_events(ev):
@@ -257,16 +122,63 @@ def filters(pulses, events, filename):
   values[idx] = (gb.apply(lambda x: crosses(x.Sigma))).astype(np.float16)
   idx += 1
 
+  def extreme_min(ev):
+    ev_len = ev.shape[0] / 4
+    SNR_min_a = ev[:ev_len].min()
+    SNR_min_b = ev[-ev_len:].min()
+    return np.max((SNR_min_a, SNR_min_b))
+  values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
+  idx += 1
+
+  def fit0(x,y):
+    p = np.polyfit(x, y, 0)
+    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
+  values[idx] = (gb.apply(lambda x: fit0(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1
+
+  values[idx] = (gb.Sigma.min() / pulses.Sigma).astype(np.float16)
+  idx += 1
+
+  values[idx] = (pulses.dTime / pulses.dDM).astype(np.float16)
+  idx += 1
+
+  def std_time(x):
+    return np.std(x - x.shift(1))
+  values[idx] = (gb.apply(lambda x: std_time(x.Time))).astype(np.float16)
+  idx += 1
+
+  values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
+  idx += 1
+  
+  def mean_time(x):
+    return np.mean(np.abs(x - x.shift(1)))
+  values[idx] = (gb.apply(lambda x: mean_time(x.Time))).astype(np.float16)
+  idx += 1
+
+  def monotonic(y):
+    sigma = np.convolve(y, np.ones(y.shape[0]/5), mode='same')/y.shape[0]*5
+    sigma_max = sigma.argmax()
+    sigma = np.diff(sigma)
+    sigma[sigma_max:] *= -1
+    return np.partition(sigma,1)[1]
+  values[idx] = (gb.apply(lambda x: monotonic(x.Sigma))).astype(np.float16)
+  idx += 1
+
   values[idx] = (values[idx-1] % 2).astype(np.float16)
   idx += 1
 
-  #DM_extremes_min = DM_extremes.min(axis=1)
-  #values[idx] = (gb.Sigma.min() / DM_extremes_min).astype(np.float16)
-  #idx += 1
+  def sigma_jumps(ev_sigma):
+    sigma = np.convolve(ev_sigma, np.ones(5), mode='same')/5.
+    sigma_max = sigma.argmax()
+    sigma = np.diff(sigma)
+    sigma[sigma_max:] *= -1
+    return sigma[sigma<0].size/float(sigma.size)
+  values[idx] = (gb.apply(lambda x: sigma_jumps(x.Sigma))).astype(np.float16)
+  idx += 1
 
-  values[idx] = '?%' + np.array(values.index.astype(str))
-
-
+  if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)
+  else: values[idx] = '?%' + np.array(values.index.astype(str))
+  
   features_list = ''
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
   header = """@relation Training_v2

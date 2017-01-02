@@ -196,6 +196,14 @@ def pulses_from_events(events, idL, sap, beam):
   #Apply RFI filters to the pulses
   pulses = RFIexcision.sift_pulses(pulses, events, idL, sap, beam)
   
+  ##Remove weaker pulses within a temporal window
+  #def simultaneous(p):                            
+    #puls = pulses.Pulse[np.abs(pulses.Time-p.Time) < 0.02]
+    #if puls.shape[0] == 1: return 0
+    #if p.name == puls.index[0]: return 0
+    #else: return 1
+  #pulses.Pulse += pulses.apply(lambda x: simultaneous(x), axis=1)
+  
   
   #A set of known pulses is necessary
   #Apply multimoment analysis to the pulses
