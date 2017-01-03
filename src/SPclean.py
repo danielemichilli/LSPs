@@ -81,7 +81,7 @@ def obs_events(args, debug=False):
   @attribute class {{0,1}}
   @data
   """.format(features_list[:-1])
-  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(idL)), 'w')
+  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(args.idL)), 'w')
   thresholds.write(header)
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.tmp'):
@@ -94,8 +94,8 @@ def obs_events(args, debug=False):
   store.close()
   
   #Select positive pulses
-  ML_predict = os.path.join(TMP_FOLDER.format(idL), 'ML_predict.txt')  
-  pulses = select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(idL)), ML_predict)
+  ML_predict = os.path.join(TMP_FOLDER.format(args.idL), 'ML_predict.txt')  
+  pulses = select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(args.idL)), ML_predict)
   
   
   if pulses.empty: 
