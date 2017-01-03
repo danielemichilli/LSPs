@@ -39,6 +39,8 @@ def select_real_pulses(pulses,basename, out_name):
   pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
   os.remove(basename+'.positive')
   pulses = pulses.loc[pulses_list]
+  if pulses_list.size != pulses.shape[0]:
+    raise IndexError('Attention: classified file contains pulses not included!')
   return pulses
 
 

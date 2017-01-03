@@ -95,7 +95,7 @@ def obs_events(args, debug=False):
   
   #Select positive pulses
   ML_predict = os.path.join(TMP_FOLDER.format(args.idL), 'ML_predict.txt')  
-  pulses = select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(args.idL)), ML_predict)
+  pulses = RFIexcision.select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(args.idL)), ML_predict)
   
   
   if pulses.empty: 
