@@ -51,6 +51,14 @@ def filters(pulses, events, filename, validation=False, header=True):
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
 
+  values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
+  idx += 1
+
+  def flat_SNR_extremes(sigma):                                            
+    dim = np.max((1,sigma.shape[0]/5))
+    return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
+  values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma))).astype(np.float16)
+  idx += 1
 
   def fit_simm(x,y):
     lim = y.argmax()
@@ -63,17 +71,7 @@ def filters(pulses, events, filename, validation=False, header=True):
     return pl*pr
   values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
   idx += 1
-
-
-  values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
-  idx += 1
-
-  def flat_SNR_extremes(sigma):                                            
-    dim = np.max((1,sigma.shape[0]/5))
-    return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
-  values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma))).astype(np.float16)
-  idx += 1
-
+  
   def fit1(x,y):
     p = np.polyfit(x, y, 1)
     return np.sum((np.polyval(p, x) - y) ** 2) / x.size

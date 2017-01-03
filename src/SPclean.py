@@ -70,7 +70,7 @@ def obs_events(args, debug=False):
   features_list = ''
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.arff_tmp'):
-      with open(file, 'r') as f:
+      with open(os.path.join(TMP_FOLDER.format(args.idL),file), 'r') as f:
         line = f.readline()
         idx = len(line.split(',')) - 1
         break
@@ -87,9 +87,9 @@ def obs_events(args, debug=False):
     if file.endswith('.tmp'):
       merge_temp_databases(args.idL,store,file)
     if file.endswith('.arff_tmp'):
-      with open(file, 'r') as f:
+      with open(os.path.join(TMP_FOLDER.format(args.idL),file), 'r') as f:
         thresholds.write(f.read())
-      os.remove(file)
+      os.remove(os.path.join(TMP_FOLDER.format(args.idL),file))
   thresholds.close()
   store.close()
   
