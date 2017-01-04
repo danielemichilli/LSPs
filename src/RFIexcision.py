@@ -177,9 +177,9 @@ def filters(pulses, events, filename, validation=False, header=True):
     features_list = ''
     for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
     header = """@relation Training_v3
-    {}
-    @attribute class {{0,1}}
-    @data
+{}
+@attribute class {{0,1}}
+@data
     """.format(features_list[:-1])
     with open(filename, 'w') as f:
       f.write(header)

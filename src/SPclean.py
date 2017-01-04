@@ -77,9 +77,9 @@ def obs_events(args, debug=False):
   
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
   header = """@relation Training_v3
-  {}
-  @attribute class {{0,1}}
-  @data
+{}
+@attribute class {{0,1}}
+@data
   """.format(features_list[:-1])
   thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(args.idL)), 'w')
   thresholds.write(header)

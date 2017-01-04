@@ -23,7 +23,7 @@ def Get_Group(float[::1] DM not None,
           float[::1] Sigma not None,
           float[::1] Time not None,
           float[::1] Duration not None,
-          int[::1] Pulse not None):
+          long[::1] Pulse not None):
   
   cdef:
     unsigned int i, j, k, j_min, j_max, empty, SNR_max

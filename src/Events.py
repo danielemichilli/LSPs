@@ -44,7 +44,7 @@ def Loader(directory,sap,beam):
     data.SAP = data.SAP.astype(np.uint8)
     data.BEAM = data.BEAM.astype(np.uint8)      
     data['Pulse'] = 0
-    data.Pulse = data.Pulse.astype(np.int32)
+    data.Pulse = data.Pulse.astype(np.int64)
     
     inf = inf.iloc[[0,1,2,4,5,7],1]
     inf.iloc[0] = inf.iloc[0].replace("_rfifind","")
@@ -91,7 +91,7 @@ def Group(events):
 
   C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
   
-  events.Pulse = (events.Pulse*np.int32(10)+events.SAP)*np.int32(100)+events.BEAM
+  events.Pulse = (events.Pulse * np.int64(10) + events.SAP) * np.int64(1000) + events.BEAM
   
   return
 
