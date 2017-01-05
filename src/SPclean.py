@@ -188,37 +188,34 @@ def lists_creation(idL,dirs,folder):
         #f.write("SAP {} - BEAM {} not processed due to some unknown error\n".format(sap, beam))
       #pulses = pd.DataFrame()
       
-    result = pd.concat((load_pulses(idL, directory, sap, beam),result))
+    result = pd.concat((pulses_from_events(idL, directory, sap, beam),result))
   
   return result
 
-
-def load_pulses(idL, directory, sap, beam):
+def pulses_from_events(idL, directory, sap, beam):
   #Load the events
   events, meta_data = Events.Loader(directory,sap,beam)
   pulses = pd.DataFrame()
   
   if events.empty: return pd.DataFrame()
-
-  #Store the events        
-  events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
-  meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
-
-  return pulses_from_events(events, idL, sap, beam)
   
-
-def pulses_from_events(events, idL, sap, beam):
+  events_all = events
+  
   #Correct for the time misalignment of events
   events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
-  events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
+  time_straight = Events.TimeAlign(events.Time.copy(),events.DM)
 
   #Apply the thresholds to the events
   events = Events.Thresh(events)
   
   #Group the events
   events.sort(['DM','Time'],inplace=True) #Needed by Group
-  Events.Group(events)
+  Events.Group(events, time_straight)
   events = events[events.Pulse>=0]
+
+  #Store the events        
+  events_org.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+  meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
