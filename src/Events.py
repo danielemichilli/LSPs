@@ -84,14 +84,14 @@ def Thresh(events):
 
 
 
-def Group(events):
+def Group(events, time_straight):
   #-----------------------------------
   # Assigns a pulse-code to each event
   #-----------------------------------
 
-  C_Funct.Get_Group(events.DM.values,events.Sigma.values,events.Time.values,events.Duration.values,events.Pulse.values)
+  C_Funct.Get_Group(events.DM.values, events.Sigma.values, time_straight.values, events.Duration.values, events.Pulse.values)
   
-  events.Pulse = (events.Pulse * np.int64(10) + events.SAP) * np.int64(1000) + events.BEAM
+  events.Pulse = (events.Pulse * 10 + events.SAP) * 1000 + events.BEAM
   
   return
 
