@@ -203,20 +203,19 @@ def pulses_from_events(idL, directory, sap, beam):
   
   #Correct for the time misalignment of events
   events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
-  time_straight = Events.TimeAlign(events.Time.copy(),events.DM)
+  events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
 
   #Apply the thresholds to the events
   events = Events.Thresh(events)
   
   #Group the events
   events.sort(['DM','Time'],inplace=True) #Needed by Group
-  Events.Group(events, time_straight)
+  Events.Group(events)
   events = events[events.Pulse>=0]
 
   #Store the events        
   events_all.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
   meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
-  events.Time = time_straight
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
