@@ -47,7 +47,7 @@ def output(idL, pulses, meta_data, candidates, inc=12):
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         ev = events[events.Pulse == idx_p]
-        puls_plot(pdf, puls, ev, idL, i, inc)
+        puls_plot(pdf, puls, ev, idL, i, inc=inc)
     
     plt.close('all')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -94,13 +94,13 @@ def puls_plot(pdf, puls, ev, idL, i, inc=12):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc)
+  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
   else: plot_not_valid(ax4)
-  flag = puls_dynSpec(ax5, ax6, puls, idL, inc)
+  flag = puls_dynSpec(ax5, ax6, puls, idL, inc=inc)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  flag = puls_dedispersed(ax7, puls, idL, inc)
+  flag = puls_dedispersed(ax7, puls, idL, inc=inc)
   if flag == -1:
     plot_not_valid(ax7)
 

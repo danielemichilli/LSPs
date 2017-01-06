@@ -199,7 +199,7 @@ def pulses_from_events(idL, directory, sap, beam):
   
   if events.empty: return pd.DataFrame()
   
-  events_all = events
+  events_all = events.copy()
   
   #Correct for the time misalignment of events
   events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
@@ -212,7 +212,7 @@ def pulses_from_events(idL, directory, sap, beam):
   events.sort(['DM','Time'],inplace=True) #Needed by Group
   Events.Group(events)
   events = events[events.Pulse>=0]
-  events_all.Pulse = events.Pulse
+  events_all.Pulse.update(events.Pulse)
 
   #Store the events        
   events_all.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
