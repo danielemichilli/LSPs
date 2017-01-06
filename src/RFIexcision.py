@@ -74,46 +74,8 @@ def filters(pulses, events, filename, validation=False, header=True):
   values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
   idx += 1
 
-  def fit1(x,y):
-    p = np.polyfit(x, y, 1)
-    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
-  values[idx] = (gb.apply(lambda x: fit1(x.DM, x.Sigma))).astype(np.float16)
-  idx += 1
-
   #Remove flat duration pulses. Minimum ratio to have weakest pulses with SNR = 8 (from Eq.6.21 of Pulsar Handbook)
   values[idx] = gb.Duration.max() / pulses.Duration - (pulses.Sigma / gb.Sigma.min())**2
-  idx += 1
-
-  def number_events(ev):
-    dim = ev.shape[0]/5
-    sigma = np.convolve(ev.Sigma, np.ones(dim), mode='valid')/dim
-    dm = ev.DM.iloc[dim/2:np.min((-int(dim-1.5)/2,-1))]
-    sigma_argmax = sigma.argmax()
-    sigma_max = sigma.max()
-    try: lim_max = np.max((sigma[:sigma_argmax].min(),sigma[sigma_argmax:].min()))
-    except ValueError: return 1
-    lim_max = lim_max+(sigma_max-lim_max)/5.
-    l = np.where(sigma[:sigma_argmax]<=lim_max)[0][-1]+1
-    r = (np.where(sigma[sigma_argmax:]<=lim_max)[0]+sigma_argmax)[0]-1
-    duration = np.convolve(ev.Duration, np.ones(dim), mode='valid')/dim
-    duration = duration[sigma_argmax]
-    try: dDM = dm.iloc[sigma_argmax] - dm.iloc[l]
-    except IndexError: return 1
-    y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
-    diff_l = lim_max/sigma_max/y
-    dDM = dm.iloc[r] - dm.iloc[sigma_argmax]
-    y = np.sqrt(np.pi)/2/(0.00000691*dDM*31.64/duration/0.13525**3)*special.erf(0.00000691*dDM*31.64/duration/0.13525**3)
-    diff_r = lim_max/sigma_max/y
-    if np.isnan(diff_l) & np.isnan(diff_r): return 1
-    return np.nanmax((diff_l,diff_r))
-  values[idx] = (gb.apply(lambda x: number_events(x))).astype(np.float16)
-  idx += 1
-
-  def crosses(sig):
-    diff = sig - (sig.max() + sig.min()) / 2.
-    count = np.count_nonzero(np.diff(np.sign(diff)))
-    return count
-  values[idx] = (gb.apply(lambda x: crosses(x.Sigma))).astype(np.float16)
   idx += 1
 
   def extreme_min(ev):
