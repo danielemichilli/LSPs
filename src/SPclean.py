@@ -212,6 +212,7 @@ def pulses_from_events(idL, directory, sap, beam):
   events.sort(['DM','Time'],inplace=True) #Needed by Group
   Events.Group(events)
   events = events[events.Pulse>=0]
+  events_all.Pulse = events.Pulse
 
   #Store the events        
   events_all.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
