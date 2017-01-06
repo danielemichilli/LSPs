@@ -73,7 +73,7 @@ def filters(pulses, events, filename, validation=False, header=True):
     return pl*pr
   values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
   idx += 1
-  
+
   def fit1(x,y):
     p = np.polyfit(x, y, 1)
     return np.sum((np.polyval(p, x) - y) ** 2) / x.size
@@ -124,12 +124,6 @@ def filters(pulses, events, filename, validation=False, header=True):
   values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
   idx += 1
 
-  def fit0(x,y):
-    p = np.polyfit(x, y, 0)
-    return np.sum((np.polyval(p, x) - y) ** 2) / x.size
-  values[idx] = (gb.apply(lambda x: fit0(x.DM, x.Sigma))).astype(np.float16)
-  idx += 1
-
   values[idx] = (gb.Sigma.min() / pulses.Sigma).astype(np.float16)
   idx += 1
 
@@ -142,32 +136,6 @@ def filters(pulses, events, filename, validation=False, header=True):
   idx += 1
 
   values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
-  idx += 1
-  
-  def mean_time(x):
-    return np.mean(np.abs(x - x.shift(1)))
-  values[idx] = (gb.apply(lambda x: mean_time(x.Time))).astype(np.float16)
-  idx += 1
-
-  def monotonic(y):
-    sigma = np.convolve(y, np.ones(y.shape[0]/5), mode='same')/y.shape[0]*5
-    sigma_max = sigma.argmax()
-    sigma = np.diff(sigma)
-    sigma[sigma_max:] *= -1
-    return np.partition(sigma,1)[1]
-  values[idx] = (gb.apply(lambda x: monotonic(x.Sigma))).astype(np.float16)
-  idx += 1
-
-  values[idx] = (values[idx-1] % 2).astype(np.float16)
-  idx += 1
-
-  def sigma_jumps(ev_sigma):
-    sigma = np.convolve(ev_sigma, np.ones(5), mode='same')/5.
-    sigma_max = sigma.argmax()
-    sigma = np.diff(sigma)
-    sigma[sigma_max:] *= -1
-    return sigma[sigma<0].size/float(sigma.size)
-  values[idx] = (gb.apply(lambda x: sigma_jumps(x.Sigma))).astype(np.float16)
   idx += 1
 
   if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)

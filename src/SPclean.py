@@ -214,8 +214,9 @@ def pulses_from_events(idL, directory, sap, beam):
   events = events[events.Pulse>=0]
 
   #Store the events        
-  events_org.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+  events_all.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
   meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
+  events.Time = time_straight
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
