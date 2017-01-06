@@ -57,7 +57,7 @@ def filters(pulses, events, filename, validation=False, header=True):
   idx += 1
 
   def flat_SNR_extremes(sigma):                                            
-    dim = np.max((1,sigma.shape[0]/5))
+    dim = np.max((1,sigma.shape[0]/6))
     return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
   values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma))).astype(np.float16)
   idx += 1
@@ -117,10 +117,8 @@ def filters(pulses, events, filename, validation=False, header=True):
   idx += 1
 
   def extreme_min(ev):
-    ev_len = ev.shape[0] / 4
-    SNR_min_a = ev[:ev_len].min()
-    SNR_min_b = ev[-ev_len:].min()
-    return np.max((SNR_min_a, SNR_min_b))
+    ev_len = ev.shape[0] / 5
+    return np.max((ev[:ev_len].min(), ev[-ev_len:].min()))
   values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
   idx += 1
 
