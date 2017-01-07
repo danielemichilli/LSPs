@@ -31,7 +31,7 @@ mpl.rc('font',size=5)
 
 def output(idL, pulses, meta_data, candidates, inc=12):
   pulses.sort('Sigma',ascending=False,inplace=True)
-  candidates.sort(['Rank','Sigma'],ascending=False,inplace=True)
+  candidates.sort('Sigma',ascending=False,inplace=True)
   
   plt.clf()
   out_dir = TMP_FOLDER.format(idL) + '/timeseries'
@@ -128,17 +128,8 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
     return new_val * m + q
   sig = circle_size(pulses_beam.Sigma)
 
-  colors = ['g','y','r']
-  col = pulses_beam.Pulse.replace([0,1,2], colors)
+  ax.scatter(pulses_beam.Time, pulses_beam.DM, c='k', s=sig, edgecolor='w', lw=.2, zorder=2)
 
-  ax.scatter(pulses_beam.Time, pulses_beam.DM, c=col, s=sig, edgecolor='w', lw=.2, zorder=2)
-  
-  def scatter_legend(colors):
-    scatter_list = []
-    for c in colors:
-      scatter_list.append( ax.scatter([],[],linewidths=[0,],c=c))
-    return scatter_list
-  ax.legend(scatter_legend(colors), ('Best','Medium','Worst'), loc='upper right')
   ax.axhline(cand.DM, c='dodgerblue', ls='-', zorder=1)
   
   ax.axhline(40.48,c='k',ls='--',lw=.1, zorder=1)
@@ -153,7 +144,7 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
   
   top = pulses.iloc[:10]
   for i in range(top.shape[0]):
-    ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=5, zorder=4)
+    ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=5,fontweight='bold',zorder=4)
   ax.tick_params(which='both',direction='out')
   
   return
@@ -162,6 +153,7 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
 
 def meta_data_plot(ax,meta_data,pulses,cand):
   ax.axis([0,10,0,10])
+  ax.annotate('Cand ID: {}'.format(cand.name), xy=(0,10))
   ax.annotate('File: {}'.format(meta_data.File.iloc[0]), xy=(0,9))
   ax.annotate('RA, DEC: {0:.8}, {1:.8}'.format(meta_data.RA.iloc[0],meta_data.DEC.iloc[0]), xy=(0,8))
   ax.annotate('Epoch (MJD): {0:.11}'.format(meta_data.Epoch.iloc[0]), xy=(0,7))
@@ -213,9 +205,7 @@ def hist_SNR(ax,pulses,cand):
 
 def scatter_SNR(ax, pulses, pulses_beam,cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
-  colors = ['g','y','r']
-  col = pulses_beam.Pulse.replace([0,1,2], colors)  
-  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c=col,s=20.,linewidths=[0.,], zorder=3)
+  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=20.,linewidths=[0.,], zorder=3)
   ax.set_xscale('log')
   ax.set_ylabel('SNR')
   ax.set_xlabel('DM (pc/cm3)')
@@ -355,7 +345,6 @@ def puls_meta_data(ax, puls, idx, i):
   ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,4))
   ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
   ax.annotate('N events: {0:.0f}'.format(puls.N_events), xy=(0,2))
-  ax.annotate('Rank: {0:.0f}'.format(puls.Pulse), xy=(0,1))
 
   ax.axis('off')
   return
@@ -367,7 +356,9 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
-  filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if inc == 0: conf = 'confirmations'
+  else: conf = ''
+  filename = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return -1
 
   if puls.DM>141.71: sample = puls.Sample * 4
@@ -477,7 +468,9 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
   else: stokes = 'stokes'
-  raw_dir = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if inc == 0: conf = 'confirmations'
+  else: conf = ''
+  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
   
   filename = TMP_FOLDER.format(idL) + '/timeseries/{}/manual_fold_DM{{0:.2f}}.dat'.format(idL)

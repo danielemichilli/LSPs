@@ -21,11 +21,11 @@ def candidates(pulses,idL):
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort(['Sigma','Rank'],ascending=[1,0],inplace=True)
+    cands.sort('Sigma',ascending=True,inplace=True)
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
         
-    cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
+    cands.sort('Sigma',ascending=False,inplace=True)
     best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
     best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
   

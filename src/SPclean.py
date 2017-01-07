@@ -150,7 +150,7 @@ def obs_events(args, debug=False):
     try: Internet.upload(cands,args.idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(args.idL)),meta_data)
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
-      with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.args.idL),'a') as f:
+      with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.idL),'a') as f:
         f.write("Connession problem \nConsider to run Upload.py script\n")
 
   return
@@ -199,8 +199,6 @@ def pulses_from_events(idL, directory, sap, beam):
   
   if events.empty: return pd.DataFrame()
   
-  events_all = events.copy()
-  
   #Correct for the time misalignment of events
   events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
   events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
@@ -212,10 +210,10 @@ def pulses_from_events(idL, directory, sap, beam):
   events.sort(['DM','Time'],inplace=True) #Needed by Group
   Events.Group(events)
   events = events[events.Pulse>=0]
-  events_all.Pulse.update(events.Pulse)
 
-  #Store the events        
-  events_all.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
+  #Store the events
+  events.sort(['DM','Time'],inplace=True)
+  events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
   meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
 
   #Generate the pulses
