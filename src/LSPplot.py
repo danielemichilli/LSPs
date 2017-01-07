@@ -231,7 +231,7 @@ def puls_DM_Time(ax, event, puls):
   #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)  
   ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)  
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
-  ax.scatter(puls.Time, puls.DM, lw=.2, marker='x', color='r', zorder=2)
+  ax.scatter(puls.Time, puls.DM, marker='x', color='r', zorder=2)
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('DM (pc/cm3)')
   return
@@ -295,7 +295,7 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
         750,  791,  833,  874,  916,  957])
   
   n_beams = ra.size
-  dDM = 0.4
+  dDM = 0.2
   dm_l = float(puls.DM - dDM/2. - 0.001)
   dm_h = float(puls.DM + dDM/2. + 0.001)
   t_l = float(puls.Time - 2. * puls.Duration)
@@ -313,7 +313,7 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
   ind.index += inc + 1
   SNR = SNR.reindex_like(ind)
 
-  plot = ax.scatter(ra,dec,s=400,edgecolor='none',c=SNR,cmap='hot_r')
+  plot = ax.scatter(ra,dec,s=200,edgecolor='none',c=SNR,cmap='hot_r')
   bar = plt.colorbar(plot, ax=ax)
   
   bar.set_label('Cumulative SNR')
@@ -402,7 +402,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   spectrum = dedispersion(spectrum)
      
   ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=100,c='r',lw=0.)
+  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=25,c='r',lw=0.)
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('Frequency (MHz)')
@@ -448,7 +448,7 @@ def load_ts(puls, idL, filename):
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
     if not os.path.isfile(filename.format(DM)):
-      error = subprocess.call(['sh', '/home/danielem/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
+      error = subprocess.call(['sh', '/home/sanidas/lotaasgit/LOTAAS-Scripts/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
     
     try:
       ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))

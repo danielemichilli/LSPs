@@ -43,7 +43,7 @@ def Repeated_candidates_beam(pulses):
     puls = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
     puls.DM = 3*(puls.DM.astype(np.float64)/3).round(2)
     
-    span = 0.25
+    span = 0.101
     
     top_count = puls.groupby('DM')['Sigma'].count()
     top_sum = puls.groupby('DM')['Sigma'].sum()
