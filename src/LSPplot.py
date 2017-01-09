@@ -402,7 +402,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   spectrum = dedispersion(spectrum)
      
   ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax1.scatter((sample+duration/2)*RES,F_MIN+1,marker='^',s=25,c='r',lw=0.)
+  ax1.scatter((sample+duration/2)*RES,F_MIN,marker='^',s=25,c='r',lw=0.)
   ax1.axis(extent)
   ax1.set_xlabel('Time (s)')
   ax1.set_ylabel('Frequency (MHz)')
@@ -505,7 +505,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
     return x, ts
   x, ts = inset(filename, params, puls)
   
-  ax3 = plt.axes([.6, .6, .3, .3])
+  ax3 = ax.axes([.6, .6, .3, .3])
   ax3.plot(x, ts, 'k')
   ax3.set_xticks([])
   ax3.set_yticks([])
