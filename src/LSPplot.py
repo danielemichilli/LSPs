@@ -15,6 +15,7 @@ import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 import logging
 from matplotlib.backends.backend_pdf import PdfPages
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import presto
 import subprocess
 import shutil
@@ -505,7 +506,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
     return x, ts
   x, ts = inset(filename, params, puls)
   
-  ax3 = ax.axes([.6, .6, .3, .3])
+  ax3 = inset_axes(ax, width="30%", height="30%", loc=1)
   ax3.plot(x, ts, 'k')
   ax3.set_xticks([])
   ax3.set_yticks([])
