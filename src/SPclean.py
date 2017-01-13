@@ -142,6 +142,8 @@ def obs_events(args, debug=False):
       
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
+    cands[cands.main_cand == 0]
+    #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output
     meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'meta_data')
     LSPplot.output(args.idL, pulses, meta_data, cands, inc=inc)    

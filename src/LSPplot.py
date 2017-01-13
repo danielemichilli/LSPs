@@ -444,7 +444,7 @@ def load_ts(puls, idL, filename):
 
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
-  out_dir = TMP_FOLDER.format(idL) + '/timeseries/{}'.format(idL)
+  out_dir = TMP_FOLDER.format(idL) + '/timeseries/'
   if not os.path.isdir(TMP_FOLDER.format(idL) + '/timeseries'): os.makedirs(TMP_FOLDER.format(idL) + '/timeseries')
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
