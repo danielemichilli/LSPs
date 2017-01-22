@@ -358,16 +358,24 @@ def Compare_Beams(puls):
   return idx.index
 
 
-def beam_comparison():
+
+def beam_comparison(pulses):
+  condition_list_A = [('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]
+  condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @beams[@beam])'
   
-  sap = int(puls.SAP)
-  beam = int(puls.BEAM)
-  tmin = float(puls.Time - 2. * puls.Duration)
-  tmax = float(puls.Time + 2. * puls.Duration)
-  DMmin = float(puls.DM - 3.)
-  DMmax = float(puls.DM + 3.)
+  def comparison(puls):
+    sap = int(puls.SAP)
+    beam = int(puls.BEAM)
+    tmin = float(puls.Time - 2. * puls.Duration)
+    tmax = float(puls.Time + 2. * puls.Duration)
+    DMmin = float(puls.DM - 3.)
+    DMmax = float(puls.DM + 3.)    
+    
+    if pd.read_hdf('SinglePulses.hdf5', 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
+    else: return 0
 
-  events = pd.read_hdf('SinglePulses.hdf5', 'events', where=[('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]).query('Sigma >= @SNRmin')
-
+  values = gb.apply(lambda x: comparison(x))
+  pulses = pulses.loc[values.index[values == 0]]
+  return pulses
 
 
