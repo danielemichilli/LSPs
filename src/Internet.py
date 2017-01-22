@@ -72,7 +72,7 @@ def upload_sheet(cands,idL,meta_data):
   for idx,cand in cands.iterrows():
     meta = meta_data[(meta_data.SAP == cand.SAP) & (meta_data.BEAM == cand.BEAM)]
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".pdf");"Plot")'.format(idL)
-    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, meta.RA[0], meta.DEC[0], cand.DM, '', '', 'ToProcess', '', link]    
+    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, "'"+meta.RA[0], "'"+meta.DEC[0], cand.DM, cand.SNR, '', '', 'ToProcess', '', link]    
     wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet

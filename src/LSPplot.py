@@ -47,8 +47,7 @@ def output(idL, pulses, meta_data, candidates, inc=12):
       beam_plot(pdf, cand, pulses_cand, pulses, meta_data)
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
-        ev = events[events.Pulse == idx_p]
-        puls_plot(pdf, puls, ev, idL, i, inc=inc)
+        puls_plot(pdf, puls, events, idL, i, inc=inc)
     
     plt.close('all')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -83,17 +82,18 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
 
 
 
-def puls_plot(pdf, puls, ev, idL, i, inc=12):
+def puls_plot(pdf, puls, events, idL, i, inc=12):
   ax1 = plt.subplot2grid((2,6),(0,0))
   ax5 = plt.subplot2grid((2,6),(0,1))
   ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
   ax7 = plt.subplot2grid((2,6),(0,4), colspan=2)
-  ax2 = plt.subplot2grid((2,6),(1,0))
-  ax3 = plt.subplot2grid((2,6),(1,1), colspan=2)
-  ax4 = plt.subplot2grid((2,6),(1,3), colspan=3)
-  
+  ax2 = plt.subplot2grid((2,6),(1,0), colspan=2)
+  ax3 = plt.subplot2grid((2,6),(1,2), colspan=2)
+  ax4 = plt.subplot2grid((2,6),(1,4), colspan=2)
+
+  ev = events[events.Pulse == puls.name]
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
-  puls_DM_Time(ax2, ev, puls)
+  puls_DM_Time(ax2, ev, all_events, puls)
   puls_SNR_DM(ax3, ev)
   if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
   else: plot_not_valid(ax4)
@@ -223,18 +223,29 @@ def scatter_SNR(ax, pulses, pulses_beam,cand):
 
 
 
-def puls_DM_Time(ax, event, puls):
+def puls_DM_Time(ax, event, all_events, puls):
   #def circle_size(val):
     #m = 4824.
     #q = 17.59
     #return val * m + q
   #sig = circle_size(event.Duration)
-  #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)  
-  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)  
+  #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)
+  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
   ax.scatter(puls.Time, puls.DM, marker='x', color='r', zorder=2)
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('DM (pc/cm3)')
+  
+  DM_min = np.clip(puls.DM - 5., 3., 550.)
+  DM_max = np.clip(puls.DM + 5., 3., 550.)
+  k = 4148.808 #s-1
+  delay = k * (F_MIN**-2 - F_MAX**-2)
+  dDM = DM_max - DM_min
+  dt = delay * dDM / 4.
+  Time_min = puls.Time - dt
+  Time_max = puls.Time + dt
+  events = all_events[(all_events.DM > DM_min) & (all_events.DM < DM_max) & (all_events.Time > Time_min) & (all_events.Time < Time_max)]
+  ax.scatter(events.Time, events.DM, s=15., marker='o', c='g', linewidths=[0.,], zorder=0)
   return
 
 
@@ -315,11 +326,12 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
   SNR = SNR.reindex_like(ind)
 
   plot = ax.scatter(ra,dec,s=200,edgecolor='none',c=SNR,cmap='hot_r')
-  bar = plt.colorbar(plot, ax=ax)
   
-  bar.set_label('Cumulative SNR')
-  ax.set_xlabel('RA (rel.)')
-  ax.set_ylabel('DEC (rel.)')
+  #bar = plt.colorbar(plot, ax=ax)
+  #bar.set_label('Cumulative SNR')
+  
+  ax.set_xlabel('RA (arb.)')
+  ax.set_ylabel('DEC (arb.)')
   if pulseN: 
     ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
     ax.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(puls.DM,puls.Time,puls.Duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
@@ -514,7 +526,10 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   #Time axis
   ax.set_xlim((0,params['bins_out']))
   labels = ax.get_xticks().tolist()
-  new_labels = ["%.3f" % (n + params['bin_start'] * RES) for n in labels]
+  if puls.DM < 40.52: down = 1
+  elif DM_peak < 141.77: down = 2
+  else: down = 4
+  new_labels = ["%.3f" % (n + params['bin_start'] * RES * down) for n in labels]
   ax.set_xticklabels(new_labels)
   ax.set_xlabel('Time (s)')
 
