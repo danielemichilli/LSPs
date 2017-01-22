@@ -358,3 +358,16 @@ def Compare_Beams(puls):
   return idx.index
 
 
+def beam_comparison():
+  
+  sap = int(puls.SAP)
+  beam = int(puls.BEAM)
+  tmin = float(puls.Time - 2. * puls.Duration)
+  tmax = float(puls.Time + 2. * puls.Duration)
+  DMmin = float(puls.DM - 3.)
+  DMmax = float(puls.DM + 3.)
+
+  events = pd.read_hdf('SinglePulses.hdf5', 'events', where=[('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]).query('Sigma >= @SNRmin')
+
+
+
