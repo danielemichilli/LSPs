@@ -244,36 +244,6 @@ beams = {
 }
 
 
-#def time_span(puls):
-  #def min_puls(x):   
-    #if x.size <= 1: return 0
-    #else: return np.min(np.abs(x-np.mean(x)))
-
-  #lim = 1-0.01/3600*puls.shape[0]
-  
-  #try:
-    #puls_time = puls.Time.astype(int)
-    #puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})  
-    #mean = puls_time.N_events.sum()/3600.
-    #k = stats.poisson.ppf(lim,mean)   
-    #puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
-    #a = puls.Pulse[puls.Time.astype(int).isin(puls_time)] 
-  #except KeyError,AssertionError: a = pd.DataFrame()
-  
-  #try:
-    #puls_time = (puls.Time+0.5).astype(int)
-    #puls_time = puls.groupby(['SAP',puls_time]).agg({'N_events':np.size,'DM':min_puls})
-    #mean = puls_time.N_events.sum()/3600.
-    #k = stats.poisson.ppf(lim,mean)
-    #puls_time = puls_time.index[(puls_time.N_events>k)&(puls_time.DM>1)].get_level_values('Time')
-    #b = puls.Pulse[(puls.Time+0.5).astype(int).isin(puls_time)] 
-  #except KeyError,AssertionError: b = pd.DataFrame()
-  
-  #puls_time = pd.concat((a,b)).index.unique()
-  #puls_time.sort()
-    
-  #return puls_time
-
 
 def time_span(pulses):
   RFI = pd.DataFrame()
@@ -311,70 +281,25 @@ def time_span(pulses):
   return RFI.index[no_rfi==0]
 
 
-def puls_beams_select(x,puls):
-  if x.BEAM<13: return 0
-  select = puls.BEAM[(puls.SAP==x.SAP)&(puls.BEAM!=x.BEAM)&(np.abs(puls.Time-x.Time)<=0.1)&(np.abs(puls.DM-x.DM)<=1.)]
-  close = select[select.isin(beams[x.BEAM])].size
-  away = select.size - close
-  if x.Sigma <= 13: return np.max((close>3,away>1))
-  elif x.Sigma <= 19:  #for sidelobe sensitivity 0.3 of main lobe 
-    return away>1
-  else: return 0
-
-
-def Compare_Beams(puls):
-  puls.Pulse[:] = 0
-    
-  sap0 = puls[puls.SAP==0].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  sap0['Time_low'] = sap0.Time_c-sap0.dTime
-  sap0.sort('Time_low',inplace=True)
-  
-  sap1 = puls[puls.SAP==1].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  sap1['Time_low'] = sap1.Time_c-sap1.dTime
-  sap1.sort('Time_low',inplace=True)
-  
-  sap2 = puls[puls.SAP==2].ix[:,['DM_c','dDM','Time_c','dTime','Sigma','Pulse']]
-  sap2['Time_low'] = sap2.Time_c-sap2.dTime
-  sap2.sort('Time_low',inplace=True)
-  
-  C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
-                  sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,np.int8(1))
-  
-  C_Funct.Compare(sap0.DM_c.values,sap0.dDM.values,sap0.Time_c.values,sap0.dTime.values,sap0.Sigma.values,sap0.Pulse.values,\
-                  sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
-  
-  C_Funct.Compare(sap1.DM_c.values,sap1.dDM.values,sap1.Time_c.values,sap1.dTime.values,sap1.Sigma.values,sap1.Pulse.values,\
-                  sap2.DM_c.values,sap2.dDM.values,sap2.Time_c.values,sap2.dTime.values,sap2.Sigma.values,sap2.Pulse.values,np.int8(1))
-  
-  #puls.Pulse.loc[puls.SAP==0] = sap0.Pulse
-  
-  #puls.Pulse.loc[puls.SAP==1] = sap1.Pulse
-  
-  #puls.Pulse.loc[puls.SAP==2] = sap2.Pulse
-  
-  idx = pd.concat((sap0[sap0.Pulse>0],sap1[sap1.Pulse>0],sap2[sap2.Pulse>0]))
-  idx.sort_index(inplace=True)
-  
-  return idx.index
-
-
-
-def beam_comparison(pulses):
+def beam_comparison(pulses, inc=12):
   condition_list_A = [('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]
   condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @beams[@beam])'
   
-  def comparison(puls):
+  def comparison(puls, inc):
+    if puls.BEAM <= inc: return 0
+    
     sap = int(puls.SAP)
     beam = int(puls.BEAM)
     tmin = float(puls.Time - 2. * puls.Duration)
     tmax = float(puls.Time + 2. * puls.Duration)
     DMmin = float(puls.DM - 3.)
-    DMmax = float(puls.DM + 3.)    
+    DMmax = float(puls.DM + 3.)
+    SNRmin = puls.Sigma / 2.
     
     if pd.read_hdf('SinglePulses.hdf5', 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
     else: return 0
 
-  values = gb.apply(lambda x: comparison(x))
+  values = pulses.apply(lambda x: comparison(x, inc), axis=1)
   pulses = pulses.loc[values.index[values == 0]]
   return pulses
 
