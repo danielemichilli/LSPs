@@ -281,7 +281,7 @@ def time_span(pulses):
   return RFI.index[no_rfi==0]
 
 
-def beam_comparison(pulses, inc=12):
+def beam_comparison(pulses, inc=12, database='SinglePulses.hdf5'):
   condition_list_A = [('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]
   condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @beams[@beam])'
   
@@ -296,7 +296,7 @@ def beam_comparison(pulses, inc=12):
     DMmax = float(puls.DM + 3.)
     SNRmin = puls.Sigma / 2.
     
-    if pd.read_hdf('SinglePulses.hdf5', 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
+    if pd.read_hdf(database, 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
     else: return 0
 
   values = pulses.apply(lambda x: comparison(x, inc), axis=1)

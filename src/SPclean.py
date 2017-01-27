@@ -42,10 +42,10 @@ def obs_events(args, debug=False):
         if filename in file_names:
           logging.warning("ATTENTION!: Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename))
           idx = file_names.index(filename)
-          file_list[idx] = root+'/'+filename
+          file_list[idx] = os.path.join(root,filename)
           continue
         else:
-          file_list.append(root+'/'+filename)
+          file_list.append(os.path.join(root,filename))
           file_names.append(filename)
     
     return file_list
@@ -60,13 +60,13 @@ def obs_events(args, debug=False):
   else: pulses = pulses_parallel(args.idL,file_list,args.folder)
   
   def merge_temp_databases(idL,store,file):
-    store.append('events',pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
-    meta_data = pd.read_hdf('{}/{}'.format(TMP_FOLDER.format(idL),file),'meta_data')
+    store.append('events',pd.read_hdf(os.path.join(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
+    meta_data = pd.read_hdf(os.path.join(TMP_FOLDER.format(idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
     store.append('meta_data',meta_data)    
-    os.remove('{}/{}'.format(TMP_FOLDER.format(idL),file))
+    os.remove(os.path.join(TMP_FOLDER.format(idL),file))
     
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'w')
+  store = pd.HDFStore(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'w')
   features_list = ''
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.arff_tmp'):
@@ -81,7 +81,7 @@ def obs_events(args, debug=False):
 @attribute class {{0,1}}
 @data
   """.format(features_list[:-1])
-  thresholds = open('{}/thresholds.arff'.format(TMP_FOLDER.format(args.idL)), 'w')
+  thresholds = open(os.path.join(TMP_FOLDER.format(args.idL),'thresholds.arff'), 'w')
   thresholds.write(header)
   for file in os.listdir(TMP_FOLDER.format(args.idL)):
     if file.endswith('.tmp'):
@@ -94,9 +94,12 @@ def obs_events(args, debug=False):
   store.close()
   
   #Select positive pulses
+  print "Total pulses produced: {}".format(pulses.shape[0])
   ML_predict = os.path.join(TMP_FOLDER.format(args.idL), 'ML_predict.txt')  
-  pulses = RFIexcision.select_real_pulses(pulses,'{}/thresholds'.format(TMP_FOLDER.format(args.idL)), ML_predict)
-  
+  pulses = RFIexcision.select_real_pulses(pulses,os.path.join(TMP_FOLDER.format(args.idL),'thresholds'), ML_predict)
+  print "Pulses positively classified: {}".format(pulses.shape[0])
+  pulses = RFIexcision.beam_comparison(pulses,inc=inc,database=os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'))
+  print "Pulses after beam comparison: {}".format(pulses.shape[0])
   
   if pulses.empty: 
     logging.warning("No pulse detected!")
@@ -132,7 +135,7 @@ def obs_events(args, debug=False):
   pulses.Candidate = pulses.Candidate.astype(np.int32)
   cands = Candidates.candidates(pulses,args.idL)
   
-  store = pd.HDFStore('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'a')
+  store = pd.HDFStore(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'a')
   store.append('pulses',pulses)
   if not cands.empty:
     cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
@@ -145,14 +148,14 @@ def obs_events(args, debug=False):
     cands = cands[cands.main_cand == 0]
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output
-    meta_data = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(args.idL)),'meta_data')
+    meta_data = pd.read_hdf(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'meta_data')
     LSPplot.output(args.idL, pulses, meta_data, cands, inc=inc)    
     
     #Store the best candidates online
-    try: Internet.upload(cands,args.idL,'{}/sp/candidates/.'.format(WRK_FOLDER.format(args.idL)),meta_data)
+    try: Internet.upload(cands,args.idL,os.path.join(WRK_FOLDER.format(args.idL),'sp/candidates/.'),meta_data)
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
-      with open('{}/{}/SP_ERROR.txt'.format(args.folder,args.idL),'a') as f:
+      with open(os.path.join(args.folder,args.idL,'SP_ERROR.txt'),'a') as f:
         f.write("Connession problem \nConsider to run Upload.py script\n")
 
   return
@@ -215,8 +218,8 @@ def pulses_from_events(idL, directory, sap, beam):
 
   #Store the events
   events.sort(['DM','Time'],inplace=True)
-  events.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'events',mode='w')
-  meta_data.to_hdf('{}/SAP{}_BEAM{}.tmp'.format(TMP_FOLDER.format(idL),sap,beam),'meta_data',mode='a')
+  events.to_hdf(os.path.join(TMP_FOLDER.format(idL),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'events',mode='w')
+  meta_data.to_hdf(os.path.join(TMP_FOLDER.format(idL),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'meta_data',mode='a')
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
@@ -229,7 +232,7 @@ def pulses_from_events(idL, directory, sap, beam):
   
   #Apply RFI filters to the pulses
   if not pulses.empty:
-    arff_basename = '{}/thresholds_{}_{}.arff_tmp'.format(TMP_FOLDER.format(idL), sap, beam)
+    arff_basename = os.path.join(TMP_FOLDER.format(idL),'thresholds_{}_{}.arff_tmp'.format(sap, beam))
     RFIexcision.filters(pulses, events, arff_basename, header=False)
  
   ##Remove weaker pulses within a temporal window
