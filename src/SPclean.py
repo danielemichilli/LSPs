@@ -106,32 +106,6 @@ def obs_events(args, debug=False):
     return
   pulses.sort_index(inplace=True)
 
-
-
-  #TO BE TESTED
-
-  '''
-  # Nuove idee: 
-  # filtro 1 - rimuove pulses in cui, escludedno i beam vicini, ci sono piu di 1/10 di pulses in altri beam in dt, dDM
-  # filtro 2 - rimuove pulses in cui ci sono piu' di 1/10 di beams aventi la meta' del SNR del beam con il massimo segnale entro dt, dDM
-  # filtro 3 - raggruppa i pulses vicini in t,DM e applica statistiche simili agli eventi con i pulses. nel raggruppamento, se ci sono due pulses entro dt,dDM si raggruppa il piu' vicino
-  
-  
-  #Remove time-spans affectd by RFI
-  pulses.sort_index(inplace=True)
-  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM == inc])] += 1
-  pulses.Pulse.loc[RFIexcision.time_span(pulses[pulses.BEAM > inc])] += 1
-  pulses = pulses[pulses.Pulse <= RFI_percent]
-
-  #Compare different beams
-  pulses.Pulse.loc[RFIexcision.Compare_Beams(pulses[pulses.BEAM > inc].copy())] += 1
-  pulses = pulses[pulses.Pulse <= RFI_percent]
-
-  #Remove pulses appearing in too many beams
-  pulses.Pulse += pulses.apply(lambda x: RFIexcision.puls_beams_select(x,pulses),axis=1).astype(np.int8)
-  pulses = pulses[pulses.Pulse <= RFI_percent]
-  '''
-  
   pulses.Candidate = pulses.Candidate.astype(np.int32)
   cands = Candidates.candidates(pulses,args.idL)
   

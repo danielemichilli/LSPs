@@ -93,7 +93,7 @@ def puls_plot(pdf, puls, events, idL, i, inc=12):
 
   ev = events[events.Pulse == puls.name]
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
-  puls_DM_Time(ax2, ev, all_events, puls)
+  puls_DM_Time(ax2, ev, events, puls)
   puls_SNR_DM(ax3, ev)
   if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
   else: plot_not_valid(ax4)
