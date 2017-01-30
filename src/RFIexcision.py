@@ -286,7 +286,7 @@ def beam_comparison(pulses, inc=12, database='SinglePulses.hdf5'):
   condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @beams[@beam])'
   
   def comparison(puls, inc):
-    if puls.BEAM <= inc: return 0
+    #if puls.BEAM <= inc: return 0
     
     sap = int(puls.SAP)
     beam = int(puls.BEAM)

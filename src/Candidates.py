@@ -39,31 +39,28 @@ def Repeated_candidates_beam(pulses):
   dirs = [n for n in gb_puls.indices.iterkeys()]
   pulses.Candidate[:] = -1
 
+  span = 0.101
+
   for (sap,beam) in dirs:
-    puls = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
-    puls.DM = 3*(puls.DM.astype(np.float64)/3).round(2)
+    puls_beam = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
     
-    span = 0.101
+    def group_SNR(DM, pulses):                                                 
+      return pulses.Sigma[(pulses.DM >= DM - span) & (pulses.DM <= DM + span)].sum()
+    def group_count(DM, pulses):                                                 
+      return pulses[(pulses.DM >= DM - span) & (pulses.DM <= DM + span)].shape[0]
+    puls_beam['top_SNR'] = puls_beam.apply(lambda x: group_SNR(x.DM, puls_beam), axis=1)
+    puls_beam['top_count'] = puls_beam.apply(lambda x: group_count(x.DM, puls_beam), axis=1)
+    puls_beam = puls_beam[puls_beam.top_count > 1]
     
-    top_count = puls.groupby('DM')['Sigma'].count()
-    top_sum = puls.groupby('DM')['Sigma'].sum()
-    
-    top_sum = top_sum[top_count >= 2]
-    #top_count = top_count[top_count >= 2]
-
     i = 1
-
-    while not top_sum[top_sum!=0].empty:
-      DM = top_sum.argmax()
-      #Sigma = top_sum.loc[DM-span:DM+span].sum()
-      #N_puls = top_count.loc[DM-span:DM+span].sum()
-      selected_pulses = puls.Candidate[(puls.DM>=DM-span)&(puls.DM<=DM+span)]
+    while puls_beam.shape[0] > 0:
+      DM = puls_beam.DM[puls_beam.top_SNR.argmax()]
+      selected_pulses = puls_beam.Candidate[(puls_beam.DM >= DM - span) & (puls_beam.DM <= DM + span)]
       if selected_pulses.shape[0] > 1:
         pulses.Candidate.loc[selected_pulses.index] = 1 + 2 * (i * 10000 + sap * 1000 + beam)  #Repeated candidates have odd ID
-      #top_count.loc[DM-span:DM+span] = 0
-      top_sum.loc[DM-span:DM+span] = 0
-      i += 1    
-
+      puls_beam = puls_beam.drop(selected_pulses.index)
+      i += 1
+    
   return
 
 
