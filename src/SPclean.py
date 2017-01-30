@@ -112,7 +112,6 @@ def obs_events(args, debug=False):
   store = pd.HDFStore(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'a')
   store.append('pulses',pulses)
   if not cands.empty:
-    cands.sort(['Sigma','Rank'],ascending=[0,1],inplace=True)
     store.append('candidates',cands)
     #cands = cands[cands.main_cand==0].head(30)
   store.close()
@@ -120,13 +119,16 @@ def obs_events(args, debug=False):
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     cands = cands[cands.main_cand == 0]
+    best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
+    best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
+
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output
     meta_data = pd.read_hdf(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'meta_data')
-    LSPplot.output(args.idL, pulses, meta_data, cands, inc=inc)    
+    LSPplot.output(args.idL, pulses, meta_data, best_cands, inc=inc)    
     
     #Store the best candidates online
-    try: Internet.upload(cands,args.idL,os.path.join(WRK_FOLDER.format(args.idL),'sp/candidates/.'),meta_data)
+    try: Internet.upload(best_cands,args.idL,os.path.join(WRK_FOLDER.format(args.idL),'sp/candidates/.'),meta_data)
     except: 
       logging.exception("ATTENTION!\n\nConnession problem, update candidates in a second moment\n\n")
       with open(os.path.join(args.folder,args.idL,'SP_ERROR.txt'),'a') as f:
