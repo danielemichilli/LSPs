@@ -96,7 +96,6 @@ def puls_plot(pdf, puls, events, idL, i, inc=12):
   puls_DM_Time(ax2, ev, events, puls)
   puls_SNR_DM(ax3, ev)
   puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
-  else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL, inc=inc)
   if flag == -1:
     plot_not_valid(ax5)
