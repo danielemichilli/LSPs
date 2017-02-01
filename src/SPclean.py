@@ -121,6 +121,7 @@ def obs_events(args, debug=False):
     cands = cands[cands.main_cand == 0]
     best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
     best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
+    best_cands.sort('Sigma', inplace=True, ascending=False)
 
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output

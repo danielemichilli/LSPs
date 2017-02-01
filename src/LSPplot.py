@@ -95,7 +95,7 @@ def puls_plot(pdf, puls, events, idL, i, inc=12):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, events, puls)
   puls_SNR_DM(ax3, ev)
-  if puls.BEAM > inc: puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
+  puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
   else: plot_not_valid(ax4)
   flag = puls_dynSpec(ax5, ax6, puls, idL, inc=inc)
   if flag == -1:
@@ -339,7 +339,7 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
     ax.annotate('DM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
   beam = puls.BEAM
-  ax.scatter(ra[beam-(inc+1)],dec[beam-(inc+1)],s=300,linewidths=[0.,],marker='*',c='w')
+  if beam > inc: ax.scatter(ra[beam-(inc+1)],dec[beam-(inc+1)],s=300,linewidths=[0.,],marker='*',c='w')
   [ax.annotate(str(i+(inc+1)),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,n_beams)]
 
   ax.set_xlim(-100,1100)

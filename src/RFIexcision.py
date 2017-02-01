@@ -284,9 +284,7 @@ def time_span(pulses):
 def beam_comparison(pulses, database='SinglePulses.hdf5'):
   condition_list_A = [('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]
   condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @adjacent_beams)'
-  
-  
-  
+    
   def comparison(puls):
     sap = int(puls.SAP)
     beam = int(puls.BEAM)
@@ -298,7 +296,7 @@ def beam_comparison(pulses, database='SinglePulses.hdf5'):
     try: adjacent_beams = beams[beam]
     except KeyError: adjacent_beams = -1
     
-    if pd.read_hdf(database, 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
+    if pd.read_hdf(database, 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 4: return 1
     else: return 0
 
   values = pulses.apply(lambda x: comparison(x), axis=1)
