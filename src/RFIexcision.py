@@ -178,7 +178,7 @@ def multimoment(pulses,idL,inc=12):
 
 
 
-#CONTROLLARE
+#TO CHECK! Add confirmation observations
 beams = {
  13: [14, 15, 16, 17, 18, 19],
  14: [20, 21, 15, 13, 19, 31],
@@ -281,13 +281,13 @@ def time_span(pulses):
   return RFI.index[no_rfi==0]
 
 
-def beam_comparison(pulses, inc=12, database='SinglePulses.hdf5'):
+def beam_comparison(pulses, database='SinglePulses.hdf5'):
   condition_list_A = [('SAP == sap'), ('BEAM != beam'), ('Time > tmin'), ('Time < tmax'), ('DM > DMmin'), ('DM < DMmax')]
-  condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @beams[@beam])'
+  condition_list_B = '(Sigma >= @SNRmin) & (BEAM != @adjacent_beams)'
+  
+  
   
   def comparison(puls, inc):
-    #if puls.BEAM <= inc: return 0
-    
     sap = int(puls.SAP)
     beam = int(puls.BEAM)
     tmin = float(puls.Time - 2. * puls.Duration)
@@ -295,6 +295,8 @@ def beam_comparison(pulses, inc=12, database='SinglePulses.hdf5'):
     DMmin = float(puls.DM - 0.2)
     DMmax = float(puls.DM + 0.2)
     SNRmin = puls.Sigma / 2.
+    try: adjacent_beams = beams[beam]
+    except KeyError: adjacent_beams = -1
     
     if pd.read_hdf(database, 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
     else: return 0
