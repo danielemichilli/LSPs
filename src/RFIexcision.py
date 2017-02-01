@@ -287,7 +287,7 @@ def beam_comparison(pulses, database='SinglePulses.hdf5'):
   
   
   
-  def comparison(puls, inc):
+  def comparison(puls):
     sap = int(puls.SAP)
     beam = int(puls.BEAM)
     tmin = float(puls.Time - 2. * puls.Duration)
@@ -301,7 +301,7 @@ def beam_comparison(pulses, database='SinglePulses.hdf5'):
     if pd.read_hdf(database, 'events', where=condition_list_A).query(condition_list_B).groupby('BEAM').count().shape[0] > 3: return 1
     else: return 0
 
-  values = pulses.apply(lambda x: comparison(x, inc), axis=1)
+  values = pulses.apply(lambda x: comparison(x), axis=1)
   pulses = pulses.loc[values.index[values == 0]]
   return pulses
 

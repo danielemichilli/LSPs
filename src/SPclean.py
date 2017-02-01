@@ -98,7 +98,7 @@ def obs_events(args, debug=False):
   ML_predict = os.path.join(TMP_FOLDER.format(args.idL), 'ML_predict.txt')  
   pulses = RFIexcision.select_real_pulses(pulses,os.path.join(TMP_FOLDER.format(args.idL),'thresholds'), ML_predict)
   print "Pulses positively classified: {}".format(pulses.shape[0])
-  pulses = RFIexcision.beam_comparison(pulses,inc=inc,database=os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'))
+  pulses = RFIexcision.beam_comparison(pulses,database=os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'))
   print "Pulses after beam comparison: {}".format(pulses.shape[0])
   
   if pulses.empty: 
