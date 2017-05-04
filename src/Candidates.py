@@ -24,7 +24,7 @@ def candidates(pulses,idL):
     cands.sort('Sigma',ascending=True,inplace=True)
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
-        
+    
     cands.sort(['main_cand', 'Sigma'], ascending=[1,0], inplace=True)
     
   else: cands = pd.DataFrame()

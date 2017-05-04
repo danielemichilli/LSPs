@@ -98,7 +98,7 @@ def obs_events(args, debug=False):
   ML_predict = os.path.join(TMP_FOLDER.format(args.idL), 'ML_predict.txt')  
   pulses = RFIexcision.select_real_pulses(pulses,os.path.join(TMP_FOLDER.format(args.idL),'thresholds'), ML_predict)
   print "Pulses positively classified: {}".format(pulses.shape[0])
-  pulses = RFIexcision.beam_comparison(pulses,database=os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'))
+  pulses = RFIexcision.beam_comparison(pulses,database=os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'), inc=inc)
   print "Pulses after beam comparison: {}".format(pulses.shape[0])
   
   if pulses.empty: 
@@ -119,8 +119,12 @@ def obs_events(args, debug=False):
   if cands.empty: logging.warning("Any reliable candidate detected!")
   else:
     cands = cands[cands.main_cand == 0]
-    best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
-    best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
+    cands.sort('Sigma', inplace=True, ascending=False)
+    best_cands = cands.groupby('BEAM').head(10)
+    best_cands = best_cands.head(50)
+    #best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
+    #best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
+    best_cands = best_cands[ ((best_cands.N_pulses == 1) & (best_cands.Sigma>10.)) | ((best_cands.N_pulses > 1) & (best_cands.Sigma>16.)) ]
     best_cands.sort('Sigma', inplace=True, ascending=False)
 
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
