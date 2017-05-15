@@ -130,7 +130,7 @@ def obs_events(args, debug=False):
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output
     meta_data = pd.read_hdf(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'meta_data')
-    LSPplot.output(args.idL, pulses, meta_data, best_cands, inc=inc)    
+    LSPplot.output(args.idL, pulses, meta_data, best_cands, args.folder, inc=inc)    
     
     #Store the best candidates online
     try: Internet.upload(best_cands,args.idL,os.path.join(WRK_FOLDER.format(args.idL),'sp/candidates/.'),meta_data)
@@ -186,6 +186,7 @@ def pulses_from_events(idL, directory, sap, beam):
   if events.empty: return pd.DataFrame()
   
   #Correct for the time misalignment of events
+  events['Time_org'] = events.Time.copy()
   events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
   events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
 
@@ -199,12 +200,13 @@ def pulses_from_events(idL, directory, sap, beam):
 
   #Store the events
   events.sort(['DM','Time'],inplace=True)
-  events.to_hdf(os.path.join(TMP_FOLDER.format(idL),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'events',mode='w')
+  events.to_hdf(os.path.join(TMP_FOLDER.format(idL),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'events',mode='w')  #Deve andare prima!
   meta_data.to_hdf(os.path.join(TMP_FOLDER.format(idL),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'meta_data',mode='a')
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
   pulses = pulses[pulses.Sigma >= 6.5]
+  pulses = pulses[pulses.DM >= 3.]
 
   #Set a maximum amout of pulses to prevent bad observations to block the pipeline
   pulses.sort('Sigma',ascending=False,inplace=True)

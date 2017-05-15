@@ -36,7 +36,7 @@ def Loader(directory,sap,beam):
     data.Duration = data.Duration.astype(np.float32)
     data.Sample = data.Sample.astype(np.int32)
     
-    data = data.ix[:,['DM','Sigma','Time','Duration','Sample']]
+    data = data.ix[:,['DM','Sigma','Time','Duration','Sample','Downfact']]
     data.index.name = 'idx'
     
     data.insert(0,'BEAM',beam)
@@ -78,7 +78,7 @@ def Thresh(events):
   events = events[events.Time < DURATION - 10]
   
   #Remove low-DM events
-  events = events[events.DM > DM_MIN]
+  #events = events[events.DM > DM_MIN]
   
   return events
 

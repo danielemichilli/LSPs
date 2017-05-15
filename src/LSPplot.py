@@ -30,7 +30,7 @@ mpl.rc('font',size=5)
 
 
 
-def output(idL, pulses, meta_data, candidates, inc=12):
+def output(idL, pulses, meta_data, candidates, folder, inc=12):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort('Sigma',ascending=False,inplace=True)
   
@@ -44,7 +44,7 @@ def output(idL, pulses, meta_data, candidates, inc=12):
     store = '{}/sp/candidates/{}.pdf'.format(WRK_FOLDER.format(idL), cand.id)
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
-      beam_plot(pdf, cand, pulses_cand, pulses, meta_data)
+      beam_plot(pdf, cand, pulses_cand, pulses, meta_data, folder)
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         puls_plot(pdf, puls, events, idL, i, inc=inc)
@@ -56,7 +56,7 @@ def output(idL, pulses, meta_data, candidates, inc=12):
 
 
 
-def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
+def beam_plot(pdf, cand, pulses, pulses_all, meta_data, folder):
   sap = int(cand.SAP)
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
@@ -70,7 +70,9 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data):
   meta_data_plot(ax1,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
   scatter_beam(ax2, pulses, pulses_beam, cand)
 
-  if not pulses_beam.empty: scatter_SNR(ax4,pulses,pulses_beam,cand)
+  if not pulses_beam.empty: 
+    events_beam = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events', where=['Pulse=pulses_beam.index.tolist()'])
+    scatter_SNR(ax4,pulses,events_beam,cand,events)
   try: 
     hist_DM(ax3,pulses_beam,cand)
     hist_SNR(ax5,pulses_beam,cand)
@@ -205,7 +207,7 @@ def hist_SNR(ax,pulses,cand):
 
 def scatter_SNR(ax, pulses, pulses_beam,cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
-  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=20.,linewidths=[0.,], zorder=3)
+  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=10.,linewidths=[0.,], zorder=3)
   ax.set_xscale('log')
   ax.set_ylabel('SNR')
   ax.set_xlabel('DM (pc/cm3)')
@@ -213,9 +215,9 @@ def scatter_SNR(ax, pulses, pulses_beam,cand):
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
-  top = pulses.iloc[:10]
-  for i in range(0,top.shape[0]):
-    ax.annotate(i,xy=(top.DM.iloc[i]/1.15,top.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center',size=4,weight='medium')
+  #top = pulses.iloc[:10]
+  #for i in range(0,top.shape[0]):
+  #  ax.annotate(i,xy=(top.DM.iloc[i]/1.15,top.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center',size=4,weight='medium')
   ax.tick_params(which='both',direction='out')
   ax.yaxis.set_ticks_position('left')
   return
@@ -223,13 +225,13 @@ def scatter_SNR(ax, pulses, pulses_beam,cand):
 
 
 def puls_DM_Time(ax, event, all_events, puls):
-  #def circle_size(val):
-    #m = 4824.
-    #q = 17.59
-    #return val * m + q
-  #sig = circle_size(event.Duration)
-  #ax.scatter(event.Time, event.DM, facecolors='none', s=sig, c='k', linewidths=[0.5,], zorder=2)
-  ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
+  def circle_size(val):
+    m = 4824.
+    q = 17.59
+    return val * m + q
+  sig = circle_size(event.Duration)
+  ax.scatter(event.Time, event.DM, s=sig, marker='o', c='k', linewidths=[0.,], zorder=1)
+  #ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
   ax.scatter(puls.Time, puls.DM, marker='x', color='r', zorder=2)
   ax.set_xlabel('Time (s)')
@@ -371,53 +373,29 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   if inc == 0: conf = 'confirmations'
   else: conf = ''
   filename = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  maskfn = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return -1
-
-  if puls.DM>141.71: sample = puls.Sample * 4
-  elif puls.DM>40.47: sample = puls.Sample * 2
-  else: sample = puls.Sample
-
+  if os.path.isfile(maskfn): mask = True  
+  else: mask = False
+  
+  duration = 10
+  
   filetype, header = Utilities.read_header(filename)
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-  sample += np.round(sample*v).astype(int)
-
-  duration = np.int(np.round(puls.Duration/RES))
-  spectra_border = 20
-  offset = duration*spectra_border
-
-  #Load the spectrum
-  mask_name = MASK_FILE.format(idL=idL,sap=sap,beam=beam)
-  spectrum = Utilities.read_fits(filename,puls.DM.copy(),sample.copy(),duration,offset,RFI_reduct=True,mask=mask_name)
-  extent = [(sample-offset)*RES,(sample+duration+offset)*RES,F_MIN,F_MAX]
-
-  if len(spectrum) == 0: return -1
   
-  #Probabilmente extent da rifare per spettro dispersed
-  ax2.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  #Plottare contorni!
-  ax2.axis(extent)
-  ax2.set_xlabel('Time (s)')
-  ax2.set_ylabel('Frequency (MHz)')  
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(filename, puls.Time_org*(1+v)-puls.Duration*duration, puls.Duration*(duration+1), dm=puls.DM, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
+  plot_waterfall(ds, start, puls.Duration*duration, ax_im=ax1, interactive=False)
+  
+  DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(filename, puls.Time_org*(1+v)-0.1, puls.Duration+DM_delay+0.1, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
+  plot_waterfall(ds, start, puls.Duration+DM_delay+0.1, ax_im=ax2, interactive=False)
 
-  def dedispersion(spectrum):
-    freq = np.linspace(F_MIN,F_MAX,2592)
-    time = (4149 * puls.DM * (F_MAX**-2 - np.power(freq,-2)) / RES).round().astype(np.int)
-    for i in range(spectrum.shape[1]):
-      spectrum[:,i] = np.roll(spectrum[:,i], time[i])
-    spectrum = spectrum[:2*offset+duration]
-  
-    spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0]/duration,duration,spectrum.shape[1]]),axis=1)
-    spectrum = np.mean(np.reshape(spectrum,[spectrum.shape[0],spectrum.shape[1]/32,32]),axis=2)
-    return spectrum
-  
-  spectrum = dedispersion(spectrum)
-     
-  ax1.imshow(spectrum.T,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=extent)
-  ax1.scatter((sample+duration/2)*RES,F_MIN,marker='^',s=25,c='r',lw=0.)
-  ax1.axis(extent)
-  ax1.set_xlabel('Time (s)')
-  ax1.set_ylabel('Frequency (MHz)')
+  #ax2.set_xlabel('Time (s)')
+  #ax2.set_ylabel('Frequency (MHz)')  
+  #ax1.set_xlabel('Time (s)')
+  #ax1.set_ylabel('Frequency (MHz)')
+  ax1.scatter((start + puls.Duration+DM_delay+0.1)/2.,F_MIN,marker='^',s=25,c='r',lw=0.)
       
   return 0
 

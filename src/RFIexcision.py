@@ -52,7 +52,16 @@ def filters(pulses, events, filename, validation=False, header=True):
   events.sort('DM',inplace=True)
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
+  
+  values[idx] = pulses.Sigma.astype(np.float16)
+  idx += 1
 
+  values[idx] = pulses.Duration.astype(np.float16)
+  idx += 1
+
+  values[idx] = pulses.dTime.astype(np.float16)
+  idx += 1
+  
   values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
   idx += 1
 
@@ -74,28 +83,7 @@ def filters(pulses, events, filename, validation=False, header=True):
   values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
   idx += 1
 
-  #Remove flat duration pulses. Minimum ratio to have weakest pulses with SNR = 8 (from Eq.6.21 of Pulsar Handbook)
-  values[idx] = gb.Duration.max() / pulses.Duration - (pulses.Sigma / gb.Sigma.min())**2
-  idx += 1
-
-  def extreme_min(ev):
-    ev_len = ev.shape[0] / 5
-    return np.max((ev[:ev_len].min(), ev[-ev_len:].min()))
-  values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
-  idx += 1
-
-  values[idx] = (gb.Sigma.min() / pulses.Sigma).astype(np.float16)
-  idx += 1
-
   values[idx] = (pulses.dTime / pulses.dDM).astype(np.float16)
-  idx += 1
-
-  def std_time(x):
-    return np.std(x - x.shift(1))
-  values[idx] = (gb.apply(lambda x: std_time(x.Time))).astype(np.float16)
-  idx += 1
-
-  values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
   idx += 1
 
   if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)
@@ -117,6 +105,32 @@ def filters(pulses, events, filename, validation=False, header=True):
   return
 
 
+def filters_collection():
+  #values[idx] = pulses.dDM.astype(np.float16)
+  #idx += 1
+  
+  #Remove flat duration pulses. Minimum ratio to have weakest pulses with SNR = 8 (from Eq.6.21 of Pulsar Handbook)
+  #values[idx] = gb.Duration.max() / pulses.Duration - (pulses.Sigma / gb.Sigma.min())**2
+  #idx += 1
+
+  #def extreme_min(ev):
+    #ev_len = ev.shape[0] / 5
+    #return np.max((ev[:ev_len].min(), ev[-ev_len:].min()))
+  #values[idx] = (gb.apply(lambda x: extreme_min(x.Sigma))).astype(np.float16)
+  #idx += 1
+
+  #values[idx] = (gb.Sigma.min() / pulses.Sigma).astype(np.float16)
+  #idx += 1
+
+  #def std_time(x):
+    #return np.std(x - x.shift(1))
+  #values[idx] = (gb.apply(lambda x: std_time(x.Time))).astype(np.float16)
+  #idx += 1
+
+  #values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
+  #idx += 1
+  
+  return
 
 
 

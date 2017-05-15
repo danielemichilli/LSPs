@@ -13,7 +13,7 @@ def Generator(events):
   pulses = events.loc[gb.Sigma.idxmax()]  
   pulses.index = pulses.Pulse
   pulses.index.name = None
-  pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration','Sample']]
+  pulses = pulses.loc[:,['SAP','BEAM','DM','Sigma','Time','Duration','Sample','Time_org','Downfact']]
   pulses.index.name = 'idx'
   pulses['Pulse'] = 0
   pulses.Pulse = pulses.Pulse.astype(np.int8)
