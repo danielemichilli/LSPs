@@ -20,6 +20,7 @@ import presto
 import subprocess
 import shutil
 import waterfaller
+import psrfits
 
 import Utilities
 from Parameters import *
@@ -385,7 +386,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   
-  ds, nbinsextra, nbins, start = waterfaller.waterfall(filename, puls.Time_org*(1+v)-puls.Duration*duration, puls.Duration*(duration+1), dm=puls.DM, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-puls.Duration*duration, puls.Duration*(duration+1), dm=puls.DM, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
   plot_waterfall(ds, start, puls.Duration*duration, ax_im=ax1, interactive=False)
   
   DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
