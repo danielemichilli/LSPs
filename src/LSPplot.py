@@ -19,6 +19,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import presto
 import subprocess
 import shutil
+import waterfaller
 
 import Utilities
 from Parameters import *
@@ -30,7 +31,7 @@ mpl.rc('font',size=5)
 
 
 
-def output(idL, pulses, meta_data, candidates, folder, inc=12):
+def output(idL, pulses, meta_data, candidates, db, inc=12):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort('Sigma',ascending=False,inplace=True)
   
@@ -44,10 +45,10 @@ def output(idL, pulses, meta_data, candidates, folder, inc=12):
     store = '{}/sp/candidates/{}.pdf'.format(WRK_FOLDER.format(idL), cand.id)
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
-      beam_plot(pdf, cand, pulses_cand, pulses, meta_data, folder)
+      beam_plot(pdf, cand, pulses_cand, pulses, meta_data, db)
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
-        puls_plot(pdf, puls, events, idL, i, inc=inc)
+        puls_plot(pdf, puls, events, idL, db, i, inc=inc)
     
     plt.close('all')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -56,7 +57,7 @@ def output(idL, pulses, meta_data, candidates, folder, inc=12):
 
 
 
-def beam_plot(pdf, cand, pulses, pulses_all, meta_data, folder):
+def beam_plot(pdf, cand, pulses, pulses_all, meta_data, db):
   sap = int(cand.SAP)
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
@@ -71,8 +72,8 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, folder):
   scatter_beam(ax2, pulses, pulses_beam, cand)
 
   if not pulses_beam.empty: 
-    events_beam = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events', where=['Pulse=pulses_beam.index.tolist()'])
-    scatter_SNR(ax4,pulses,events_beam,cand,events)
+    events_beam = pd.read_hdf(db, 'events', where=['Pulse=pulses_beam.index.tolist()'])
+    scatter_SNR(ax4,pulses,events_beam,cand)
   try: 
     hist_DM(ax3,pulses_beam,cand)
     hist_SNR(ax5,pulses_beam,cand)
@@ -84,7 +85,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, folder):
 
 
 
-def puls_plot(pdf, puls, events, idL, i, inc=12):
+def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   ax1 = plt.subplot2grid((2,6),(0,0))
   ax5 = plt.subplot2grid((2,6),(0,1))
   ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
@@ -97,7 +98,7 @@ def puls_plot(pdf, puls, events, idL, i, inc=12):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, events, puls)
   puls_SNR_DM(ax3, ev)
-  puls_heatmap(ax4, puls, idL, WRK_FOLDER.format(idL)+'/sp', inc=inc)
+  puls_heatmap(ax4, puls, idL, db, inc=inc)
   flag = puls_dynSpec(ax5, ax6, puls, idL, inc=inc)
   if flag == -1:
     plot_not_valid(ax5)
@@ -177,7 +178,7 @@ def meta_data_plot(ax,meta_data,pulses,cand):
 
 def hist_DM(ax,pulses,cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
-  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=2)
+  ax.hist(pulses.DM.tolist(),bins=int(550-DM_MIN),histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
   ax.set_ylabel('Counts')
@@ -192,7 +193,7 @@ def hist_DM(ax,pulses,cand):
 
 def hist_SNR(ax,pulses,cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
-  ax.hist(pulses.DM.tolist(),bins=550-DM_MIN,histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=2)
+  ax.hist(pulses.DM.tolist(),bins=int(550-DM_MIN),histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
   ax.set_ylabel('Cumulative SNR')
@@ -205,7 +206,7 @@ def hist_SNR(ax,pulses,cand):
 
 
 
-def scatter_SNR(ax, pulses, pulses_beam,cand):
+def scatter_SNR(ax, pulses, pulses_beam, cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
   ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=10.,linewidths=[0.,], zorder=3)
   ax.set_xscale('log')
@@ -265,7 +266,7 @@ def puls_SNR_DM(ax, event):
 
 
 
-def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
+def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
   if inc == 12:    
     ra = np.array([ 
           499,  499,  622,  621,  499,  377,  376,  499,  624,  748,  744,
@@ -316,9 +317,9 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
   sap = int(puls.SAP)
   select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
   try:
-    events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events', where=select)
+    events = pd.read_hdf(db, 'events', where=select)
   except ValueError:
-    events = pd.read_hdf('{}/SinglePulses.hdf5'.format(folder), 'events')
+    events = pd.read_hdf(db, 'events')
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.sum()
   ind = pd.Series(np.zeros(n_beams))
@@ -339,7 +340,7 @@ def puls_heatmap(ax, puls, idL, folder, pulseN=False, inc=12):
   else:
     ax.annotate('DM: {:.2f} - {:.2f}, Time: {:.2f} - {:.2f}'.format(dm_l,dm_h,t_l,t_h), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
   
-  beam = puls.BEAM
+  beam = int(puls.BEAM)
   if beam > inc: ax.scatter(ra[beam-(inc+1)],dec[beam-(inc+1)],s=300,linewidths=[0.,],marker='*',c='w')
   [ax.annotate(str(i+(inc+1)),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,n_beams)]
 

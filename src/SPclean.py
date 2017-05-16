@@ -130,7 +130,7 @@ def obs_events(args, debug=False):
     #pulses = pulses[pulses.Candidate.isin(cands.index)]
     #Produce the output
     meta_data = pd.read_hdf(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'meta_data')
-    LSPplot.output(args.idL, pulses, meta_data, best_cands, args.folder, inc=inc)    
+    LSPplot.output(args.idL, pulses, meta_data, best_cands, os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'), inc=inc)    
     
     #Store the best candidates online
     try: Internet.upload(best_cands,args.idL,os.path.join(WRK_FOLDER.format(args.idL),'sp/candidates/.'),meta_data)
