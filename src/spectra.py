@@ -302,6 +302,8 @@ class Spectra(object):
 
             *** Trimming is irreversible ***
         """
+        bins = int(bins)
+        
         assert bins < self.numspectra
         if bins == 0:
             return

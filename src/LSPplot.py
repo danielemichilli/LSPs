@@ -24,7 +24,6 @@ import psrfits
 
 import Utilities
 from Parameters import *
-import Paths
 import RFIexcision
 from Paths import *
 
@@ -46,7 +45,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
     store = '{}/sp/candidates/{}.pdf'.format(WRK_FOLDER.format(idL), cand.id)
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
-      beam_plot(pdf, cand, pulses_cand, pulses, meta_data, db)
+      beam_plot(pdf, cand, pulses_cand, pulses, meta_data, events)
       
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         puls_plot(pdf, puls, events, idL, db, i, inc=inc)
@@ -58,7 +57,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
 
 
 
-def beam_plot(pdf, cand, pulses, pulses_all, meta_data, db):
+def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
   sap = int(cand.SAP)
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
@@ -73,8 +72,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, db):
   scatter_beam(ax2, pulses, pulses_beam, cand)
 
   if not pulses_beam.empty: 
-    events_beam = pd.read_hdf(db, 'events', where=['Pulse=pulses_beam.index.tolist()'])
-    scatter_SNR(ax4,pulses,events_beam,cand)
+    scatter_SNR(ax4,pulses,events[events.Pulse.isin(pulses_beam.index)],cand)
   try: 
     hist_DM(ax3,pulses_beam,cand)
     hist_SNR(ax5,pulses_beam,cand)
@@ -227,12 +225,13 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
 
 
 def puls_DM_Time(ax, event, all_events, puls):
-  def circle_size(val):
-    m = 4824.
-    q = 17.59
-    return val * m + q
-  sig = circle_size(event.Duration)
-  ax.scatter(event.Time, event.DM, s=sig, marker='o', c='k', linewidths=[0.,], zorder=1)
+  def circle_size(values):
+    new_val = np.clip(values,6.5,20)
+    m = 31.85
+    q = -137.025
+    return new_val * m + q
+  sig = circle_size(event.Sigma)
+  ax.scatter(event.Time, event.DM, s=sig, marker='o', c='k', linewidths=[0.1,], facecolors='none', zorder=1)
   #ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
   ax.scatter(puls.Time, puls.DM, marker='x', color='r', zorder=2)
@@ -333,8 +332,8 @@ def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
   #bar = plt.colorbar(plot, ax=ax)
   #bar.set_label('Cumulative SNR')
   
-  ax.set_xlabel('RA (arb.)')
-  ax.set_ylabel('DEC (arb.)')
+  ax.set_xlabel('RA')
+  ax.set_ylabel('DEC')
   if pulseN: 
     ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
     ax.annotate('DM: {:.2f}$\pm$0.2, Time: {:.2f}$\pm${:.2f}'.format(puls.DM,puls.Time,puls.Duration), xy=(-80,1080), fontsize='large',horizontalalignment='left',verticalalignment='top')
@@ -347,6 +346,7 @@ def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
 
   ax.set_xlim(-100,1100)
   ax.set_ylim(-100,1100)
+  ax.tick_params(axis='both', labelleft='off', labelright='off', labeltop='on', labelbottom='off', right='off', left='off', bottom='off', top='off')
   return
 
 
@@ -374,8 +374,8 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  filename = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  maskfn = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  filename = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  maskfn = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return -1
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
@@ -386,18 +386,18 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
   v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
   
-  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-puls.Duration*duration, puls.Duration*(duration+1), dm=puls.DM, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
-  plot_waterfall(ds, start, puls.Duration*duration, ax_im=ax1, interactive=False)
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-puls.Duration*duration/2, puls.Duration*(duration+1), dm=puls.DM, downsamp=int(puls.Downfact), nsub=16, maskfn=maskfn, mask=mask)
+  waterfaller.plot_waterfall(ds, start, puls.Duration*duration, ax_im=ax1, interactive=False)
+  ax1.scatter((start + puls.Duration)/2.,F_MIN,marker='^',s=25,c='r',lw=0.)
   
   DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
-  ds, nbinsextra, nbins, start = waterfaller.waterfall(filename, puls.Time_org*(1+v)-0.1, puls.Duration+DM_delay+0.1, downsamp=puls.Downfact, maskfn=maskfn, mask=mask)
-  plot_waterfall(ds, start, puls.Duration+DM_delay+0.1, ax_im=ax2, interactive=False)
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-0.1, puls.Duration+DM_delay+0.2, downsamp=int(puls.Downfact), nsub=32, maskfn=maskfn, mask=mask)
+  waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.1, ax_im=ax2, interactive=False, sweep_dms=[puls.DM])
 
   #ax2.set_xlabel('Time (s)')
   #ax2.set_ylabel('Frequency (MHz)')  
   #ax1.set_xlabel('Time (s)')
   #ax1.set_ylabel('Frequency (MHz)')
-  ax1.scatter((start + puls.Duration+DM_delay+0.1)/2.,F_MIN,marker='^',s=25,c='r',lw=0.)
       
   return 0
 
@@ -436,11 +436,11 @@ def load_ts(puls, idL, filename):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   out_dir = TMP_FOLDER.format(idL) + '/timeseries/'
-  if not os.path.isdir(TMP_FOLDER.format(idL) + '/timeseries'): os.makedirs(TMP_FOLDER.format(idL) + '/timeseries')
+  if not os.path.isdir(os.path.join(TMP_FOLDER.format(idL), 'timeseries')): os.makedirs(os.path.join(TMP_FOLDER.format(idL), 'timeseries'))
   FNULL = open(os.devnull, 'w')
   for j,DM in enumerate(DM_range):
     if not os.path.isfile(filename.format(DM)):
-      error = subprocess.call(['sh', '/home/sanidas/lotaasgit/LOTAAS-Scripts/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
+      error = subprocess.call(['sh', '/projects/0/lotaas2/software/LSP/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
     
     try:
       ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
@@ -462,7 +462,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
   
   filename = TMP_FOLDER.format(idL) + '/timeseries/{}/manual_fold_DM{{0:.2f}}.dat'.format(idL)

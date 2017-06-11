@@ -36,7 +36,8 @@ def sift_pulses(pulses, events, idL, sap, beam):
 def select_real_pulses(pulses,basename, out_name):
   subprocess.call(['java', '-jar', Paths.CLASSIFIER, '-v', '-m{}'.format(Paths.MODEL_FILE), '-p{}'.format(basename+'.arff'), '-o{}'.format(basename+'.positive'), '-a1'])
   os.remove(basename+'.arff')
-  pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
+  try: pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
+  except IOError: return pd.DataFrame()
   os.remove(basename+'.positive')
   pulses = pulses.loc[pulses_list]
   if pulses_list.size != pulses.shape[0]:
