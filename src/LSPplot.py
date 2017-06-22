@@ -195,7 +195,7 @@ def hist_SNR(ax,pulses,cand):
   ax.hist(pulses.DM.tolist(),bins=int(550-DM_MIN),histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
   ax.set_xlabel('DM (pc/cm3)')
-  ax.set_ylabel('Cumulative SNR')
+  ax.set_ylabel('Cumulative S/N')
   ax.set_xlim(DM_MIN,550)
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
@@ -209,7 +209,7 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
   ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
   ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=10.,linewidths=[0.,], zorder=3)
   ax.set_xscale('log')
-  ax.set_ylabel('SNR')
+  ax.set_ylabel('S/N')
   ax.set_xlabel('DM (pc/cm3)')
   ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
@@ -255,7 +255,7 @@ def puls_DM_Time(ax, event, all_events, puls):
 def puls_SNR_DM(ax, event):
   ax.plot(event.DM, event.Sigma, 'k')
   ax.set_xlabel('DM (pc/cm3)')    
-  ax.set_ylabel('SNR')
+  ax.set_ylabel('S/N')
   
   ax2 = ax.twinx()
   ax2.plot(event.DM, event.Duration*1000, 'r')
