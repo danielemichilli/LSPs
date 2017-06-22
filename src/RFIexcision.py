@@ -54,6 +54,61 @@ def filters(pulses, events, filename, validation=False, header=True):
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
   
+  
+  def mean(y):
+    return y.sum()/y.size()
+  
+  def std(y):
+    return (np.sum((y-mean(y))**2)/(y.size-1))**.5
+  
+  def ske(y):
+    return np.sum((y-mean(y))**3)/y.size/(np.sum((y-mean(y))**2)/y.size)**1.5
+  
+  def kur(y):
+    return np.sum((y-mean(y))**4)/y.size/(np.sum((y-mean(y))**2)/y.size)**2 - 3
+  
+  def mean2(x,y):
+    return np.sum(x*y)/y.sum()
+  
+  def std2(y):
+    return (np.sum((x-mean2(x,y))**2*y)/y.sum())**.5
+  
+  def ske2(y):
+    return np.abs(np.sum((x-mean2(x,y))**3*y)/y.sum()/std(y)**3)
+  
+  def kur2(y):
+    return np.sum((x-mean2(x,y))**4*y)/y.sum()/std(y)**4 - 3
+  
+  values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1  
+  
+  values[idx] = (gb.apply(lambda x: std2(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1  
+  
+  values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1
+  
+  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Sigma))).astype(np.float16)
+  idx += 1
+  
+  values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Duration))).astype(np.float16)
+  idx += 1  
+  
+  values[idx] = (gb.apply(lambda x: std2(x.DM, x.Duration))).astype(np.float16)
+  idx += 1  
+  
+  values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Duration))).astype(np.float16)
+  idx += 1
+  
+  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Duration))).astype(np.float16)
+  idx += 1
+
+
+
+
+
+    
+  
   values[idx] = pulses.Sigma.astype(np.float16)
   idx += 1
 
