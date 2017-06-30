@@ -54,92 +54,26 @@ def filters(pulses, events, filename, validation=False, header=True):
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
   
-  
-  def mean(y):
-    return y.sum()/y.size()
-  
-  def std(y):
-    return (np.sum((y-mean(y))**2)/(y.size-1))**.5
-  
-  def ske(y):
-    return np.sum((y-mean(y))**3)/y.size/(np.sum((y-mean(y))**2)/y.size)**1.5
-  
-  def kur(y):
-    return np.sum((y-mean(y))**4)/y.size/(np.sum((y-mean(y))**2)/y.size)**2 - 3
-  
   def mean2(x,y):
     return np.sum(x*y)/y.sum()
   
-  def std2(y):
-    return (np.sum((x-mean2(x,y))**2*y)/y.sum())**.5
+  def kur2(x,y):
+    std = np.clip(y.std(),1e-5,np.inf)
+    return np.sum((x-mean2(x,y))**4*y)/y.sum()/std**4 - 3
   
-  def ske2(y):
-    return np.abs(np.sum((x-mean2(x,y))**3*y)/y.sum()/std(y)**3)
-  
-  def kur2(y):
-    return np.sum((x-mean2(x,y))**4*y)/y.sum()/std(y)**4 - 3
-  
-  values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Sigma))).astype(np.float16)
+  values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Sigma)))
   idx += 1  
-  
-  values[idx] = (gb.apply(lambda x: std2(x.DM, x.Sigma))).astype(np.float16)
-  idx += 1  
-  
-  values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Sigma))).astype(np.float16)
+
+  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Sigma)))
   idx += 1
   
-  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Sigma))).astype(np.float16)
+  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Duration)))
   idx += 1
   
-  values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Duration))).astype(np.float16)
-  idx += 1  
-  
-  values[idx] = (gb.apply(lambda x: std2(x.DM, x.Duration))).astype(np.float16)
-  idx += 1  
-  
-  values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Duration))).astype(np.float16)
-  idx += 1
-  
-  values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Duration))).astype(np.float16)
+  values[idx] = pulses.Sigma
   idx += 1
 
-
-
-
-
-    
-  
-  values[idx] = pulses.Sigma.astype(np.float16)
-  idx += 1
-
-  values[idx] = pulses.Duration.astype(np.float16)
-  idx += 1
-
-  values[idx] = pulses.dTime.astype(np.float16)
-  idx += 1
-  
-  values[idx] = (gb.Duration.max() / pulses.Duration).astype(np.float16)
-  idx += 1
-
-  def flat_SNR_extremes(sigma):                                            
-    dim = np.max((1,sigma.shape[0]/6))
-    return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
-  values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma))).astype(np.float16)
-  idx += 1
-
-  def fit_simm(x,y):
-    lim = y.argmax()
-    xl = x.loc[:lim]
-    if xl.shape[0] < 2: return 10000
-    pl = np.polyfit(xl, y.loc[:lim], 1)[0]
-    xr = x.loc[lim:]
-    if xr.shape[0] < 2: return 10000
-    pr = np.polyfit(xr, y.loc[lim:], 1)[0]
-    return pl*pr
-  values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma))).astype(np.float16)
-  idx += 1
-
-  values[idx] = (pulses.dTime / pulses.dDM).astype(np.float16)
+  values[idx] = pulses.Duration
   idx += 1
 
   if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)
@@ -162,6 +96,49 @@ def filters(pulses, events, filename, validation=False, header=True):
 
 
 def filters_collection():
+  #def std2(x,y):
+    #return (np.sum((x-mean2(x,y))**2*y)/y.sum())**.5
+  
+  #def ske2(x,y):
+    #std = np.clip(y.std(),1e-5,np.inf)
+    #return np.abs(np.sum((x-mean2(x,y))**3*y)/y.sum()/std**3)
+    
+  #values[idx] = pulses.dTime
+  #idx += 1
+  
+  #values[idx] = (gb.Duration.max() / pulses.Duration)
+  #idx += 1
+
+  #def flat_SNR_extremes(sigma):                                            
+    #dim = np.max((1,sigma.shape[0]/6))
+    #return np.max((np.median(sigma.iloc[:dim]),np.median(sigma.iloc[-dim:]))) / sigma.max()
+  #values[idx] = (gb.apply(lambda x: flat_SNR_extremes(x.Sigma)))
+  #idx += 1
+
+  #def fit_simm(x,y):
+    #lim = y.argmax()
+    #xl = x.loc[:lim]
+    #if xl.shape[0] < 2: return 10000
+    #pl = np.polyfit(xl, y.loc[:lim], 1)[0]
+    #xr = x.loc[lim:]
+    #if xr.shape[0] < 2: return 10000
+    #pr = np.polyfit(xr, y.loc[lim:], 1)[0]
+    #return pl*pr
+  #values[idx] = (gb.apply(lambda x: fit_simm(x.DM, x.Sigma)))
+  #idx += 1
+
+  #values[idx] = (pulses.dTime / pulses.dDM)
+  #idx += 1
+  
+  #values[idx] = (gb.apply(lambda x: std2(x.DM, x.Duration)))
+  #idx += 1  
+  
+  #values[idx] = (gb.apply(lambda x: std2(x.DM, x.Sigma)))
+  #idx += 1  
+  
+  #values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Sigma)))
+  #idx += 1
+
   #values[idx] = pulses.dDM.astype(np.float16)
   #idx += 1
   
@@ -185,6 +162,24 @@ def filters_collection():
 
   #values[idx] = (pulses.Sigma - gb.Sigma.min()).astype(np.float16)
   #idx += 1
+  
+  #values[idx] = (gb.apply(lambda x: ske2(x.DM, x.Duration)))
+  #idx += 1
+  
+  #values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Duration)))
+  #idx += 1  
+  
+  #def mean(y):
+    #return y.sum()/y.size
+  
+  #def std(y):
+    #return np.clip((np.sum((y-mean(y))**2)/(y.size-1))**.5, 1e-5, np.inf)
+  
+  #def ske(y):
+    #return np.sum((y-mean(y))**3)/y.size/(np.sum((y-mean(y))**2)/y.size)**1.5
+  
+  #def kur(y):
+    #return np.sum((y-mean(y))**4)/y.size/(np.sum((y-mean(y))**2)/y.size)**2 - 3  
   
   return
 
