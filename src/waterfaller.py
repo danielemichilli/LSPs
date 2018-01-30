@@ -189,7 +189,7 @@ def waterfall(rawdatafile, start, duration, dm=None, nbins=None, nsub=None,\
 def plot_waterfall(data, start, duration, colour="k",
                    integrate_ts=False, integrate_spec=False, show_cb=False, 
                    cmap_str="gist_yarg", sweep_dms=[], sweep_posns=[],
-                   ax_im=None, ax_ts=None, ax_spec=None, interactive=True):
+                   ax_im=None, ax_ts=None, ax_spec=None, interactive=True, puls_t=False):
     """ I want a docstring too!
     """
 
@@ -212,6 +212,8 @@ def plot_waterfall(data, start, duration, colour="k",
     # Ploting it up
     nbinlim = np.int(duration/data.dt)
 
+    if puls_t: data.starttime = puls_t 
+
     img = ax_im.imshow(data.data[..., :nbinlim], aspect='auto', \
                 cmap=matplotlib.cm.cmap_d[cmap_str], \
                 interpolation='nearest', origin='upper', \
@@ -220,7 +222,7 @@ def plot_waterfall(data, start, duration, colour="k",
               
     ax_im.set_xlim((data.starttime, data.starttime+ nbinlim*data.dt))
     ax_im.set_ylim((data.freqs.min(), data.freqs.max()))
-              
+
     if show_cb:
         cb = ax_im.get_figure().colorbar(img)
         cb.set_label("Scaled signal intensity (arbitrary units)")
@@ -240,11 +242,13 @@ def plot_waterfall(data, start, duration, colour="k",
             sweep_posn = sweep_posns[ii]
         sweepstart = data.dt*data.numspectra*sweep_posn+data.starttime
         sty = SWEEP_STYLES[ii%len(SWEEP_STYLES)]
-        ax_im.plot(delays+sweepstart, data.freqs, sty, lw=4, alpha=0.5)
+        ax_im.plot(delays+sweepstart, data.freqs, sty, lw=.2)
 
     # Dressing it up
-    ax_im.xaxis.get_major_formatter().set_useOffset(False)
-    ax_im.set_xlabel("Time (s)")
+    #print "img limits: ", [-nbinlim*data.dt*2.,nbinlim*data.dt/2.]
+    #img.set_extent([-nbinlim*data.dt*2.,nbinlim*data.dt/2., data.freqs.min(), data.freqs.max()])
+    #ax_im.xaxis.get_major_formatter().set_useOffset(False)
+    ax_im.set_xlabel("$\Delta$Time (s)")
     ax_im.set_ylabel("Frequency (MHz)")
 
     # Plot Time series

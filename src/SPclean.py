@@ -63,7 +63,7 @@ def obs_events(args, debug=False):
     store.append('events',pd.read_hdf(os.path.join(TMP_FOLDER.format(idL),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
     meta_data = pd.read_hdf(os.path.join(TMP_FOLDER.format(idL),file),'meta_data')
     meta_data.reset_index(inplace=True,drop=True)
-    store.append('meta_data',meta_data)    
+    store.append('meta_data',meta_data)
     os.remove(os.path.join(TMP_FOLDER.format(idL),file))
     
   store = pd.HDFStore(os.path.join(WRK_FOLDER.format(args.idL),'sp/SinglePulses.hdf5'),'w')

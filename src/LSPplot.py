@@ -89,7 +89,7 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   ax5 = plt.subplot2grid((2,6),(0,1))
   ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
   ax7 = plt.subplot2grid((2,6),(0,4), colspan=2)
-  ax2 = plt.subplot2grid((2,6),(1,0), colspan=2)
+  ax2 = plt.subplot2grid((2,6),(1,0))#, colspan=2)
   ax3 = plt.subplot2grid((2,6),(1,2), colspan=2)
   ax4 = plt.subplot2grid((2,6),(1,4), colspan=2)
 
@@ -132,7 +132,7 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
 
   ax.scatter(pulses_beam.Time, pulses_beam.DM, c='k', s=sig, edgecolor='w', lw=.2, zorder=2)
 
-  ax.axhline(cand.DM, c='dodgerblue', ls='-', zorder=1)
+  ax.axhline(cand.DM, c='r', ls='-', zorder=1)
   
   ax.axhline(40.48,c='k',ls='--',lw=.1, zorder=1)
   ax.axhline(141.68,c='k',ls='--',lw=.1, zorder=1)
@@ -163,7 +163,7 @@ def meta_data_plot(ax,meta_data,pulses,cand):
   ax.annotate('Sigma (cum.): {0:.1f}'.format(cand.Sigma), xy=(0,5))
   if cand.N_pulses == 1:
     ax.annotate('Time (s): {0:.2f}'.format(pulses.Time.iloc[0]), xy=(0,3))
-    ax.annotate('Duration (ms): {0:.0f}'.format(pulses.Duration.iloc[0]*1000), xy=(0,2))
+    ax.annotate('Width (ms): {0:.0f}'.format(pulses.Duration.iloc[0]*1000), xy=(0,2))
     ax.annotate('N. events: {}'.format(pulses.N_events.iloc[0]), xy=(0,1))
   else:
     ax.annotate('dDM (pc/cm2): {0:.2f}'.format(pulses.DM.max()-pulses.DM.min()), xy=(0,4))
@@ -176,10 +176,10 @@ def meta_data_plot(ax,meta_data,pulses,cand):
 
 
 def hist_DM(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
+  ax.axvline(cand.DM, c='r', ls='-', linewidth=.2, zorder=3)
   ax.hist(pulses.DM.tolist(),bins=int(550-DM_MIN),histtype='stepfilled',color=u'k',range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
-  ax.set_xlabel('DM (pc/cm3)')
+  ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_ylabel('Counts')
   ax.set_xlim(DM_MIN,550)
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
@@ -191,10 +191,10 @@ def hist_DM(ax,pulses,cand):
 
 
 def hist_SNR(ax,pulses,cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=3)
+  ax.axvline(cand.DM, c='r', ls='-', linewidth=.2, zorder=3)
   ax.hist(pulses.DM.tolist(),bins=int(550-DM_MIN),histtype='stepfilled',color=u'k',weights=pulses.Sigma.tolist(),range=(DM_MIN,550), zorder=2)
   ax.set_xscale('log')
-  ax.set_xlabel('DM (pc/cm3)')
+  ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_ylabel('Cumulative S/N')
   ax.set_xlim(DM_MIN,550)
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
@@ -206,11 +206,11 @@ def hist_SNR(ax,pulses,cand):
 
 
 def scatter_SNR(ax, pulses, pulses_beam, cand):
-  ax.axvline(cand.DM, c='dodgerblue', ls='-', linewidth=.2, zorder=2)
-  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=10.,linewidths=[0.,], zorder=3)
+  ax.axvline(cand.DM, c='r', ls='-', linewidth=.2, zorder=3)
+  ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=5,linewidths=[0.,], zorder=2)
   ax.set_xscale('log')
   ax.set_ylabel('S/N')
-  ax.set_xlabel('DM (pc/cm3)')
+  ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
@@ -229,39 +229,44 @@ def puls_DM_Time(ax, event, all_events, puls):
     new_val = np.clip(values,6.5,20)
     m = 31.85
     q = -137.025
-    return new_val * m + q
+    return (new_val * m + q) / 2.
   sig = circle_size(event.Sigma)
-  ax.scatter(event.Time, event.DM, s=sig, marker='o', c='k', linewidths=[0.1,], facecolors='none', zorder=1)
+  x_ev = (event.Time - puls.Time)
+  ax.scatter(x_ev, event.DM, s=sig, marker='o', linewidths=[.5,], edgecolor='r', facecolors='none', zorder=0)
   #ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
   #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
-  ax.scatter(puls.Time, puls.DM, marker='x', color='r', zorder=2)
-  ax.set_xlabel('Time (s)')
-  ax.set_ylabel('DM (pc/cm3)')
+  ax.scatter(0, puls.DM, marker='x', s=30., color='dodgerblue', zorder=2)
+  ax.set_xlabel('$\Delta$Time (s)')
+  ax.set_ylabel('DM (pc cm$^{-3}$)')
   
-  DM_min = np.clip(puls.DM - 5., 3., 550.)
-  DM_max = np.clip(puls.DM + 5., 3., 550.)
+  DM_min = np.clip(puls.DM - puls.dDM * 3., 3., 550.)
+  DM_max = np.clip(puls.DM + puls.dDM * 3., 3., 550.)
   k = 4148.808 #s-1
   delay = k * (F_MIN**-2 - F_MAX**-2)
   dDM = DM_max - DM_min
-  dt = delay * dDM / 4.
+  dt = delay * dDM * 3.
   Time_min = puls.Time - dt
   Time_max = puls.Time + dt
   events = all_events[(all_events.DM > DM_min) & (all_events.DM < DM_max) & (all_events.Time > Time_min) & (all_events.Time < Time_max)]
-  ax.scatter(events.Time, events.DM, s=15., marker='o', c='g', linewidths=[0.,], zorder=0)
+  x_ev = (events.Time - puls.Time)
+  ax.scatter(x_ev, events.DM, s=15., marker='o', c='k', linewidths=[0.,], zorder=1)
   return
 
 
 
 def puls_SNR_DM(ax, event):
   ax.plot(event.DM, event.Sigma, 'k')
-  ax.set_xlabel('DM (pc/cm3)')    
+  ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_ylabel('S/N')
   
   ax2 = ax.twinx()
   ax2.plot(event.DM, event.Duration*1000, 'r')
-  ax2.set_ylabel('Duration (ms)', color='r')
+  ax2.set_ylabel('Width (ms)', color='r')
   for tl in ax2.get_yticklabels():
     tl.set_color('r')
+
+  ax.set_zorder(ax2.get_zorder()+1)
+  ax.patch.set_visible(False)
   return
 
 
@@ -314,25 +319,41 @@ def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
   dm_h = float(puls.DM + dDM/2. + 0.001)
   t_l = float(puls.Time - 2. * puls.Duration)
   t_h = float(puls.Time + 2. * puls.Duration)
+
+  '''
+  dm_l = float(puls.DM - 2/2. - 0.001)
+  dm_h = float(puls.DM + 2/2. + 0.001)
+  t_l = float(puls.Time - 100. * puls.Duration)
+  t_h = float(puls.Time + 100. * puls.Duration)
+  '''
+
   sap = int(puls.SAP)
   select = '(SAP == sap) and ((DM > dm_l) and (DM < dm_h)) and ((Time >= t_l) and (Time <= t_h))'
   try:
     events = pd.read_hdf(db, 'events', where=select)
-  except ValueError:
+  except (TypeError, ValueError) as e:
     events = pd.read_hdf(db, 'events')
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
-  SNR = events.groupby('BEAM').Sigma.sum()
+  SNR = events.groupby('BEAM').Sigma.max() #.sum()
+
+  print 'ev:', events.shape[0]
+  print SNR
+
   ind = pd.Series(np.zeros(n_beams))
     
   ind.index += inc + 1
   SNR = SNR.reindex_like(ind)
 
+  SNR -= SNR.min()
+  SNR /= SNR.max()
+
   plot = ax.scatter(ra,dec,s=200,edgecolor='none',c=SNR,cmap='hot_r')
   
-  #bar = plt.colorbar(plot, ax=ax)
-  #bar.set_label('Cumulative SNR')
+  bar = plt.colorbar(plot, ax=ax, orientation='horizontal', pad=0.03)# ,ticks=[])  
+  bar.set_label('Normalized S/N')
   
   ax.set_xlabel('RA')
+  ax.xaxis.set_label_position('top')
   ax.set_ylabel('DEC')
   if pulseN: 
     ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN))
@@ -342,11 +363,11 @@ def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
   
   beam = int(puls.BEAM)
   if beam > inc: ax.scatter(ra[beam-(inc+1)],dec[beam-(inc+1)],s=300,linewidths=[0.,],marker='*',c='w')
-  [ax.annotate(str(i+(inc+1)),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='m') for i in range(0,n_beams)]
+  [ax.annotate(str(i+(inc+1)),(ra[i],dec[i]), horizontalalignment='center', verticalalignment='center', color='dodgerblue') for i in range(0,n_beams)]
 
   ax.set_xlim(-100,1100)
   ax.set_ylim(-100,1100)
-  ax.tick_params(axis='both', labelleft='off', labelright='off', labeltop='on', labelbottom='off', right='off', left='off', bottom='off', top='off')
+  ax.tick_params(axis='both', labelbottom='off', labelleft='off', top='off', bottom='off', left='off', right='off')
   return
 
 
@@ -359,7 +380,7 @@ def puls_meta_data(ax, puls, idx, i):
   ax.annotate('dDM (pc/cm2): {0:.2f}'.format(puls.dDM), xy=(0,6))
   ax.annotate('Time (s): {0:.2f}'.format(puls.Time), xy=(0,5))
   ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,4))
-  ax.annotate('Duration (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
+  ax.annotate('Width (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
   ax.annotate('N events: {0:.0f}'.format(puls.N_events), xy=(0,2))
 
   ax.axis('off')
@@ -380,33 +401,37 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
   
-  duration = 10
+  duration = 20
   
-  filetype, header = Utilities.read_header(filename)
-  MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-  
-  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-puls.Duration*duration/2, puls.Duration*(duration+1), dm=puls.DM, downsamp=int(puls.Downfact), nsub=16, maskfn=maskfn, mask=mask)
-  waterfaller.plot_waterfall(ds, start, puls.Duration*duration, ax_im=ax1, interactive=False)
-  ax1.scatter((start + puls.Duration)/2.,F_MIN,marker='^',s=25,c='r',lw=0.)
-  
-  DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
-  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org*(1+v)-0.1, puls.Duration+DM_delay+0.2, downsamp=int(puls.Downfact), nsub=32, maskfn=maskfn, mask=mask)
-  waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.1, ax_im=ax2, interactive=False, sweep_dms=[puls.DM])
+  #filetype, header = Utilities.read_header(filename)
+  #MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
+  #v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
 
-  #ax2.set_xlabel('Time (s)')
-  #ax2.set_ylabel('Frequency (MHz)')  
-  #ax1.set_xlabel('Time (s)')
-  #ax1.set_ylabel('Frequency (MHz)')
-      
+  try: df = int(puls.Downfact)
+  except AttributeError:
+    if puls.DM < 40.52: df = int(round(puls.Duration / 0.0004915))
+    elif puls.DM < 141.77: df = int(round(puls.Duration / 0.0004915 / 2))
+    else: df = int(round(puls.Duration / 0.0004915 / 4))
+  
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-puls.Duration*duration/2, puls.Duration*(duration+1), nsub=16, dm=puls.DM, width_bins=df, maskfn=maskfn, mask=mask, scaleindep=False, bandpass_corr=True, zerodm=True)
+  waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2)
+  #ax1.scatter(start+puls.Duration*duration/2,F_MIN+1,marker='^',s=50,c='r',lw=0.)
+  ax1.scatter(0.,F_MIN+1,marker='^',s=50,c='r',lw=0.)
+
+  DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
+  #ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-0.1, puls.Duration+DM_delay+0.2, dm=0., nsub=32*3, downsamp=df, maskfn=maskfn, mask=mask, scaleindep=True, zerodm=True, bandpass_corr=True)
+  ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-0.1, puls.Duration+DM_delay+0.2, dm=0., nsub=32*3, downsamp=df*3, maskfn=maskfn, mask=mask, scaleindep=True, zerodm=True, bandpass_corr=True)
+  waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.2, ax_im=ax2, interactive=False, sweep_dms=[puls.DM], puls_t=-0.1)
+
   return 0
 
 
 
-def load_ts(puls, idL, filename):
+def load_ts(puls, idL, filename=False, REAL=True):
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES  #Theoretical factor between time and DM
 
-  bin_peak = int(puls['Sample'])
+  if REAL: bin_peak = 746790
+  else: bin_peak = 5775345
   DM_peak = puls['DM']
   if DM_peak < 40.52: 
     duration = int(np.round(puls['Duration'] / RES))
@@ -433,29 +458,39 @@ def load_ts(puls, idL, filename):
 
   bin_start = bin_peak - nBins/2 * scrunch_fact
 
-  sap = int(puls.SAP)
-  beam = int(puls.BEAM)
-  out_dir = TMP_FOLDER.format(idL) + '/timeseries/'
-  if not os.path.isdir(os.path.join(TMP_FOLDER.format(idL), 'timeseries')): os.makedirs(os.path.join(TMP_FOLDER.format(idL), 'timeseries'))
-  FNULL = open(os.devnull, 'w')
-  for j,DM in enumerate(DM_range):
-    if not os.path.isfile(filename.format(DM)):
-      error = subprocess.call(['sh', '/projects/0/lotaas2/software/LSP/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir], stdout=FNULL, stderr=FNULL)
+  if filename:
+    sap = int(puls.SAP)
+    beam = int(puls.BEAM)
+    out_dir = TMP_FOLDER.format(idL) + '/timeseries/'
+    if not os.path.isdir(TMP_FOLDER.format(idL) + '/timeseries'): os.makedirs(TMP_FOLDER.format(idL) + '/timeseries')
+    FNULL = open(os.devnull, 'w')
+    for j,DM in enumerate(DM_range):
+      if not os.path.isfile(filename.format(DM)):
+        error = subprocess.call(['sh', '/projects/0/lotaas2/software/LSP/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir])
     
-    try:
-      ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
-      ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
-    except IOError: ts = np.zeros(nBins) + np.nan
+      try:
+        ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
+        ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
+      except IOError: ts = np.zeros(nBins) + np.nan
 
-    data[j] = ts
-    
-  params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': duration, 'DM_min': DM_range[0], 'DM_max': DM_range[-1], 'k': k}
+      data[j] = ts
+
+    #shutil.copy(filename.format(puls.DM), '/home/danielem')
+    #shutil.copy(filename.format(puls.DM)[:-3]+'inf', '/home/danielem')
+
+  elif REAL: 
+    data = np.load('/home/danielem/timeseries_LSP_paper.npy')
+  else: 
+    data = np.load('/home/danielem/timeseries_LSP_paper_RFI.npy')
+
+
+  params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': nBins*scrunch_fact*RES, 'DM_min': DM_range[0], 'DM_max': DM_range[-1], 'k': k}
   
   return data, params
 
 
 
-def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
+def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=True):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
@@ -464,61 +499,66 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12):
   else: conf = ''
   raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
+  filename = TMP_FOLDER.format(idL) + '/timeseries/manual_fold_DM{0:.2f}.dat'
   
-  filename = TMP_FOLDER.format(idL) + '/timeseries/{}/manual_fold_DM{{0:.2f}}.dat'.format(idL)
-  data, params = load_ts(puls, idL, filename)
+
+  #data, params = load_ts(puls, idL, filename=False, REAL=False)
+
+  if REAL: np_name = '/home/danielem/timeseries_LSP_paper'
+  else: np_name = '/home/danielem/timeseries_LSP_paper_RFI' 
+  if os.path.isfile(np_name+'.npy'): filename = False
+  data, params = load_ts(puls, idL, filename=filename, REAL=REAL)
+  if not os.path.isfile(np_name+'.npy'): np.save(np_name, data)
+
 
   #Image plot
-  ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[0,params['bins_out'],params['DM_min'], params['DM_max']])
+  ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[-params['duration']/2.,params['duration']/2.,params['DM_min'], params['DM_max']])
   ax.set_ylim((params['DM_min'], params['DM_max']))
-  ax.set_ylabel('DM (pc/cc)')
+  ax.set_ylabel('DM (pc cm$^{-3}$)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
   #Plot contours
-  x = np.arange(params['bins_out'])
-  y = (x - params['bins_out'] / 2.) / params['k'] + puls.DM
-  ax.plot(x, y,'r--')
-  ax.axvline((params['bins_out'] - params['scrunch_fact']) / 2., color='r', ls='--')
+  k = 4148.808 * (F_MAX**-2 - F_MIN**-2)
+  x = np.array([-params['duration']/2.,params['duration']/2.])
+  y = x / k + puls.DM
+  #y = y / float(params['bins_out']) * params['duration']
+  ax.plot(x, y,'r', linewidth=.2)
+  ax.axvline(0, color='r', linewidth=.2)
 
   #Inset profile
-  def inset(filename, params, puls):
+  def inset(data, params, puls):
     nPlotBins = 20
     nProfBins = 5
     nBins = nPlotBins * nProfBins
-    scrunch_fact = int(np.round(params['duration'] / float(nProfBins)))
-    if scrunch_fact < 1: scrunch_fact = 1
-    x = np.arange(nBins)
-    bin_start = int(puls.Sample) - nBins/2 * scrunch_fact
+    ts = data[data.shape[0]/2+1]
+    #x = np.linspace(-params['duration']/2.*1000,params['duration']/2.*1000,ts.size)
+    return ts #,x
+
+  ts = inset(data, params, puls)
   
-    try:
-      ts = np.memmap(filename.format(puls.DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
-      ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
-    except IOError: x = ts = None
-    return x, ts
-  x, ts = inset(filename, params, puls)
-  
-  ax3 = inset_axes(ax, width="30%", height="30%", loc=1)
-  ax3.plot(x, ts, 'k')
-  ax3.set_xticks([])
-  ax3.set_yticks([])
+  if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
+  prof_ax.plot(ts, 'k')
+  prof_ax.set_xlim((0,ts.size))
+  prof_ax.set_xticks([])
+  prof_ax.set_yticks([])
 
   #Time axis
-  ax.set_xlim((0,params['bins_out']))
-  labels = ax.get_xticks().tolist()
+  ax.set_xlim((-params['duration']/2.,params['duration']/2.))
+  #labels = ax.get_xticks().tolist()
   if puls.DM < 40.52: down = 1
-  elif DM_peak < 141.77: down = 2
+  elif puls.DM < 141.77: down = 2
   else: down = 4
-  new_labels = ["%.3f" % (n + params['bin_start'] * RES * down) for n in labels]
-  ax.set_xticklabels(new_labels)
-  ax.set_xlabel('Time (s)')
+  #new_labels = ["%.0f" % (((n + params['bin_start'] * RES * down) - puls.Time)*1000. ) for n in labels]
+  #ax.set_xticklabels(new_labels)
+  ax.set_xlabel('$\Delta$Time (s)') #.format(params['bin_start'] * RES * down * 1000 * params['scrunch_fact']))
 
   #Sample axis
-  ax2 = ax.twiny()
-  ax2.set_xlim((0,params['bins_out']))
-  labels = ax.get_xticks().tolist()
-  new_labels = [int((n + params['bin_start']) % 100000) for n in labels]
-  ax2.set_xticklabels(new_labels)
-  ax2.set_xlabel('Sample - {}00000'.format(params['bin_start'] / 100000))
+  #ax2 = ax.twiny()
+  #ax2.set_xlim((0,params['bins_out']))
+  #labels = ax.get_xticks().tolist()
+  #new_labels = [int((n + params['bin_start']) % 100000) for n in labels]
+  #ax2.set_xticklabels(new_labels)
+  #ax2.set_xlabel('Sample - {}00000'.format(params['bin_start'] / 100000))
   
 
   return 0
