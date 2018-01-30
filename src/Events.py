@@ -51,6 +51,7 @@ def Loader(directory,sap,beam):
     inf = pd.DataFrame(inf).T
     inf.columns=['File','Telescope','Instrument','RA','DEC','Epoch']
     inf = inf.astype(str)
+    inf['File'] = inf.File.apply(lambda x: os.path.basename(x))
     
     inf.insert(0,'BEAM',beam)
     inf.insert(0,'SAP',sap)
