@@ -37,7 +37,7 @@ def Repeated_candidates_beam(pulses):
   dirs = [n for n in gb_puls.indices.iterkeys()]
   pulses.Candidate[:] = -1
 
-  span = 0.101
+  span = 0.151
 
   for (sap,beam) in dirs:
     puls_beam = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
