@@ -1,9 +1,6 @@
 #############################
-#
 # LOTAAS Single Pulse plots
-#
 # Written by Daniele Michilli
-#
 #############################
 
 import matplotlib.pyplot as plt
@@ -22,7 +19,6 @@ import shutil
 import waterfaller
 import psrfits
 
-import Utilities
 from Parameters import *
 import RFIexcision
 from Paths import *
@@ -170,6 +166,7 @@ def meta_data_plot(ax,meta_data,pulses,cand):
     ax.annotate('Period (s): {0:.3f}'.format(cand.Period), xy=(0,3))
     ax.annotate('Period err. (s): {0:.3f}'.format(cand.Period_err), xy=(0,2))
     ax.annotate('N. pulses: {0:.0f}'.format(cand.N_pulses), xy=(0,1))
+  ax.annotate('L-SpS {}'.format(meta_data.version.iloc[0]), xy=(0,0))
   ax.axis('off')
   return
 
@@ -215,9 +212,6 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
-  #top = pulses.iloc[:10]
-  #for i in range(0,top.shape[0]):
-  #  ax.annotate(i,xy=(top.DM.iloc[i]/1.15,top.Sigma.iloc[i]),horizontalalignment='right',verticalalignment='center',size=4,weight='medium')
   ax.tick_params(which='both',direction='out')
   ax.yaxis.set_ticks_position('left')
   return
@@ -402,10 +396,6 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   else: mask = False
   
   duration = 20
-  
-  #filetype, header = Utilities.read_header(filename)
-  #MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-  #v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
 
   try: df = int(puls.Downfact)
   except AttributeError:
@@ -415,11 +405,9 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-puls.Duration*duration/2, puls.Duration*(duration+1), nsub=16, dm=puls.DM, width_bins=df, maskfn=maskfn, mask=mask, scaleindep=False, bandpass_corr=True, zerodm=True)
   waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2)
-  #ax1.scatter(start+puls.Duration*duration/2,F_MIN+1,marker='^',s=50,c='r',lw=0.)
   ax1.scatter(0.,F_MIN+1,marker='^',s=50,c='r',lw=0.)
 
   DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
-  #ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-0.1, puls.Duration+DM_delay+0.2, dm=0., nsub=32*3, downsamp=df, maskfn=maskfn, mask=mask, scaleindep=True, zerodm=True, bandpass_corr=True)
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-0.1, puls.Duration+DM_delay+0.2, dm=0., nsub=32*3, downsamp=df*3, maskfn=maskfn, mask=mask, scaleindep=True, zerodm=True, bandpass_corr=True)
   waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.2, ax_im=ax2, interactive=False, sweep_dms=[puls.DM], puls_t=-0.1)
 
@@ -475,9 +463,6 @@ def load_ts(puls, idL, filename=False, REAL=True):
 
       data[j] = ts
 
-    #shutil.copy(filename.format(puls.DM), '/home/danielem')
-    #shutil.copy(filename.format(puls.DM)[:-3]+'inf', '/home/danielem')
-
   elif REAL: 
     data = np.load('/home/danielem/timeseries_LSP_paper.npy')
   else: 
@@ -500,9 +485,6 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
   raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
   filename = TMP_FOLDER.format(idL) + '/timeseries/manual_fold_DM{0:.2f}.dat'
-  
-
-  #data, params = load_ts(puls, idL, filename=False, REAL=False)
 
   if REAL: np_name = '/home/danielem/timeseries_LSP_paper'
   else: np_name = '/home/danielem/timeseries_LSP_paper_RFI' 
@@ -521,7 +503,6 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2)
   x = np.array([-params['duration']/2.,params['duration']/2.])
   y = x / k + puls.DM
-  #y = y / float(params['bins_out']) * params['duration']
   ax.plot(x, y,'r', linewidth=.2)
   ax.axvline(0, color='r', linewidth=.2)
 
@@ -531,8 +512,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
     nProfBins = 5
     nBins = nPlotBins * nProfBins
     ts = data[data.shape[0]/2+1]
-    #x = np.linspace(-params['duration']/2.*1000,params['duration']/2.*1000,ts.size)
-    return ts #,x
+    return ts
 
   ts = inset(data, params, puls)
   
@@ -544,21 +524,9 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
 
   #Time axis
   ax.set_xlim((-params['duration']/2.,params['duration']/2.))
-  #labels = ax.get_xticks().tolist()
   if puls.DM < 40.52: down = 1
   elif puls.DM < 141.77: down = 2
   else: down = 4
-  #new_labels = ["%.0f" % (((n + params['bin_start'] * RES * down) - puls.Time)*1000. ) for n in labels]
-  #ax.set_xticklabels(new_labels)
   ax.set_xlabel('$\Delta$Time (s)') #.format(params['bin_start'] * RES * down * 1000 * params['scrunch_fact']))
-
-  #Sample axis
-  #ax2 = ax.twiny()
-  #ax2.set_xlim((0,params['bins_out']))
-  #labels = ax.get_xticks().tolist()
-  #new_labels = [int((n + params['bin_start']) % 100000) for n in labels]
-  #ax2.set_xticklabels(new_labels)
-  #ax2.set_xlabel('Sample - {}00000'.format(params['bin_start'] / 100000))
-  
 
   return 0

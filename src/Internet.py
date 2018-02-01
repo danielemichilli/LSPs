@@ -14,8 +14,8 @@ from Paths import *
 import Parameters
 
 
-def upload(cands,idL,folder,meta_data):
-  upload_sheet(cands,idL,meta_data)
+def upload(cands,idL,folder,meta_data,pulses):
+  upload_sheet(cands,idL,meta_data,pulses)
   upload_plots(idL,folder)
   return
 
@@ -29,7 +29,7 @@ def upload_plots(idL,folder):
   return
 
 
-def upload_sheet(cands,idL,meta_data):
+def upload_sheet(cands,idL,meta_data,pulses):
   try: json_key = json.load(open(SITE_CERT))
   except IOError:
     ConnectionError("Spreadsheet cannot be uploaded - Google certificate missing")
@@ -74,7 +74,8 @@ def upload_sheet(cands,idL,meta_data):
     link = '=HYPERLINK(CONCATENATE("http://www.astron.nl/lofarpwg/lotaas-sp/observations/{}/";OFFSET($A$1;ROW()-1;0);".pdf");"Plot")'.format(idL)
     RA = "'" + meta.RA[0].split('.')[0]
     DEC = "'" + meta.DEC[0].split('.')[0]
-    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, RA, DEC, cand.DM, cand.Sigma, '', '', 'ToProcess', '', link]    
+    cand_percent = int(float(cand.N_pulses) / pulses[(pulses.Pulse==0) & (pulses.BEAM==cand.BEAM) & (pulses.SAP==cand.SAP)].shape[0] * 100)
+    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, RA, DEC, cand.DM, cand.Sigma, cand_percent '', '', 'ToProcess', '', link]    
     wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet
