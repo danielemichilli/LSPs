@@ -31,7 +31,9 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   pulses.sort('Sigma',ascending=False,inplace=True)
   candidates.sort('Sigma',ascending=False,inplace=True)
   
-  plt.clf()
+  plt.close('all')
+  fig = plt.figure(figsize=(7,8))
+
   out_dir = TMP_FOLDER.format(idL) + '/timeseries'
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
@@ -57,12 +59,13 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
   sap = int(cand.SAP)
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
-    
-  ax1 = plt.subplot2grid((3,6),(0,0), rowspan=2)
-  ax2 = plt.subplot2grid((3,6),(0,1), colspan=5, rowspan=2)
-  ax3 = plt.subplot2grid((3,6),(2,0), colspan=2)
-  ax4 = plt.subplot2grid((3,6),(2,2), colspan=2)
-  ax5 = plt.subplot2grid((3,6),(2,4), colspan=2)
+
+  gs = gridspec.GridSpec(3, 6, wspace=.7, hspace=.3)
+  ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 1))
+  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 5))
+  ax3 = plt.subplot(gs.new_subplotspec((2,0), 1, 2))
+  ax4 = plt.subplot(gs.new_subplotspec((2,2), 1, 2))
+  ax5 = plt.subplot(gs.new_subplotspec((2,4), 1, 2))
 
   meta_data_plot(ax1,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
   scatter_beam(ax2, pulses, pulses_beam, cand)
@@ -74,36 +77,36 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
     hist_SNR(ax5,pulses_beam,cand)
   except ValueError: pass
     
-  plt.tight_layout()
-  pdf.savefig(bbox_inches='tight',dpi=200)
+  pdf.savefig(bbox_inches='tight', dpi=200)
   return
 
 
 
 def puls_plot(pdf, puls, events, idL, db, i, inc=12):
-  ax1 = plt.subplot2grid((2,6),(0,0))
-  ax5 = plt.subplot2grid((2,6),(0,1))
-  ax6 = plt.subplot2grid((2,6),(0,2), colspan=2)
-  ax7 = plt.subplot2grid((2,6),(0,4), colspan=2)
-  ax2 = plt.subplot2grid((2,6),(1,0))#, colspan=2)
-  ax3 = plt.subplot2grid((2,6),(1,2), colspan=2)
-  ax4 = plt.subplot2grid((2,6),(1,4), colspan=2)
+  gs = gridspec.GridSpecFromSubplotSpec(2, 6, wspace=0.5, hspace=0.2)
+  ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1))
+  ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1))
+  ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2))
+  ax4 = plt.subplot(gsC.new_subplotspec((0,2), 1, 1))
+  ax5 = plt.subplot(gsC.new_subplotspec((0,3), 1, 1))
+  ax6 = plt.subplot(gsC.new_subplotspec((1,2), 1, 1))
+  ax7 = plt.subplot(gsC.new_subplotspec((1,3), 1, 1), sharey=ax6)
+  ax8 = plt.subplot(gs.new_subplotspec((0,4), 2, 2))
 
   ev = events[events.Pulse == puls.name]
+
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, events, puls)
-  puls_SNR_DM(ax3, ev)
-  puls_heatmap(ax4, puls, idL, db, inc=inc)
-  flag = puls_dynSpec(ax5, ax6, puls, idL, inc=inc)
+  flag = puls_dedispersed(ax3, puls, idL, inc=inc, prof_ax=ax4)
+  if flag == -1: plot_not_valid(ax3)
+  puls_SNR_DM(ax5, ev)
+  flag = puls_dynSpec(ax6, ax7, puls, idL, inc=inc)
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  flag = puls_dedispersed(ax7, puls, idL, inc=inc)
-  if flag == -1:
-    plot_not_valid(ax7)
+  puls_heatmap(ax8, puls, idL, db_hm, inc=inc)
 
-  plt.tight_layout()
-  pdf.savefig(bbox_inches='tight',dpi=200)
+  pdf.savefig(bbox_inches='tight', dpi=200)
   return
 
 
@@ -130,8 +133,8 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
 
   ax.axhline(cand.DM, c='r', ls='-', zorder=1)
   
-  ax.axhline(40.48,c='k',ls='--',lw=.1, zorder=1)
-  ax.axhline(141.68,c='k',ls='--',lw=.1, zorder=1)
+  ax.axhline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
+  ax.axhline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
   ax.set_yscale('log')
   ax.set_xlabel('Time (s)')
   ax.set_ylabel('DM (pc/cc)')
@@ -179,8 +182,8 @@ def hist_DM(ax,pulses,cand):
   ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_ylabel('Counts')
   ax.set_xlim(DM_MIN,550)
-  ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
-  ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
   ax.tick_params(which='both',direction='out')
   ax.yaxis.set_ticks_position('left')
   return
@@ -194,8 +197,8 @@ def hist_SNR(ax,pulses,cand):
   ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_ylabel('Cumulative S/N')
   ax.set_xlim(DM_MIN,550)
-  ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
-  ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
   ax.tick_params(which='both',direction='out')
   ax.yaxis.set_ticks_position('left')
   return
@@ -210,8 +213,8 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
   ax.set_xlabel('DM (pc cm$^{-3}$)')
   ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
-  ax.axvline(40.48,c='k',ls='--',lw=.1, zorder=1)
-  ax.axvline(141.68,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
+  ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
   ax.tick_params(which='both',direction='out')
   ax.yaxis.set_ticks_position('left')
   return
@@ -330,9 +333,6 @@ def puls_heatmap(ax, puls, idL, db, pulseN=False, inc=12):
     events = events[(events.SAP == sap) & ((events.DM > dm_l) & (events.DM < dm_h)) & ((events.Time >= t_l) & (events.Time <= t_h))]
   SNR = events.groupby('BEAM').Sigma.max() #.sum()
 
-  print 'ev:', events.shape[0]
-  print SNR
-
   ind = pd.Series(np.zeros(n_beams))
     
   ind.index += inc + 1
@@ -399,8 +399,8 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
 
   try: df = int(puls.Downfact)
   except AttributeError:
-    if puls.DM < 40.52: df = int(round(puls.Duration / 0.0004915))
-    elif puls.DM < 141.77: df = int(round(puls.Duration / 0.0004915 / 2))
+    if puls.DM < DM_STEP1: df = int(round(puls.Duration / 0.0004915))
+    elif puls.DM < DM_STEP2: df = int(round(puls.Duration / 0.0004915 / 2))
     else: df = int(round(puls.Duration / 0.0004915 / 4))
   
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-puls.Duration*duration/2, puls.Duration*(duration+1), nsub=16, dm=puls.DM, width_bins=df, maskfn=maskfn, mask=mask, scaleindep=False, bandpass_corr=True, zerodm=True)
@@ -415,16 +415,15 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
 
 
 
-def load_ts(puls, idL, filename=False, REAL=True):
+def load_ts(puls, idL, filename=False):
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES  #Theoretical factor between time and DM
 
-  if REAL: bin_peak = 746790
-  else: bin_peak = 5775345
+  bin_peak = int(puls['Sample'])
   DM_peak = puls['DM']
-  if DM_peak < 40.52: 
+  if DM_peak < DM_STEP1: 
     duration = int(np.round(puls['Duration'] / RES))
     DM_res = 0.01
-  elif DM_peak < 141.77: 
+  elif DM_peak < DM_STEP2: 
     duration = int(np.round(puls['Duration'] / RES / 2.))
     DM_res = 0.05
     k /= 2.
@@ -463,19 +462,13 @@ def load_ts(puls, idL, filename=False, REAL=True):
 
       data[j] = ts
 
-  elif REAL: 
-    data = np.load('/home/danielem/timeseries_LSP_paper.npy')
-  else: 
-    data = np.load('/home/danielem/timeseries_LSP_paper_RFI.npy')
-
-
   params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': nBins*scrunch_fact*RES, 'DM_min': DM_range[0], 'DM_max': DM_range[-1], 'k': k}
   
   return data, params
 
 
 
-def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=True):
+def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
@@ -486,12 +479,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
   if not os.path.isfile(raw_dir): return -1
   filename = TMP_FOLDER.format(idL) + '/timeseries/manual_fold_DM{0:.2f}.dat'
 
-  if REAL: np_name = '/home/danielem/timeseries_LSP_paper'
-  else: np_name = '/home/danielem/timeseries_LSP_paper_RFI' 
-  if os.path.isfile(np_name+'.npy'): filename = False
-  data, params = load_ts(puls, idL, filename=filename, REAL=REAL)
-  if not os.path.isfile(np_name+'.npy'): np.save(np_name, data)
-
+  data, params = load_ts(puls, idL, filename=filename)
 
   #Image plot
   ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[-params['duration']/2.,params['duration']/2.,params['DM_min'], params['DM_max']])
@@ -524,8 +512,8 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False, REAL=Tr
 
   #Time axis
   ax.set_xlim((-params['duration']/2.,params['duration']/2.))
-  if puls.DM < 40.52: down = 1
-  elif puls.DM < 141.77: down = 2
+  if puls.DM < DM_STEP1: down = 1
+  elif puls.DM < DM_STEP2: down = 2
   else: down = 4
   ax.set_xlabel('$\Delta$Time (s)') #.format(params['bin_start'] * RES * down * 1000 * params['scrunch_fact']))
 

@@ -75,7 +75,7 @@ def upload_sheet(cands,idL,meta_data,pulses):
     RA = "'" + meta.RA[0].split('.')[0]
     DEC = "'" + meta.DEC[0].split('.')[0]
     cand_percent = int(float(cand.N_pulses) / pulses[(pulses.Pulse==0) & (pulses.BEAM==cand.BEAM) & (pulses.SAP==cand.SAP)].shape[0] * 100)
-    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, RA, DEC, cand.DM, cand.Sigma, cand_percent '', '', 'ToProcess', '', link]    
+    row = [cand.id, date, vers, idL, cand.SAP, cand.BEAM, cand.N_pulses, RA, DEC, cand.DM, '{:.1f}'.format(cand.Sigma), cand_percent, '', '', 'ToProcess', '', link]    
     wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet

@@ -219,10 +219,10 @@ def multimoment(pulses,idL,inc=12):
       except NameError: 
         logging.warning("RFIexcision - Additional modules missing")
         return
-      
-      if puls.DM>141.71: sample = puls.Sample * 4
-      elif puls.DM>40.47: sample = puls.Sample * 2
-      else: sample = puls.Sample      
+
+      if puls.DM < DM_STEP1: sample = puls.Sample
+      elif puls.DM < DM_STEP2: sample = puls.Sample * 2
+      else: sample = puls.Sample
       
       sample += np.round(sample*v).astype(int)
       duration = np.int(np.round(puls.Duration/RES))
@@ -349,9 +349,9 @@ def time_span(pulses):
 
 
 def beam_comparison(pulses, database='SinglePulses.hdf5', inc=12):
-  #conditions_A = '(Time > @tmin) & (Time < @tmax)'
-  #conditions_B = '(SAP == @sap) & (BEAM != @beam) & (BEAM != @inc) & (DM > @DMmin) & (DM < @DMmax) & (Sigma >= @SNRmin)'
-  #conditions_C = 'BEAM != @adjacent_beams'
+  conditions_A = '(Time > @tmin) & (Time < @tmax)'
+  conditions_B = '(SAP == @sap) & (BEAM != @beam) & (BEAM != @inc) & (DM > @DMmin) & (DM < @DMmax) & (Sigma >= @SNRmin)'
+  conditions_C = 'BEAM != @adjacent_beams'
     
   def comparison(puls, inc, events):
     sap = int(puls.SAP)
@@ -362,12 +362,9 @@ def beam_comparison(pulses, database='SinglePulses.hdf5', inc=12):
     DMmax = float(puls.DM + 0.2)
     SNRmin = puls.Sigma / 2.
     try: adjacent_beams = beams[beam]
-    except KeyError: adjacent_beams = -1
+    except KeyError: adjacent_beams = []
 
-    selected = (events.Time > tmin) & (events.Time < tmax) & (events.SAP == sap) & (events.BEAM != beam) & (events.BEAM != inc) & (events.DM > DMmin) & (events.DM < DMmax) & (events.Sigma >= SNRmin) & (~ events.BEAM.isin(adjacent_beams))
-    
-    if events[selected].groupby('BEAM').count().shape[0] > 4: return 1
-    #if events.query(conditions_A).query(conditions_B).query(conditions_C).groupby('BEAM').count().shape[0] > 4: return 1
+    if events.query(conditions_A).query(conditions_B).query(conditions_C).groupby('BEAM').count().shape[0] > 4: return 1
     else: return 0
 
   events = pd.read_hdf(database, 'events')

@@ -3,6 +3,7 @@ import time
 import argparse
 import shutil
 import subprocess
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ def parser():
 
 
 def main():
-  SPclean.log("The DataBase is being created", args.id_obs)
+  #warnings.filterwarnings('error', category=FutureWarning)
 
   args = parser()
   if args.conf:
@@ -36,7 +37,7 @@ def main():
     OBS_FOLDER += 'confirmations/'
     RAW_FOLDER += 'confirmations/'
   args.folder = OBS_FOLDER
-    
+
   try: shutil.rmtree(WRK_FOLDER.format(args.id_obs))
   except OSError: pass
   os.makedirs(WRK_FOLDER.format(args.id_obs))
@@ -47,26 +48,26 @@ def main():
   os.makedirs(TMP_FOLDER.format(args.id_obs))
   try: shutil.rmtree('{}{}/sp'.format(OBS_FOLDER,args.id_obs))
   except OSError: pass
-  os.makedirs('{}{}/sp'.format(OBS_FOLDER,args.id_obs))
 
-  git_folder = '{}/.git'.format(os.path.dirname(os.path.dirname(fileName)))
+  scriptFolder = os.path.dirname(os.path.realpath(__file__))
+  git_folder = os.path.join(scriptFolder, '.git')
   vers = subprocess.check_output(['git','--git-dir',git_folder,'describe','--tags','--abbrev=0','--always']).strip()
   SPclean.log("L-SpS version used: {}".format(vers), args.id_obs)
-  
+  args.vers = vers
+
   time0 = time.time()
+  SPclean.log("The DataBase is being created", args.id_obs)
 
   try:
-    SPclean.main(args, vers=vers)
-
+    SPclean.main(args)
     SPclean.log("The DataBase has been created", args.id_obs)
     SPclean.log("Time spent: {:.2f} s".format(time.time() - time0), args.id_obs)
-
-    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.id_obs)),'{}/{}/sp'.format(OBS_FOLDER,args.id_obs))
-    shutil.rmtree(WRK_FOLDER.format(args.id_obs))
-    shutil.rmtree(TMP_FOLDER.format(args.id_obs))
   
-  finally:
+  except:
     SPclean.log_err("Fatal: an error arised in processing the observation", args.id_obs)
+
+  finally:
+    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.id_obs)),'{}/{}/sp'.format(OBS_FOLDER,args.id_obs))
     shutil.rmtree(WRK_FOLDER.format(args.id_obs))
     shutil.rmtree(TMP_FOLDER.format(args.id_obs))
 
