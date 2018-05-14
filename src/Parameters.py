@@ -29,4 +29,11 @@ SIGMA_TOLL_IB = 2
 RFI_percent = 2
 PULS_LENGHT = 15
 
-DS_OFFSET = 100000 #bins
+DS_OFFSET = 100000 #bin
+
+
+#DM step changes
+DM_STEP1 = 41.04   #40.49
+DM_STEP2 = 133.14  #141.69
+
+

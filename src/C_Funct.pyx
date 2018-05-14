@@ -66,10 +66,10 @@ def Get_Group(float[::1] DM not None,
       
       DM_new = DM[i]
       
-      if DM_new < 40.49: step = 0.01
-        
-      elif DM_new < 141.69: step = 0.05
-        
+      if DM_new < DM_STEP1: step = 0.01
+      
+      elif DM_new < DM_STEP2: step = 0.05
+
       else: step = 0.1
         
       step_min = step - float_err

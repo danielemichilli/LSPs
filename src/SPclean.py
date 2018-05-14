@@ -23,7 +23,14 @@ import Internet
 from Paths import *
 
 
+import time
+
+
+
 def main(args):
+
+  time0 = time.time()
+
   if args.conf: inc = 0
   else: inc = 12
   
@@ -33,7 +40,7 @@ def main(args):
     for root, dirnames, filenames in os.walk(os.path.join(folder+id_obs)):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
-          log_err("Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename), args.id_obs)
+          log_err("Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename), id_obs)
           idx = file_names.index(filename)
           file_list[idx] = os.path.join(root,filename)
           continue
@@ -44,12 +51,23 @@ def main(args):
   
   file_list = file_list(args.folder,args.id_obs)
     
+
+  print "time 0:", time.time() - time0
+  time0 = time.time()
+
+
+
   if args.debug:
     CPUs = mp.cpu_count()
     dirs_range = int(np.ceil(len(file_list)/float(CPUs)))
     results = [lists_creation(args.id_obs,file_list[i*dirs_range:(i+1)*dirs_range],args.folder) for i in range(CPUs) if len(file_list[i*dirs_range:(i+1)*dirs_range]) > 0]
     pulses = pd.concat(results)
   else: pulses = pulses_parallel(args.id_obs,file_list,args.folder)
+
+
+  print "time 1:", time.time() - time0
+  time0 = time.time()
+
   
   def merge_temp_databases(id_obs,store,file):
     store.append('events',pd.read_hdf(os.path.join(TMP_FOLDER.format(id_obs),file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
@@ -67,7 +85,13 @@ def main(args):
         line = f.readline()
         idx = len(line.split(',')) - 1
         break
-  
+
+
+  print "time 2:", time.time() - time0
+  time0 = time.time()
+
+
+
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
   header = """@relation Training_v3
 {}
@@ -91,8 +115,21 @@ def main(args):
   ML_predict = os.path.join(TMP_FOLDER.format(args.id_obs), 'ML_predict.txt')  
   pulses = RFIexcision.select_real_pulses(pulses,os.path.join(TMP_FOLDER.format(args.id_obs),'thresholds'), ML_predict)
   print "Pulses positively classified: {}".format(pulses.shape[0])
+
+
+  print "time 3:", time.time() - time0
+  time0 = time.time()
+
+
+
   pulses = RFIexcision.beam_comparison(pulses,database=os.path.join(WRK_FOLDER.format(args.id_obs),'sp/SinglePulses.hdf5'), inc=inc)
   print "Pulses after beam comparison: {}".format(pulses.shape[0])
+
+
+  print "time 4:", time.time() - time0
+  time0 = time.time()
+
+
   
   if pulses.empty: 
     print "No pulse detected!"
@@ -123,14 +160,34 @@ def main(args):
   cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma>10.)) | ((cands.N_pulses > 1) & (cands.Sigma>16.)) ]
   cands.sort('Sigma', inplace=True, ascending=False)
 
+
+
+  print "time 5:", time.time() - time0
+  time0 = time.time()
+
+
+
   #pulses = pulses[pulses.Candidate.isin(cands.index)]
   #Produce the output
   meta_data = pd.read_hdf(os.path.join(WRK_FOLDER.format(args.id_obs),'sp/SinglePulses.hdf5'),'meta_data')
-  LSPplot.output(args.id_obs, pulses, meta_data, cands, os.path.join(WRK_FOLDER.format(args.id_obs),'sp/SinglePulses.hdf5'), inc=inc, vers=args.vers)    
+  LSPplot.output(args.id_obs, pulses, meta_data, cands, os.path.join(WRK_FOLDER.format(args.id_obs),'sp/SinglePulses.hdf5'), inc=inc)
+
+
+  print "time 6:", time.time() - time0
+  time0 = time.time()
+
+
   
   #Store the best candidates online
-  try: Internet.upload(cands,args.id_obs,os.path.join(WRK_FOLDER.format(args.id_obs),'sp/candidates/.'),meta_data)
+  try: Internet.upload(cands,args.id_obs,os.path.join(WRK_FOLDER.format(args.id_obs),'sp/candidates/.'),meta_data,pulses)
   except: log_err("Connession problem \nConsider to run Upload.py script\n", args.id_obs)
+
+
+
+  print "time 7:", time.time() - time0
+  time0 = time.time()
+
+
 
   return
 
@@ -138,6 +195,9 @@ def main(args):
 def pulses_parallel(id_obs,dirs,folder):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
+
+  print "CPUs:", CPUs
+
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
   pool = mp.Pool(CPUs)
@@ -195,7 +255,7 @@ def pulses_from_events(id_obs, directory, sap, beam):
 
   #Set a maximum amout of pulses to prevent bad observations to block the pipeline
   pulses.sort('Sigma',ascending=False,inplace=True)
-  pulses = pulses.iloc[:3e4]
+  pulses = pulses.iloc[:int(3e4)]
   events = events[events.Pulse.isin(pulses.index)]
   
   #Apply RFI filters to the pulses
@@ -223,9 +283,10 @@ def pulses_from_events(id_obs, directory, sap, beam):
 
 
 def log(text, id_obs):
-  file_out='{}/{}/log.txt'.format(OBS_FOLDER, id_obs)
+  file_out='{}/sp/log.txt'.format(WRK_FOLDER.format(id_obs))
   with open(file_out, 'a') as f:
     f.write(text)
+    f.write('\n')
   return
 
 
@@ -233,5 +294,6 @@ def log_err(text, id_obs):
   file_out='{}/{}/SP_ERROR.txt'.format(OBS_FOLDER, id_obs)
   with open(file_out, 'a') as f:
     f.write(text)
+    f.write('\n')
   return
 
