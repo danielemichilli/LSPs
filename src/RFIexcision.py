@@ -18,7 +18,6 @@ try:
   import presto
 except ImportError: pass
 
-import Utilities
 import C_Funct
 import Paths
 from Parameters import *
@@ -47,30 +46,30 @@ def select_real_pulses(pulses,basename, out_name):
 
 
 
-def filters(pulses, events, filename, validation=False, header=True):  
+def filters(pulses, events, filename, validation=False, header=True):
   values = pd.DataFrame(dtype=np.float16)
   idx = 0
 
-  events.sort('DM',inplace=True)
+  events.sort_values('DM',inplace=True)
   gb = events.groupby('Pulse',sort=False)
   pulses.sort_index(inplace=True)
-  
+
   def mean2(x,y):
     return np.sum(x*y)/y.sum()
-  
+
   def kur2(x,y):
     std = np.clip(y.std(),1e-5,np.inf)
     return np.sum((x-mean2(x,y))**4*y)/y.sum()/std**4 - 3
-  
+
   values[idx] = (gb.apply(lambda x: mean2(x.DM, x.Sigma)))
-  idx += 1  
+  idx += 1
 
   values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Sigma)))
   idx += 1
-  
+
   values[idx] = (gb.apply(lambda x: kur2(x.DM, x.Duration)))
   idx += 1
-  
+
   values[idx] = pulses.Sigma
   idx += 1
 
@@ -79,18 +78,18 @@ def filters(pulses, events, filename, validation=False, header=True):
 
   if validation: values[idx] = (pulses.Pulsar != 'RFI').astype(np.int)
   else: values[idx] = '?%' + np.array(values.index.astype(str))
-  
+
   if header:
     features_list = ''
     for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
-    header = """@relation Training_v3
+    header = """@relation Training
 {}
 @attribute class {{0,1}}
 @data
     """.format(features_list[:-1])
     with open(filename, 'w') as f:
       f.write(header)
-  
+
   values.to_csv(filename, sep=',', float_format='%10.5f', header=False, index=False, mode='a')
 
   return
