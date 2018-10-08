@@ -1,12 +1,9 @@
 from requests import ConnectionError
 import logging
 import subprocess
-try:
-  import json
-  import gspread
-  from oauth2client.client import SignedJwtAssertionCredentials
-except ImportError:
-  logging.warning("Results cannot be uploaded on the website - Module missing")
+import json
+import gspread
+from oauth2client.client import SignedJwtAssertionCredentials
 import os
 import time
 

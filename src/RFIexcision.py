@@ -13,10 +13,8 @@ from scipy import special
 from scipy import stats
 import os
 import subprocess
-try: 
-  import pyfits
-  import presto
-except ImportError: pass
+import pyfits
+import presto
 
 import C_Funct
 import Paths
@@ -203,10 +201,7 @@ def multimoment(pulses,idL,inc=12):
       if beam==inc: stokes = 'incoherentstokes'
       else: stokes = 'stokes'
       filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-      try: fits = pyfits.open(filename,memmap=True)
-      except NameError: 
-        logging.warning("RFIexcision - Additional modules missing")
-        return
+      fits = pyfits.open(filename,memmap=True)
       except IOError: continue
       
       last_beam = beam
@@ -214,10 +209,7 @@ def multimoment(pulses,idL,inc=12):
   
       header = Utilities.read_header(filename)
       MJD = header['STT_IMJD'] + header['STT_SMJD'] / 86400.
-      try: v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
-      except NameError: 
-        logging.warning("RFIexcision - Additional modules missing")
-        return
+      v = presto.get_baryv(header['RA'],header['DEC'],MJD,1800.,obs='LF')
 
       if puls.DM < DM_STEP1: sample = puls.Sample
       elif puls.DM < DM_STEP2: sample = puls.Sample * 2

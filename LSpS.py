@@ -34,8 +34,8 @@ def main():
   if args.conf:
     global OBS_FOLDER
     global RAW_FOLDER
-    OBS_FOLDER += 'confirmations/'
-    RAW_FOLDER += 'confirmations/'
+    OBS_FOLDER = os.path.join(OBS_FOLDER, 'confirmations/')
+    RAW_FOLDER = os.path.join(RAW_FOLDER, 'confirmations/')
   args.folder = OBS_FOLDER
 
   try: shutil.rmtree(WRK_FOLDER.format(args.id_obs))
