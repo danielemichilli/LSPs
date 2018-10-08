@@ -201,7 +201,7 @@ def multimoment(pulses,idL,inc=12):
       if beam==inc: stokes = 'incoherentstokes'
       else: stokes = 'stokes'
       filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
-      fits = pyfits.open(filename,memmap=True)
+      try: fits = pyfits.open(filename,memmap=True)
       except IOError: continue
       
       last_beam = beam
