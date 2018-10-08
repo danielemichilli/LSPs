@@ -107,23 +107,7 @@ def TimeAlign(Time,DM):
   # Only the extreme frequencies are taken into account
   k = 4148.808 #s-1
   delay = k * (F_MIN**-2 - F_MAX**-2)
-
-  DM_steps = np.array((
-          2.525,    5.055,    7.585,   10.115,   12.645,   15.175,
-         17.705,   20.235,   22.765,   25.295,   27.825,   30.355,
-         32.885,   35.415,   37.945,   40.475,   65.815,   91.115,
-        116.415,  141.715,  242.965,  344.165,  445.365,  546.565))
-  
-  DM_n = np.digitize(DM, DM_steps) - 1
-  
-  a = 0.253 * DM_n[DM_n<15]
-  a[a>=0.253*9] += 0.253
-  b = 0.253 * 15 + 25.3 * delay * ( DM_n[(DM_n>=15)&(DM_n<19)] - 14 )
-  c = 0.253 * 15 + 25.3 * delay * 4 + 4 * 25.3 * delay * ( DM_n[DM_n>=19] - 18 )
-  
-  DM_n = np.concatenate((a,b,c))
-  
-  Time += np.float32( delay * DM / 2 + DM_n )
+  Time += np.float32( delay * DM / 2 )
   
   return Time
 
