@@ -1,9 +1,8 @@
 from requests import ConnectionError
 import logging
 import subprocess
-import json
 import gspread
-from oauth2client.client import SignedJwtAssertionCredentials
+from oauth2client.service_account import ServiceAccountCredentials
 import os
 import time
 
@@ -27,12 +26,8 @@ def upload_plots(idL,folder):
 
 
 def upload_sheet(cands,idL,meta_data,pulses):
-  try: json_key = json.load(open(SITE_CERT))
-  except IOError:
-    ConnectionError("Spreadsheet cannot be uploaded - Google certificate missing")
-    return
   scope = ['https://spreadsheets.google.com/feeds']
-  credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
+  credentials = ServiceAccountCredentials.from_json_keyfile_name(SITE_CERT, scope)
   gc = gspread.authorize(credentials)
   sh = gc.open("LSP_candidates")
   
