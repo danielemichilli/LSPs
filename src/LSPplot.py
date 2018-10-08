@@ -83,7 +83,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
 
 
 def puls_plot(pdf, puls, events, idL, db, i, inc=12):
-  gs = gridspec.GridSpecFromSubplotSpec(2, 6, wspace=0.5, hspace=0.2)
+  gs = gridspec.GridSpec(2, 6, wspace=0.5, hspace=0.2)
   ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1))
   ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1))
   ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2))
