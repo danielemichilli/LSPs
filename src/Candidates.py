@@ -8,7 +8,7 @@ import Utilities
 
 
 def candidates(pulses,idL):
-  pulses.sort(['Sigma','Pulse'],ascending=[0,1],inplace=True)
+  pulses.sort_values(['Sigma','Pulse'],ascending=[0,1],inplace=True)
   
   Repeated_candidates_beam(pulses)
   
@@ -21,11 +21,11 @@ def candidates(pulses,idL):
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort('Sigma',ascending=True,inplace=True)
+    cands.sort_values('Sigma',ascending=True,inplace=True)
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
     
-    cands.sort(['main_cand', 'Sigma'], ascending=[1,0], inplace=True)
+    cands.sort_values(['main_cand', 'Sigma'], ascending=[1,0], inplace=True)
     
   else: cands = pd.DataFrame()
   

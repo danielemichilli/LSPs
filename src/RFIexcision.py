@@ -185,7 +185,7 @@ def filters_collection():
 
 
 def multimoment(pulses,idL,inc=12):
-  pulses.sort(['SAP','BEAM'],inplace=True)
+  pulses.sort_values(['SAP','BEAM'],inplace=True)
   last_beam = -1
   last_sap = -1
   freq = np.linspace(F_MIN,F_MAX,2592)
@@ -331,7 +331,7 @@ def time_span(pulses):
   
   if RFI.empty: return RFI.index
   RFI = RFI.drop_duplicates()
-  RFI.sort('Time',inplace=True)
+  RFI.sort_values('Time',inplace=True)
   no_rfi = np.zeros(RFI.shape[0],dtype=np.int8)
   C_Funct.time_span(RFI.DM.astype(np.float32).values,RFI.Time.astype(np.float32).values,no_rfi)
   

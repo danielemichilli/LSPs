@@ -28,8 +28,8 @@ mpl.rc('font',size=5)
 
 
 def output(idL, pulses, meta_data, candidates, db, inc=12):
-  pulses.sort('Sigma',ascending=False,inplace=True)
-  candidates.sort('Sigma',ascending=False,inplace=True)
+  pulses.sort_values('Sigma',ascending=False,inplace=True)
+  candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
   fig = plt.figure(figsize=(7,8))

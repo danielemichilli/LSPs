@@ -37,7 +37,7 @@ def main(args):
   def file_list(folder, id_obs):
     file_list = []
     file_names = []
-    for root, dirnames, filenames in os.walk(os.path.join(folder+id_obs)):
+    for root, dirnames, filenames in os.walk(os.path.join(folder, id_obs)):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
           log_err("Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename), id_obs)
@@ -152,13 +152,13 @@ def main(args):
     return
 
   cands = cands[cands.main_cand == 0]
-  cands.sort('Sigma', inplace=True, ascending=False)
+  cands.sort_values('Sigma', inplace=True, ascending=False)
   cands = cands.groupby('BEAM').head(10)
   cands = cands.head(50)
   #best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
   #best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
   cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma>10.)) | ((cands.N_pulses > 1) & (cands.Sigma>16.)) ]
-  cands.sort('Sigma', inplace=True, ascending=False)
+  cands.sort_values('Sigma', inplace=True, ascending=False)
 
 
 
@@ -232,19 +232,19 @@ def pulses_from_events(id_obs, directory, sap, beam):
   
   #Correct for the time misalignment of events
   events['Time_org'] = events.Time.copy()
-  events.sort(['DM','Time'],inplace=True)  #Needed by TimeAlign
+  events.sort_values(['DM','Time'],inplace=True)  #Needed by TimeAlign
   events.Time = Events.TimeAlign(events.Time.copy(),events.DM)
 
   #Apply the thresholds to the events
   events = Events.Thresh(events)
   
   #Group the events
-  events.sort(['DM','Time'],inplace=True) #Needed by Group
+  events.sort_values(['DM','Time'],inplace=True) #Needed by Group
   Events.Group(events)
   events = events[events.Pulse>=0]
 
   #Store the events
-  events.sort(['DM','Time'],inplace=True)
+  events.sort_values(['DM','Time'],inplace=True)
   events.to_hdf(os.path.join(TMP_FOLDER.format(id_obs),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'events',mode='w')  #Deve andare prima!
   meta_data.to_hdf(os.path.join(TMP_FOLDER.format(id_obs),'SAP{}_BEAM{}.tmp'.format(sap,beam)),'meta_data',mode='a')
 
@@ -254,7 +254,7 @@ def pulses_from_events(id_obs, directory, sap, beam):
   pulses = pulses[pulses.DM >= 3.]
 
   #Set a maximum amout of pulses to prevent bad observations to block the pipeline
-  pulses.sort('Sigma',ascending=False,inplace=True)
+  pulses.sort_values('Sigma',ascending=False,inplace=True)
   pulses = pulses.iloc[:int(3e4)]
   events = events[events.Pulse.isin(pulses.index)]
   
