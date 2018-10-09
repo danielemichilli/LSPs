@@ -73,7 +73,7 @@ def main(PATH):
 
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
-    with open(os.path.join(PATH.OBS_FOLDER, 'sp/log.txt')) as log:
+    with open(os.path.join(PATH.OBS_FOLDER, 'sp/log.txt'), 'w') as log:
       log.write(result.getvalue())
     shutil.rmtree(PATH.WRK_FOLDER)
     shutil.rmtree(PATH.TMP_FOLDER)
