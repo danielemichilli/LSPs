@@ -6,7 +6,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import os
 import time
 
-from Paths import *
 import Parameters
 
 
@@ -27,7 +26,7 @@ def upload_plots(idL,folder):
 
 def upload_sheet(cands,idL,meta_data,pulses):
   scope = ['https://spreadsheets.google.com/feeds']
-  credentials = ServiceAccountCredentials.from_json_keyfile_name(SITE_CERT, scope)
+  credentials = ServiceAccountCredentials.from_json_keyfile_name(PATH.SITE_CERT, scope)
   gc = gspread.authorize(credentials)
   sh = gc.open("LSP_candidates")
   

@@ -17,21 +17,20 @@ import pyfits
 import presto
 
 import C_Funct
-import Paths
 from Parameters import *
 
 
 def sift_pulses(pulses, events, idL, sap, beam):
-  arff_basename = '{}/thresholds_{}_{}'.format(Paths.TMP_FOLDER.format(idL), sap, beam)
+  arff_basename = '{}/thresholds_{}_{}'.format(PATH.TMP_FOLDER, sap, beam)
   filters(pulses, events, arff_basename+'.arff')
-  ML_predict = os.path.join(Paths.TMP_FOLDER.format(idL), 'ML_predict.txt')  
+  ML_predict = os.path.join(PATH.TMP_FOLDER, 'ML_predict.txt')  
   pulses = select_real_pulses(pulses,arff_basename, ML_predict)
   return pulses
   
   
 
 def select_real_pulses(pulses,basename, out_name):
-  subprocess.call(['java', '-jar', Paths.CLASSIFIER, '-v', '-m{}'.format(Paths.MODEL_FILE), '-p{}'.format(basename+'.arff'), '-o{}'.format(basename+'.positive'), '-a1'])
+  subprocess.call(['java', '-jar', PATH.CLASSIFIER, '-v', '-m{}'.format(PATH.MODEL_FILE), '-p{}'.format(basename+'.arff'), '-o{}'.format(basename+'.positive'), '-a1'])
   os.remove(basename+'.arff')
   try: pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
   except IOError: return pd.DataFrame()
@@ -200,7 +199,7 @@ def multimoment(pulses,idL,inc=12):
       #Open the fits file
       if beam==inc: stokes = 'incoherentstokes'
       else: stokes = 'stokes'
-      filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=Paths.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
+      filename = '{folder}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,idL=idL,stokes=stokes,sap=sap,beam=beam)
       try: fits = pyfits.open(filename,memmap=True)
       except IOError: continue
       

@@ -21,7 +21,6 @@ import psrfits
 
 from Parameters import *
 import RFIexcision
-from Paths import *
 
 mpl.rc('font',size=5)
 
@@ -34,13 +33,13 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   plt.close('all')
   fig = plt.figure(figsize=(7,8))
 
-  out_dir = TMP_FOLDER.format(idL) + '/timeseries'
+  out_dir = PATH.TMP_FOLDER + '/timeseries'
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
-    events = pd.read_hdf('{}/sp/SinglePulses.hdf5'.format(WRK_FOLDER.format(idL)),'events',where=['(SAP == sap) & (BEAM == beam)'])
-    store = '{}/sp/candidates/{}.pdf'.format(WRK_FOLDER.format(idL), cand.id)
+    events = pd.read_hdf(PATH.DB,'events',where=['(SAP == sap) & (BEAM == beam)'])
+    store = os.path.join(PATH.WRK_FOLDER, 'sp/candidates/{}.pdf'.format(cand.id))
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
       beam_plot(pdf, cand, pulses_cand, pulses, meta_data, events)

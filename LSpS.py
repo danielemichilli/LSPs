@@ -4,12 +4,14 @@ import argparse
 import shutil
 import subprocess
 import warnings
+import sys
 
 import numpy as np
 import pandas as pd
 
 from src import SPclean
-from src.Paths import *
+import src.Paths as PATH
+global PATH
 
 
 def parser():
@@ -27,50 +29,54 @@ def parser():
   return args
 
 
-def main():
+def main(PATH):
   #warnings.filterwarnings('error', category=FutureWarning)
 
   args = parser()
   if args.conf:
-    global OBS_FOLDER
-    global RAW_FOLDER
-    OBS_FOLDER = os.path.join(OBS_FOLDER, 'confirmations')
-    RAW_FOLDER = os.path.join(RAW_FOLDER, 'confirmations')
-  args.folder = OBS_FOLDER
+    #global OBS_FOLDER
+    #global RAW_FOLDER
+    PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, 'confirmations')
+    PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, 'confirmations')
   
-  WRK_FOLDER = os.path.join(WRK_FOLDER, args.id_obs)
-  TMP_FOLDER = os.path.join(TMP_FOLDER, args.id_obs)
-  OBS_FOLDER = os.path.join(OBS_FOLDER, args.id_obs)
+  PATH.WRK_FOLDER = os.path.join(PATH.WRK_FOLDER, args.id_obs)
+  PATH.TMP_FOLDER = os.path.join(PATH.TMP_FOLDER, args.id_obs)
+  PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, args.id_obs)
 
-  if os.path.isdir(WRK_FOLDER): shutil.rmtree(WRK_FOLDER)
-  os.makedirs(WRK_FOLDER)
-  os.makedirs(os.path.join(WRK_FOLDER, 'sp'))
-  os.makedirs(os.path.join(WRK_FOLDER, 'sp/candidates'))
-  if os.path.isdir(TMP_FOLDER): shutil.rmtree(TMP_FOLDER)
-  os.makedirs(TMP_FOLDER)
-  if os.path.isdir(os.path.join(OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(OBS_FOLDER, 'sp'))
+  if os.path.isdir(PATH.WRK_FOLDER): shutil.rmtree(PATH.WRK_FOLDER)
+  os.makedirs(PATH.WRK_FOLDER)
+  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp'))
+  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'))
+  if os.path.isdir(PATH.TMP_FOLDER): shutil.rmtree(PATH.TMP_FOLDER)
+  os.makedirs(PATH.TMP_FOLDER)
+  if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp'))
 
   scriptFolder = os.path.dirname(os.path.realpath(__file__))
   git_folder = os.path.join(scriptFolder, '.git')
   vers = subprocess.check_output(['git','--git-dir',git_folder,'describe','--tags','--abbrev=0','--always']).strip()
-  SPclean.log("L-SpS version used: {}".format(vers), args.id_obs)
+  print "L-SpS version used: {}".format(vers)
   args.vers = vers
 
   time0 = time.time()
-  SPclean.log("The DataBase is being created", args.id_obs)
+  print "The DataBase is being created."
 
   try:
     SPclean.main(args)
-    SPclean.log("The DataBase has been created", args.id_obs)
-    SPclean.log("Time spent: {:.2f} s".format(time.time() - time0), args.id_obs)
+    print "The DataBase has been created."
+    print "Time spent: {:.2f} s.".format(time.time() - time0)
 
   finally:
-    shutil.copytree(os.path.join(WRK_FOLDER, 'sp'), os.path.join(OBS_FOLDER, 'sp'))
-    shutil.rmtree(WRK_FOLDER)
-    shutil.rmtree(TMP_FOLDER)
+    shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
+    shutil.rmtree(PATH.WRK_FOLDER)
+    shutil.rmtree(PATH.TMP_FOLDER)
 
   return
 
 
 if __name__ == '__main__':
-  main()
+  with open(os.path.join(PATH.WRK_FOLDER, 'sp/log.txt'), 'w') as f:
+    sys.stdout = f
+  with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as f:
+    sys.stderr = f
+  
+  main(PATH)
