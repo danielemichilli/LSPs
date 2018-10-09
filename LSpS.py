@@ -6,6 +6,7 @@ import subprocess
 import warnings
 import sys
 import traceback
+from StringIO import StringIO
 
 import numpy as np
 import pandas as pd
@@ -49,8 +50,8 @@ def main(PATH):
   os.makedirs(PATH.TMP_FOLDER)
   if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp'))
 
-  stdout = open(os.path.join(PATH.WRK_FOLDER, 'sp/log.txt'), 'w')
-  sys.stdout = stdout
+  result = StringIO()
+  sys.stdout = result
 
   scriptFolder = os.path.dirname(os.path.realpath(__file__))
   git_folder = os.path.join(scriptFolder, '.git')
@@ -72,6 +73,8 @@ def main(PATH):
 
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
+    with os.path.join(PATH.OBS_FOLDER, 'sp/log.txt') as log:
+      log.write(result.getvalue())
     shutil.rmtree(PATH.WRK_FOLDER)
     shutil.rmtree(PATH.TMP_FOLDER)
     stdout.close()
