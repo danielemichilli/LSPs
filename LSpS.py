@@ -47,11 +47,9 @@ def main(PATH):
   if os.path.isdir(PATH.TMP_FOLDER): shutil.rmtree(PATH.TMP_FOLDER)
   os.makedirs(PATH.TMP_FOLDER)
   if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp'))
-  
+
   stdout = open(os.path.join(PATH.WRK_FOLDER, 'sp/log.txt'), 'w')
   sys.stdout = stdout
-  stderr = open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w')
-  sys.stderr = stderr
 
   scriptFolder = os.path.dirname(os.path.realpath(__file__))
   git_folder = os.path.join(scriptFolder, '.git')
@@ -66,6 +64,10 @@ def main(PATH):
     SPclean.main(args)
     print "The DataBase has been created."
     print "Time spent: {:.2f} s.".format(time.time() - time0)
+    
+  except Exception as e:
+    with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as stderr:
+      stderr.write(str(e))
 
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
