@@ -125,7 +125,7 @@ def plot_not_valid(ax):
 
 def scatter_beam(ax, pulses, pulses_beam, cand):
   def circle_size(values):
-    new_val = np.clip(values,5.5,20)
+    new_val = np.clip(values, 5, 20)
     m = 31.85
     q = -137.025
     return new_val * m + q
