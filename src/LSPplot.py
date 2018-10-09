@@ -475,7 +475,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
   filename = TMP_FOLDER.format(idL) + '/timeseries/manual_fold_DM{0:.2f}.dat'
 
