@@ -68,7 +68,7 @@ def main(PATH):
     
   except Exception:
     with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as stderr:
-      stderr.write(traceback.print_exc())
+      stderr.write(traceback.format_exc())
 
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
