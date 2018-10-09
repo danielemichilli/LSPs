@@ -34,20 +34,21 @@ def main():
   if args.conf:
     global OBS_FOLDER
     global RAW_FOLDER
-    OBS_FOLDER = os.path.join(OBS_FOLDER, 'confirmations/')
-    RAW_FOLDER = os.path.join(RAW_FOLDER, 'confirmations/')
+    OBS_FOLDER = os.path.join(OBS_FOLDER, 'confirmations')
+    RAW_FOLDER = os.path.join(RAW_FOLDER, 'confirmations')
   args.folder = OBS_FOLDER
+  
+  WRK_FOLDER = os.path.join(WRK_FOLDER, args.id_obs)
+  TMP_FOLDER = os.path.join(TMP_FOLDER, args.id_obs)
+  OBS_FOLDER = os.path.join(OBS_FOLDER, args.id_obs)
 
-  try: shutil.rmtree(WRK_FOLDER.format(args.id_obs))
-  except OSError: pass
-  os.makedirs(WRK_FOLDER.format(args.id_obs))
-  os.makedirs('{}/sp'.format(WRK_FOLDER.format(args.id_obs)))
-  os.makedirs('{}/sp/candidates'.format(WRK_FOLDER.format(args.id_obs)))
-  try: shutil.rmtree(TMP_FOLDER.format(args.id_obs))
-  except OSError: pass
-  os.makedirs(TMP_FOLDER.format(args.id_obs))
-  try: shutil.rmtree('{}{}/sp'.format(OBS_FOLDER,args.id_obs))
-  except OSError: pass
+  if os.path.isdir(WRK_FOLDER): shutil.rmtree(WRK_FOLDER)
+  os.makedirs(WRK_FOLDER)
+  os.makedirs(os.path.join(WRK_FOLDER, 'sp'))
+  os.makedirs(os.path.join(WRK_FOLDER, 'sp/candidates'))
+  if os.path.isdir(TMP_FOLDER): shutil.rmtree(TMP_FOLDER)
+  os.makedirs(TMP_FOLDER)
+  if os.path.isdir(os.path.join(OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(OBS_FOLDER, 'sp'))
 
   scriptFolder = os.path.dirname(os.path.realpath(__file__))
   git_folder = os.path.join(scriptFolder, '.git')
@@ -64,9 +65,9 @@ def main():
     SPclean.log("Time spent: {:.2f} s".format(time.time() - time0), args.id_obs)
 
   finally:
-    shutil.copytree('{}/sp'.format(WRK_FOLDER.format(args.id_obs)),'{}/{}/sp'.format(OBS_FOLDER,args.id_obs))
-    shutil.rmtree(WRK_FOLDER.format(args.id_obs))
-    shutil.rmtree(TMP_FOLDER.format(args.id_obs))
+    shutil.copytree(os.path.join(WRK_FOLDER, 'sp'), os.path.join(OBS_FOLDER, 'sp'))
+    shutil.rmtree(WRK_FOLDER)
+    shutil.rmtree(TMP_FOLDER)
 
   return
 
