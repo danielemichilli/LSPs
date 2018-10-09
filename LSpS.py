@@ -77,7 +77,6 @@ def main(PATH):
       log.write(result.getvalue())
     shutil.rmtree(PATH.WRK_FOLDER)
     shutil.rmtree(PATH.TMP_FOLDER)
-    stdout.close()
     stderr.close()
 
   return
