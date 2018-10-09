@@ -63,7 +63,7 @@ def main(PATH):
   print "The DataBase is being created."
 
   try:
-    SPclean.main(args, PATH)
+    SPclean.main(args)
     print "The DataBase has been created."
     print "Time spent: {:.2f} s.".format(time.time() - time0)
 
