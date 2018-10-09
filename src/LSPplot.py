@@ -21,6 +21,7 @@ import psrfits
 
 from Parameters import *
 import RFIexcision
+import Paths as PATH
 
 mpl.rc('font',size=5)
 

@@ -11,7 +11,6 @@ import pandas as pd
 
 from src import SPclean
 import src.Paths as PATH
-global PATH
 
 
 def parser():
@@ -34,8 +33,6 @@ def main(PATH):
 
   args = parser()
   if args.conf:
-    #global OBS_FOLDER
-    #global RAW_FOLDER
     PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, 'confirmations')
     PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, 'confirmations')
   
@@ -66,7 +63,7 @@ def main(PATH):
   print "The DataBase is being created."
 
   try:
-    SPclean.main(args)
+    SPclean.main(args, PATH)
     print "The DataBase has been created."
     print "Time spent: {:.2f} s.".format(time.time() - time0)
 

@@ -18,6 +18,7 @@ import presto
 
 import C_Funct
 from Parameters import *
+import Paths as PATH
 
 
 def sift_pulses(pulses, events, idL, sap, beam):

@@ -20,6 +20,7 @@ import RFIexcision
 import LSPplot
 import Candidates
 import Internet
+import Paths as PATH
 
 import time
 

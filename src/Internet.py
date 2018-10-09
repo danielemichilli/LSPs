@@ -7,6 +7,7 @@ import os
 import time
 
 import Parameters
+import Paths as PATH
 
 
 def upload(cands,idL,folder,meta_data,pulses):
