@@ -32,7 +32,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
-  fig = plt.figure(figsize=(6,4))
+  fig = plt.figure(figsize=(7,4))
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -77,7 +77,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
     hist_SNR(ax5,pulses_beam,cand)
   except ValueError: pass
     
-  pdf.savefig(bbox_inches='tight', dpi=100)
+  pdf.savefig(bbox_inches='tight', dpi=200)
   return
 
 
@@ -108,7 +108,7 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
     plot_not_valid(ax7)
   puls_heatmap(ax8, puls, idL, db, inc=inc)
 
-  pdf.savefig(bbox_inches='tight', dpi=100)
+  pdf.savefig(bbox_inches='tight', dpi=200)
   return
 
 
@@ -125,7 +125,7 @@ def plot_not_valid(ax):
 
 def scatter_beam(ax, pulses, pulses_beam, cand):
   def circle_size(values):
-    new_val = np.clip(values,6.5,20)
+    new_val = np.clip(values,5.5,20)
     m = 31.85
     q = -137.025
     return new_val * m + q
