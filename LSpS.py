@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import warnings
 import sys
+import traceback
 
 import numpy as np
 import pandas as pd
@@ -65,9 +66,9 @@ def main(PATH):
     print "The DataBase has been created."
     print "Time spent: {:.2f} s.".format(time.time() - time0)
     
-  except Exception as e:
+  except Exception:
     with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as stderr:
-      stderr.write(str(e))
+      stderr.write(traceback.print_exc())
 
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp'), os.path.join(PATH.OBS_FOLDER, 'sp'))
