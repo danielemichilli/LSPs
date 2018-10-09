@@ -120,9 +120,7 @@ def main(args):
   print "time 3:", time.time() - time0
   time0 = time.time()
 
-
-
-  pulses = RFIexcision.beam_comparison(pulses, database=PATH.DB, inc=inc)
+  if not pulses.empty: pulses = RFIexcision.beam_comparison(pulses, database=PATH.DB, inc=inc)
   print "Pulses after beam comparison: {}".format(pulses.shape[0])
 
 
