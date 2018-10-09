@@ -104,7 +104,7 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   if flag == -1:
     plot_not_valid(ax5)
     plot_not_valid(ax6)
-  puls_heatmap(ax8, puls, idL, db_hm, inc=inc)
+  puls_heatmap(ax8, puls, idL, db, inc=inc)
 
   pdf.savefig(bbox_inches='tight', dpi=200)
   return
