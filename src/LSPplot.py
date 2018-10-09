@@ -34,7 +34,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   plt.close('all')
   fig = plt.figure(figsize=(7,8))
 
-  out_dir = PATH.TMP_FOLDER + '/timeseries'
+  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
     sap = int(cand.SAP)
@@ -389,8 +389,8 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  filename = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  maskfn = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  maskfn = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(filename): return -1
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
@@ -448,8 +448,8 @@ def load_ts(puls, idL, filename=False):
   if filename:
     sap = int(puls.SAP)
     beam = int(puls.BEAM)
-    out_dir = TMP_FOLDER.format(idL) + '/timeseries/'
-    if not os.path.isdir(TMP_FOLDER.format(idL) + '/timeseries'): os.makedirs(TMP_FOLDER.format(idL) + '/timeseries')
+    out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries/')
+    if not os.path.isdir(out_dir): os.makedirs(out_dir)
     FNULL = open(os.devnull, 'w')
     for j,DM in enumerate(DM_range):
       if not os.path.isfile(filename.format(DM)):
@@ -475,9 +475,9 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  raw_dir = '{folder}/{conf}/{idL}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
-  filename = TMP_FOLDER.format(idL) + '/timeseries/manual_fold_DM{0:.2f}.dat'
+  filename = os.path.join(PATH.TMP_FOLDER, 'timeseries/manual_fold_DM{0:.2f}.dat')
 
   data, params = load_ts(puls, idL, filename=filename)
 
