@@ -23,7 +23,7 @@ from Parameters import *
 import RFIexcision
 import Paths as PATH
 
-mpl.rc('font',size=5)
+mpl.rc('font',size=4)
 
 
 
@@ -32,7 +32,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
-  fig = plt.figure(figsize=(7,8))
+  fig = plt.figure(figsize=(6,4))
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -77,7 +77,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
     hist_SNR(ax5,pulses_beam,cand)
   except ValueError: pass
     
-  pdf.savefig(bbox_inches='tight', dpi=200)
+  pdf.savefig(bbox_inches='tight', dpi=100)
   return
 
 
@@ -98,15 +98,17 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, events, puls)
   flag = puls_dedispersed(ax3, puls, idL, inc=inc, prof_ax=ax4)
-  if flag == -1: plot_not_valid(ax3)
+  if flag == -1: 
+    plot_not_valid(ax3)
+    plot_not_valid(ax4)
   puls_SNR_DM(ax5, ev)
   flag = puls_dynSpec(ax6, ax7, puls, idL, inc=inc)
   if flag == -1:
-    plot_not_valid(ax5)
     plot_not_valid(ax6)
+    plot_not_valid(ax7)
   puls_heatmap(ax8, puls, idL, db, inc=inc)
 
-  pdf.savefig(bbox_inches='tight', dpi=200)
+  pdf.savefig(bbox_inches='tight', dpi=100)
   return
 
 
