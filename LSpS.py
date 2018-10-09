@@ -50,6 +50,11 @@ def main(PATH):
   if os.path.isdir(PATH.TMP_FOLDER): shutil.rmtree(PATH.TMP_FOLDER)
   os.makedirs(PATH.TMP_FOLDER)
   if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp'))
+  
+  with open(os.path.join(PATH.WRK_FOLDER, 'sp/log.txt'), 'w') as f:
+    sys.stdout = f
+  with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as f:
+    sys.stderr = f
 
   scriptFolder = os.path.dirname(os.path.realpath(__file__))
   git_folder = os.path.join(scriptFolder, '.git')
@@ -74,9 +79,4 @@ def main(PATH):
 
 
 if __name__ == '__main__':
-  with open(os.path.join(PATH.WRK_FOLDER, 'sp/log.txt'), 'w') as f:
-    sys.stdout = f
-  with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as f:
-    sys.stderr = f
-  
   main(PATH)
