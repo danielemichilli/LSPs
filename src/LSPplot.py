@@ -87,10 +87,10 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1))
   ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1))
   ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2))
-  ax4 = plt.subplot(gsC.new_subplotspec((0,2), 1, 1))
-  ax5 = plt.subplot(gsC.new_subplotspec((0,3), 1, 1))
-  ax6 = plt.subplot(gsC.new_subplotspec((1,2), 1, 1))
-  ax7 = plt.subplot(gsC.new_subplotspec((1,3), 1, 1), sharey=ax6)
+  ax4 = plt.subplot(gs.new_subplotspec((0,2), 1, 1))
+  ax5 = plt.subplot(gs.new_subplotspec((0,3), 1, 1))
+  ax6 = plt.subplot(gs.new_subplotspec((1,2), 1, 1))
+  ax7 = plt.subplot(gs.new_subplotspec((1,3), 1, 1), sharey=ax6)
   ax8 = plt.subplot(gs.new_subplotspec((0,4), 2, 2))
 
   ev = events[events.Pulse == puls.name]
