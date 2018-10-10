@@ -32,7 +32,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
-  fig = plt.figure(figsize=(7,4))
+  fig = plt.figure(figsize=(8,4))
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
