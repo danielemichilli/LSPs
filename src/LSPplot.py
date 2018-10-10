@@ -23,8 +23,8 @@ from Parameters import *
 import RFIexcision
 import Paths as PATH
 
-mpl.rc('font',size=4)
-
+mpl.rc('font', size=4)
+mpl.rc('lines', linewidth=0.5)
 
 
 def output(idL, pulses, meta_data, candidates, db, inc=12):
@@ -32,7 +32,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
-  fig = plt.figure(figsize=(8,1))
+  fig = plt.figure(figsize=(6,4))
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -61,11 +61,11 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
 
   gs = gridspec.GridSpec(3, 6, wspace=.7, hspace=.3)
-  ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 1))
-  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 5))
-  ax3 = plt.subplot(gs.new_subplotspec((2,0), 1, 2))
-  ax4 = plt.subplot(gs.new_subplotspec((2,2), 1, 2))
-  ax5 = plt.subplot(gs.new_subplotspec((2,4), 1, 2))
+  ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 1), rasterized = True)
+  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 5), rasterized = True)
+  ax3 = plt.subplot(gs.new_subplotspec((2,0), 1, 2), rasterized = True)
+  ax4 = plt.subplot(gs.new_subplotspec((2,2), 1, 2), rasterized = True)
+  ax5 = plt.subplot(gs.new_subplotspec((2,4), 1, 2), rasterized = True)
 
   meta_data_plot(ax1,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
   scatter_beam(ax2, pulses, pulses_beam, cand)
@@ -76,7 +76,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
     hist_DM(ax3,pulses_beam,cand)
     hist_SNR(ax5,pulses_beam,cand)
   except ValueError: pass
-    
+  
   pdf.savefig(bbox_inches='tight', dpi=200)
   return
 
@@ -84,14 +84,14 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
 
 def puls_plot(pdf, puls, events, idL, db, i, inc=12):
   gs = gridspec.GridSpec(2, 6, wspace=0.5, hspace=0.2)
-  ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1))
-  ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1))
-  ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2))
-  ax4 = plt.subplot(gs.new_subplotspec((0,2), 1, 1))
-  ax5 = plt.subplot(gs.new_subplotspec((0,3), 1, 1))
-  ax6 = plt.subplot(gs.new_subplotspec((1,2), 1, 1))
-  ax7 = plt.subplot(gs.new_subplotspec((1,3), 1, 1), sharey=ax6)
-  ax8 = plt.subplot(gs.new_subplotspec((0,4), 2, 2))
+  ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1), rasterized = True)
+  ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1), rasterized = True)
+  ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2), rasterized = True)
+  ax4 = plt.subplot(gs.new_subplotspec((0,2), 1, 1), rasterized = True)
+  ax5 = plt.subplot(gs.new_subplotspec((0,3), 1, 1), rasterized = True)
+  ax6 = plt.subplot(gs.new_subplotspec((1,2), 1, 1), rasterized = True)
+  ax7 = plt.subplot(gs.new_subplotspec((1,3), 1, 1), sharey=ax6, rasterized = True)
+  ax8 = plt.subplot(gs.new_subplotspec((0,4), 2, 2), rasterized = True)
 
   ev = events[events.Pulse == puls.name]
 
