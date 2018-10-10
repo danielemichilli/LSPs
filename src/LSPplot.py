@@ -230,7 +230,7 @@ def puls_DM_Time(ax, event, all_events, puls):
   #  q = -137.025
   #  return (new_val * m + q) / 2.
   #sig = circle_size(event.Sigma)
-  #sig = pulses_beam.Sigma - pulses_beam.Sigma.min()
+  sig = pulses_beam.Sigma - pulses_beam.Sigma.min()
   sig = sig * (480. / sig.max()) + 20.
   
   x_ev = (event.Time - puls.Time)
