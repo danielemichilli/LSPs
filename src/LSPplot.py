@@ -228,7 +228,7 @@ def puls_DM_Time(ax, event, all_events, puls):
     new_val = np.clip(values,5,20)
     m = 31.85
     q = -137.025
-    return (new_val * m + q) / 2.
+    return (new_val * m + q) / 2. + 5.
   sig = circle_size(event.Sigma)
   #sig = event.Sigma - event.Sigma.min()
   #sig = sig * (480. / sig.max()) + 20.
