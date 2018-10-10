@@ -24,7 +24,7 @@ import RFIexcision
 import Paths as PATH
 
 mpl.rc('font', size=4)
-mpl.rc('lines', linewidth=0.5)
+mpl.rc('lines', linewidth=1)
 
 
 def output(idL, pulses, meta_data, candidates, db, inc=12):
@@ -32,7 +32,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   candidates.sort_values('Sigma',ascending=False,inplace=True)
   
   plt.close('all')
-  fig = plt.figure(figsize=(6,4))
+  fig = plt.figure(figsize=(8,4))
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   if os.path.isdir(out_dir): shutil.rmtree(out_dir)
@@ -124,12 +124,14 @@ def plot_not_valid(ax):
 
 
 def scatter_beam(ax, pulses, pulses_beam, cand):
-  def circle_size(values):
-    new_val = np.clip(values, 5, 20)
-    m = 31.85
-    q = -137.025
-    return new_val * m + q
-  sig = circle_size(pulses_beam.Sigma)
+  #def circle_size(values):
+  #  new_val = np.clip(values, 5, 20)
+  #  m = 31.85
+  #  q = -137.025
+  #  return new_val * m + q
+  #sig = circle_size(pulses_beam.Sigma)
+  sig = pulses_beam.Sigma - pulses_beam.Sigma.min()
+  sig = sig * (480. / sig.max()) + 20.
 
   ax.scatter(pulses_beam.Time, pulses_beam.DM, c='k', s=sig, edgecolor='w', lw=.2, zorder=2)
 
