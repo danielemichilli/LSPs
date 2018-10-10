@@ -224,14 +224,14 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
 
 
 def puls_DM_Time(ax, event, all_events, puls):
-  #def circle_size(values):
-  #  new_val = np.clip(values,6.5,20)
-  #  m = 31.85
-  #  q = -137.025
-  #  return (new_val * m + q) / 2.
-  #sig = circle_size(event.Sigma)
-  sig = event.Sigma - event.Sigma.min()
-  sig = sig * (480. / sig.max()) + 20.
+  def circle_size(values):
+    new_val = np.clip(values,5,20)
+    m = 31.85
+    q = -137.025
+    return (new_val * m + q) / 2.
+  sig = circle_size(event.Sigma)
+  #sig = event.Sigma - event.Sigma.min()
+  #sig = sig * (480. / sig.max()) + 20.
   
   x_ev = (event.Time - puls.Time)
   ax.scatter(x_ev, event.DM, s=sig, marker='o', linewidths=[.5,], edgecolor='r', facecolors='none', zorder=0)
