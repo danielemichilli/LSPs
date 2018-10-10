@@ -124,14 +124,12 @@ def plot_not_valid(ax):
 
 
 def scatter_beam(ax, pulses, pulses_beam, cand):
-  #def circle_size(values):
-  #  new_val = np.clip(values, 5, 20)
-  #  m = 31.85
-  #  q = -137.025
-  #  return new_val * m + q
-  #sig = circle_size(pulses_beam.Sigma)
-  sig = pulses_beam.Sigma - pulses_beam.Sigma.min()
-  sig = sig * (480. / sig.max()) + 20.
+  def circle_size(values):
+    new_val = np.clip(values, 5, 20)
+    m = 31.85
+    q = -137.025
+    return new_val * m + q
+  sig = circle_size(pulses_beam.Sigma)
 
   ax.scatter(pulses_beam.Time, pulses_beam.DM, c='k', s=sig, edgecolor='w', lw=.2, zorder=2)
 
@@ -226,12 +224,15 @@ def scatter_SNR(ax, pulses, pulses_beam, cand):
 
 
 def puls_DM_Time(ax, event, all_events, puls):
-  def circle_size(values):
-    new_val = np.clip(values,6.5,20)
-    m = 31.85
-    q = -137.025
-    return (new_val * m + q) / 2.
-  sig = circle_size(event.Sigma)
+  #def circle_size(values):
+  #  new_val = np.clip(values,6.5,20)
+  #  m = 31.85
+  #  q = -137.025
+  #  return (new_val * m + q) / 2.
+  #sig = circle_size(event.Sigma)
+  #sig = pulses_beam.Sigma - pulses_beam.Sigma.min()
+  sig = sig * (480. / sig.max()) + 20.
+  
   x_ev = (event.Time - puls.Time)
   ax.scatter(x_ev, event.DM, s=sig, marker='o', linewidths=[.5,], edgecolor='r', facecolors='none', zorder=0)
   #ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
