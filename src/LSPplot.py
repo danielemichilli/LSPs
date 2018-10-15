@@ -395,7 +395,9 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
   if inc == 0: conf = 'confirmations'
   else: conf = ''
   filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  print filename
   maskfn = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  print maskfn
   if not os.path.isfile(filename): return -1
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
