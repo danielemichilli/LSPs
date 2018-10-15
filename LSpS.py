@@ -23,17 +23,13 @@ def parser():
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,description="The program creates a DataBase of the events in the observation.")
   parser.add_argument('id_obs', help='Observation ID')
   parser.add_argument('-conf', help="Run over confirmation observations.",action='store_true')
-  parser.add_argument('-load_DB', help="Load events from a DataBase instead of text files.",action='store_true')
   parser.add_argument('--debug', help="Debug mode: shows all the warnings.",action='store_true')
   args = parser.parse_args()
   
   return args
 
 
-def main(PATH):
-  #warnings.filterwarnings('error', category=FutureWarning)
-
-  args = parser()
+def set_paths(args, PATH):
   if args.conf:
     PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, 'confirmations')
     PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, 'confirmations')
@@ -41,7 +37,16 @@ def main(PATH):
   PATH.WRK_FOLDER = os.path.join(PATH.WRK_FOLDER, args.id_obs)
   PATH.TMP_FOLDER = os.path.join(PATH.TMP_FOLDER, args.id_obs)
   PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, args.id_obs)
+  PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, args.id_obs)
+  return PATH
+  
 
+def main(PATH):
+  #warnings.filterwarnings('error', category=FutureWarning)
+
+  args = parser()
+  PATH = set_paths(args, PATH)
+  
   if os.path.isdir(PATH.WRK_FOLDER): shutil.rmtree(PATH.WRK_FOLDER)
   os.makedirs(PATH.WRK_FOLDER)
   os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp'))

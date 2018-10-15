@@ -40,7 +40,7 @@ def main(args):
     for root, dirnames, filenames in os.walk(OBS_FOLDER):
       for filename in fnmatch.filter(filenames, '*singlepulse.tgz'):
         if filename in file_names:
-          log_err("Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename), id_obs)
+          print "WARNING: Two sp archives with the same filename foud: {}. Only the latter will be processed".format(filename)
           idx = file_names.index(filename)
           file_list[idx] = os.path.join(root,filename)
           continue
@@ -131,7 +131,6 @@ def main(args):
   
   if pulses.empty: 
     print "No pulse detected!"
-    log("No pulse detected!", args.id_obs)
     return
   pulses.sort_index(inplace=True)
 
@@ -146,7 +145,6 @@ def main(args):
       
   if cands.empty:
     print "Any reliable candidate detected!"
-    log("Any reliable candidate detected!", args.id_obs)
     return
 
   cands = cands[cands.main_cand == 0]
@@ -159,10 +157,8 @@ def main(args):
   cands.sort_values('Sigma', inplace=True, ascending=False)
 
 
-
   print "time 5:", time.time() - time0
   time0 = time.time()
-
 
 
   #pulses = pulses[pulses.Candidate.isin(cands.index)]
@@ -174,18 +170,14 @@ def main(args):
   print "time 6:", time.time() - time0
   time0 = time.time()
 
-
   
   #Store the best candidates online
   try: Internet.upload(cands,args.id_obs,os.path.join(PATH.WRK_FOLDER,'sp/candidates/.'),meta_data,pulses)
-  except: log_err("Connession problem \nConsider to run Upload.py script\n", args.id_obs)
-
+  except: print "WARNING: Connession problem \nConsider running Create_diagnostics.py"
 
 
   print "time 7:", time.time() - time0
   time0 = time.time()
-
-
 
   return
 
