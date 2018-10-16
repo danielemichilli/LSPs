@@ -433,11 +433,11 @@ def load_ts(puls, idL, filename):
   except OSError: pass
   os.makedirs(out_dir)
 
-  nDMs = 20
+  nDMs = 21
   DM = puls['DM']
   dDM = puls['dDM']
   lowDM = DM - dDM / 2.
-  stepDM = dDM / nDMs
+  stepDM = dDM / (nDMs - 1)
   
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
   error = subprocess.call(['prepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
@@ -460,7 +460,7 @@ def load_ts(puls, idL, filename):
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
     return sorted(l, key = alphanum_key)
     
-  ts_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*')))
+  ts_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*.dat')))
   for i,ts_name in enumerate(ts_list):
     try:
       ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
