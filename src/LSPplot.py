@@ -392,7 +392,7 @@ def puls_meta_data(ax, puls, idx, i):
 
 
 
-def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
+def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   sap = int(puls.SAP)
   beam = int(puls.BEAM)
   if beam == inc: stokes = 'incoherentstokes'
@@ -416,7 +416,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
     else: df = int(round(puls.Duration / 0.0004915 / 4))
   
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-puls.Duration*duration/2, puls.Duration*(duration+1), nsub=16, dm=puls.DM, width_bins=df, maskfn=maskfn, mask=mask, scaleindep=False, bandpass_corr=True, zerodm=True)
-  waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2)
+  waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2, ax_ts=ax_ts)
   ax1.scatter(0.,F_MIN+1,marker='^',s=50,c='r',lw=0.)
 
   DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
