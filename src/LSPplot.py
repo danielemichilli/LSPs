@@ -439,8 +439,8 @@ def load_ts(puls, idL, filename):
   stepDM = dDM / nDMs
   
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
-  error = subprocess.call(['prepsubband', '-dmprec', 4, '-numdms', nDMs, '-dmstep', stepDM, \
-    '-noclip', '-nsub', 288, '-lodm', lowDM, '-mask', mask, '-runavg', '-noscales', '-noweights',\
+  error = subprocess.call(['prepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+    '-noclip', '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
     '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
       
   nProfBins = 3
