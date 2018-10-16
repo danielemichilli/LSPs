@@ -38,6 +38,14 @@ def set_paths(args, PATH):
   PATH.TMP_FOLDER = os.path.join(PATH.TMP_FOLDER, args.id_obs)
   PATH.OBS_FOLDER = os.path.join(PATH.OBS_FOLDER, args.id_obs)
   PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, args.id_obs)
+  PATH.DB = os.path.join(PATH.WRK_FOLDER,'sp/SinglePulses.hdf5')
+  
+  if os.path.isdir(PATH.WRK_FOLDER): shutil.rmtree(PATH.WRK_FOLDER)
+  os.makedirs(PATH.WRK_FOLDER)
+  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp'))
+  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'))
+  if os.path.isdir(PATH.TMP_FOLDER): shutil.rmtree(PATH.TMP_FOLDER)
+  os.makedirs(PATH.TMP_FOLDER)
   return PATH
   
 
@@ -46,13 +54,6 @@ def main(PATH):
 
   args = parser()
   PATH = set_paths(args, PATH)
-  
-  if os.path.isdir(PATH.WRK_FOLDER): shutil.rmtree(PATH.WRK_FOLDER)
-  os.makedirs(PATH.WRK_FOLDER)
-  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp'))
-  os.makedirs(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'))
-  if os.path.isdir(PATH.TMP_FOLDER): shutil.rmtree(PATH.TMP_FOLDER)
-  os.makedirs(PATH.TMP_FOLDER)
   if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp'))
 
   result = StringIO()

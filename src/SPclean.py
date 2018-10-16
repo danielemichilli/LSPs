@@ -26,9 +26,6 @@ import time
 
 
 def main(args):
-
-  PATH.DB = os.path.join(PATH.WRK_FOLDER,'sp/SinglePulses.hdf5')
-
   time0 = time.time()
 
   if args.conf: inc = 0

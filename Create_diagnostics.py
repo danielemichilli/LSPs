@@ -1,9 +1,11 @@
 import argparse
 import os
+import shutil
 
 import pandas as pd
 
 import src.Paths as PATH
+from LSpS import set_paths
 
 
 def parser():
@@ -36,13 +38,11 @@ def load_DB():
 
 def main(PATH):
   args = parser()
-  if args.conf:
-    PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, 'confirmations')
+  PATH = set_paths(args, PATH)
+  PATH.DB = os.path.join(PATH.OBS_FOLDER,'sp/SinglePulses.hdf5')
+  if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp/candidates')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp/candidates'))
   
-  PATH.WRK_FOLDER = os.path.join(PATH.WRK_FOLDER, args.id_obs)
-  PATH.TMP_FOLDER = os.path.join(PATH.TMP_FOLDER, args.id_obs)
-  PATH.RAW_FOLDER = os.path.join(PATH.RAW_FOLDER, args.id_obs)
-  PATH.DB = os.path.join(PATH.WRK_FOLDER,'sp/SinglePulses.hdf5')
+  
   if args.conf: inc = 0
   else: inc = 12
 
@@ -53,5 +53,8 @@ def main(PATH):
 
 
 if __name__ == '__main__':
-  main(PATH)
-  
+  try: main(PATH)
+  finally:
+    shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'), os.path.join(PATH.OBS_FOLDER, 'sp/candidates'))
+    shutil.rmtree(PATH.WRK_FOLDER)
+    shutil.rmtree(PATH.TMP_FOLDER)
