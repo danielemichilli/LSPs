@@ -3,6 +3,7 @@
 # Written by Daniele Michilli
 #############################
 
+from glob import glob
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -16,7 +17,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import presto
 import subprocess
 import shutil
-import waterfaller
+from waterfaller import waterfaller
 import psrfits
 
 from Parameters import *
@@ -97,15 +98,18 @@ def puls_plot(pdf, puls, events, idL, db, i, inc=12):
 
   puls_meta_data(ax1, puls, ev.Pulse.iloc[0], i)
   puls_DM_Time(ax2, ev, events, puls)
-  flag = puls_dedispersed(ax3, puls, idL, inc=inc, prof_ax=ax4)
-  if flag == -1: 
+  puls_dedispersed_plotted = puls_dedispersed(ax3, puls, idL, inc=inc, prof_ax=ax4)
+  if puls_dedispersed_plotted == -1: 
     plot_not_valid(ax3)
-    plot_not_valid(ax4)
-  puls_SNR_DM(ax5, ev)
-  flag = puls_dynSpec(ax6, ax7, puls, idL, inc=inc)
-  if flag == -1:
+    puls_dynSpec_plotted = puls_dynSpec(ax6, ax7, puls, idL, inc=inc, ax_ts=ax4)
+  else:
+    puls_dynSpec_plotted = puls_dynSpec(ax6, ax7, puls, idL, inc=inc, ax_ts=None)
+  if puls_dynSpec_plotted == -1:
     plot_not_valid(ax6)
     plot_not_valid(ax7)
+    if puls_dedispersed_plotted == -1: 
+      plot_not_valid(ax4)
+  puls_SNR_DM(ax5, ev)
   puls_heatmap(ax8, puls, idL, db, inc=inc)
 
   pdf.savefig(bbox_inches='tight', dpi=200)
@@ -422,56 +426,42 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12):
 
 
 
-def load_ts(puls, idL, filename=False):
-  k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES  #Theoretical factor between time and DM
+def load_ts(puls, idL, filename):
+  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
+  try: shutil.rmtree(out_dir)
+  except OSError: pass
+  os.makedirs(out_dir)
 
-  bin_peak = int(puls['Sample'])
-  DM_peak = puls['DM']
-  if DM_peak < DM_STEP1: 
-    duration = int(np.round(puls['Duration'] / RES))
-    DM_res = 0.01
-  elif DM_peak < DM_STEP2: 
-    duration = int(np.round(puls['Duration'] / RES / 2.))
-    DM_res = 0.05
-    k /= 2.
-  else: 
-    duration = int(np.round(puls['Duration'] / RES / 4.))
-    DM_res = 0.1
-    k /= 4.
-
-  nDMs = int(np.round(puls['dDM'] / DM_res * 2.))  #Valutare se estendere oltre larghezza puls
-  DM_range = DM_peak - (nDMs/2 - np.arange(nDMs)) * DM_res 
+  nDMs = 20
+  DM = puls['DM']
+  dDM = puls['dDM']
+  lowDM = DM - dDM / 2.
+  stepDM = dDM / nDMs
   
+  mask = os.path.splitext(filename)[0] + "_rfifind.mask"
+  error = subprocess.call(['prepsubband', '-dmprec', 4, '-numdms', nDMs, '-dmstep', stepDM, \
+    '-noclip', '-nsub', 288, '-lodm', lowDM, '-mask', mask, '-runavg', '-noscales', '-noweights',\
+    '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
+      
   nProfBins = 3
-  scrunch_fact = int(np.round(duration / float(nProfBins)))
-  if scrunch_fact < 1: scrunch_fact = 1  
-  
-  nPlotBins = int(np.ceil((DM_range[0] - DM_range[-1]) * k / duration * 1.5 ))
+  k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES
+  duration = int(np.round(puls['Duration'] / RES))
+  nPlotBins = int(np.ceil(dDM * k / duration * 1.5 ))
   nBins = nPlotBins * nProfBins
   data = np.zeros((nDMs,nBins))
-
-  bin_start = bin_peak - nBins/2 * scrunch_fact
-
-  if filename:
-    sap = int(puls.SAP)
-    beam = int(puls.BEAM)
-    out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries/')
-    if not os.path.isdir(out_dir): os.makedirs(out_dir)
-    FNULL = open(os.devnull, 'w')
-    for j,DM in enumerate(DM_range):
-      if not os.path.isfile(filename.format(DM)):
-        error = subprocess.call(['sh', '/projects/0/lotaas2/software/LSP/spdspsr_pl.sh', idL, str(sap), str(beam), '{:.2f}'.format(DM), out_dir])
+  peak = int(puls['Time_org'] / RES)
+  scrunch_fact = int(np.round(duration / float(nProfBins)))
+  if scrunch_fact < 1: scrunch_fact = 1 
+  bin_start = peak - nBins/2 * scrunch_fact
     
-      try:
-        ts = np.memmap(filename.format(DM), dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
-        ts = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
-      except IOError: ts = np.zeros(nBins) + np.nan
-
-      data[j] = ts
-
-  params = {'bins_out': nBins*scrunch_fact, 'bin_start': bin_start, 'scrunch_fact': scrunch_fact, 'duration': nBins*scrunch_fact*RES, 'DM_min': DM_range[0], 'DM_max': DM_range[-1], 'k': k}
+  ts_list = glob(os.path.join(out_dir, 'diagnostic_plot*'))
+  for i,ts_name in enumerate(ts_list):
+  try:
+    ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
+    data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
+  except IOError: data[i] = np.zeros(nBins) + np.nan  
   
-  return data, params
+  return data, nBins*scrunch_fact*RES
 
 
 
@@ -484,32 +474,32 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   else: conf = ''
   raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
-  filename = os.path.join(PATH.TMP_FOLDER, 'timeseries/manual_fold_DM{0:.2f}.dat')
 
-  data, params = load_ts(puls, idL, filename=filename)
+  data, plot_duration = load_ts(puls, idL, raw_dir)
 
   #Image plot
-  ax.imshow(data,cmap='Greys',origin="lower",aspect='auto',interpolation='nearest',extent=[-params['duration']/2.,params['duration']/2.,params['DM_min'], params['DM_max']])
-  ax.set_ylim((params['DM_min'], params['DM_max']))
+  ax.imshow(data, cmap='Greys', origin="lower", aspect='auto', interpolation='nearest',\
+    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.])
+  ax.set_ylim((puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.))
   ax.set_ylabel('DM (pc cm$^{-3}$)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
   #Plot contours
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2)
-  x = np.array([-params['duration']/2.,params['duration']/2.])
+  x = np.array([-plot_duration/2.,plot_duration/2.])
   y = x / k + puls.DM
   ax.plot(x, y,'r', linewidth=.2)
   ax.axvline(0, color='r', linewidth=.2)
 
   #Inset profile
-  def inset(data, params, puls):
+  def inset(data, puls):
     nPlotBins = 20
     nProfBins = 5
     nBins = nPlotBins * nProfBins
     ts = data[data.shape[0]/2+1]
     return ts
 
-  ts = inset(data, params, puls)
+  ts = inset(data, puls)
   
   if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
   prof_ax.plot(ts, 'k')
@@ -518,7 +508,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   prof_ax.set_yticks([])
 
   #Time axis
-  ax.set_xlim((-params['duration']/2.,params['duration']/2.))
+  ax.set_xlim((-plot_duration/2.,plot_duration/2.))
   if puls.DM < DM_STEP1: down = 1
   elif puls.DM < DM_STEP2: down = 2
   else: down = 4
