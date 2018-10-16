@@ -456,10 +456,10 @@ def load_ts(puls, idL, filename):
     
   ts_list = glob(os.path.join(out_dir, 'diagnostic_plot*'))
   for i,ts_name in enumerate(ts_list):
-  try:
-    ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
-    data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
-  except IOError: data[i] = np.zeros(nBins) + np.nan  
+    try:
+      ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
+      data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
+    except IOError: data[i] = np.zeros(nBins) + np.nan  
   
   return data, nBins*scrunch_fact*RES
 
