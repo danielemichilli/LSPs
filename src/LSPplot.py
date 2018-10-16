@@ -445,15 +445,15 @@ def load_ts(puls, idL, filename):
     '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
       
   nProfBins = 3
-  k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
   duration = int(np.round(puls['Duration'] / RES))
-  nPlotBins = int(np.ceil(dDM * k / duration * 1.5 ))
+  k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
+  nPlotBins = int(np.ceil(dDM * k / 2. ))
   nBins = nPlotBins * nProfBins
   data = np.zeros((nDMs,nBins))
   peak = int(puls['Time_org'] / RES)
   scrunch_fact = int(np.round(duration / float(nProfBins)))
   if scrunch_fact < 1: scrunch_fact = 1 
-  bin_start = peak - nBins/2 * scrunch_fact
+  bin_start = peak - nBins * scrunch_fact / 2
 
   def natural_sort(l): 
     convert = lambda text: int(text) if text.isdigit() else text.lower() 
