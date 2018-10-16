@@ -19,6 +19,7 @@ import subprocess
 import shutil
 from waterfaller import waterfaller
 import psrfits
+import re
 
 from Parameters import *
 import RFIexcision
@@ -444,7 +445,7 @@ def load_ts(puls, idL, filename):
     '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
       
   nProfBins = 3
-  k = 4148.808 * (F_MAX**-2 - F_MIN**-2) / RES
+  k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
   duration = int(np.round(puls['Duration'] / RES))
   nPlotBins = int(np.ceil(dDM * k / duration * 1.5 ))
   nBins = nPlotBins * nProfBins
@@ -453,8 +454,13 @@ def load_ts(puls, idL, filename):
   scrunch_fact = int(np.round(duration / float(nProfBins)))
   if scrunch_fact < 1: scrunch_fact = 1 
   bin_start = peak - nBins/2 * scrunch_fact
+
+  def natural_sort(l): 
+    convert = lambda text: int(text) if text.isdigit() else text.lower() 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    return sorted(l, key = alphanum_key)
     
-  ts_list = glob(os.path.join(out_dir, 'diagnostic_plot*'))
+  ts_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*')))
   for i,ts_name in enumerate(ts_list):
     try:
       ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
