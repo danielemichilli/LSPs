@@ -62,21 +62,23 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
 
-  gs = gridspec.GridSpec(3, 6, wspace=.7, hspace=.3)
+  gs = gridspec.GridSpec(3, 8, wspace=.7, hspace=.3)
   ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 1), rasterized = True)
-  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 5), rasterized = True)
+  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 7), rasterized = True)
   ax3 = plt.subplot(gs.new_subplotspec((2,0), 1, 2), rasterized = True)
   ax4 = plt.subplot(gs.new_subplotspec((2,2), 1, 2), rasterized = True)
   ax5 = plt.subplot(gs.new_subplotspec((2,4), 1, 2), rasterized = True)
-
+  ax6 = plt.subplot(gs.new_subplotspec((2,6), 1, 2), rasterized = True)
+  
   meta_data_plot(ax1,meta_data[(meta_data.SAP==sap)&(meta_data.BEAM==beam)],pulses,cand)
   scatter_beam(ax2, pulses, pulses_beam, cand)
 
   if not pulses_beam.empty: 
     scatter_SNR(ax4,pulses,events[events.Pulse.isin(pulses_beam.index)],cand)
-  try: 
+    scatter_SNR(ax5,pulses,events[events.Pulse.isin(pulses_beam.index)],cand, zoom=True)
+  try:
     hist_DM(ax3,pulses_beam,cand)
-    hist_SNR(ax5,pulses_beam,cand)
+    hist_SNR(ax6,pulses_beam,cand)
   except ValueError: pass
   
   pdf.savefig(bbox_inches='tight', dpi=200)
@@ -212,13 +214,14 @@ def hist_SNR(ax,pulses,cand):
 
 
 
-def scatter_SNR(ax, pulses, pulses_beam, cand):
+def scatter_SNR(ax, pulses, pulses_beam, cand, zoom=False):
   ax.axvline(cand.DM, c='r', ls='-', linewidth=.2, zorder=3)
   ax.scatter(pulses_beam.DM,pulses_beam.Sigma,c='k',s=5,linewidths=[0.,], zorder=2)
-  ax.set_xscale('log')
+  if not zoom: ax.set_xscale('log')
   ax.set_ylabel('S/N')
   ax.set_xlabel('DM (pc cm$^{-3}$)')
-  ax.set_xlim((3., 550.))
+  if zoom: ax.set_xlim((3., 550.))
+  else: ax.set_xlim((cand.DM - 5, cand.DM + 5))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
@@ -382,11 +385,15 @@ def puls_meta_data(ax, puls, idx, i):
   ax.annotate('Pulse code: {}'.format(idx), xy=(0,8))
   ax.annotate('DM (pc/cm2): {0:.2f}'.format(puls.DM), xy=(0,7))
   ax.annotate('dDM (pc/cm2): {0:.2f}'.format(puls.dDM), xy=(0,6))
-  ax.annotate('Time (s): {0:.2f}'.format(puls.Time), xy=(0,5))
+  ax.annotate('Time (s): {0:.2f}'.format(puls.Time_org), xy=(0,5))
   ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,4))
   ax.annotate('Width (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
   ax.annotate('N events: {0:.0f}'.format(puls.N_events), xy=(0,2))
-
+  ax.annotate('Sample: {}'.format(int(np.round(puls.Time_org / RES)), xy=(0,1))
+  if puls.DM < DM_STEP1: d = 1
+  elif puls.DM < DM_STEP2: d = 2
+  else: d = 4
+  ax.annotate('Downsampling: {}'.format(puls.Downfact * d), xy=(0,0))
   ax.axis('off')
   return
 
