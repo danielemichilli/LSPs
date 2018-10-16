@@ -1,10 +1,9 @@
 import argparse
 import os
 
+import pandas as pd
+
 import src.Paths as PATH
-
-
-
 
 
 def parser():
