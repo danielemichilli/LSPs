@@ -33,7 +33,7 @@ def load_DB():
   cands = cands.head(50)
   cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma>10.)) | ((cands.N_pulses > 1) & (cands.Sigma>16.)) ]
   cands.sort_values('Sigma', inplace=True, ascending=False)
-  return 
+  return meta_data, pulses, cands
 
 
 def main(PATH):
