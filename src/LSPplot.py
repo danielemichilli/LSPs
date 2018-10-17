@@ -225,7 +225,7 @@ def scatter_SNR(ax, pulses, pulses_beam, cand, zoom=False):
     dDM = pulses.DM.max() - pulses.DM.min()
     ax.set_xlim((cand.DM - dDM * 2, cand.DM + dDM * 2))
   else: ax.set_xlim((3., 550.))
-  ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
+  ax.set_ylim((5, pulses_beam.Sigma.max()+0.5))
   ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
   ax.tick_params(which='both',direction='out')
