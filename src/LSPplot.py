@@ -454,8 +454,8 @@ def load_ts(puls, idL, filename):
   nProfBins = 3
   duration = int(np.round(puls['Duration'] / RES))
   k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
-  nPlotBins = int(np.ceil(dDM * k / duration * 2 ))
-  nBins = nPlotBins * nProfBins
+  nPlotBins = int(np.ceil(dDM * k / duration)) * 3
+  nBins = nPlotBins * nProfBins + 1
   data = np.zeros((nDMs,nBins))
   peak = int(puls['Time_org'] / RES)
   scrunch_fact = int(np.round(duration / float(nProfBins)))
@@ -504,15 +504,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   ax.plot(x, y,'r', linewidth=.2)
   ax.axvline(0, color='r', linewidth=.2)
 
-  #Inset profile
-  def inset(data, puls):
-    nPlotBins = 100
-    nProfBins = 5
-    nBins = nPlotBins * nProfBins
-    ts = data[data.shape[0]/2+1]
-    return ts
-
-  ts = inset(data, puls)
+  ts = data[data.shape[0]/2+1]
   
   if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
   prof_ax.plot(ts, 'k')
