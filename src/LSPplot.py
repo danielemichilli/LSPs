@@ -514,7 +514,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
     prof_bins = 4
     scrunch = int(puls.Downfact / prof_bins)
     if scrunch < 1: scrunch = 1
-    bins = 101
+    bins = 200
     prof = prof[idx - bins / 2 * scrunch : idx + bins / 2 * scrunch]
     prof = prof.reshape([bins, scrunch]).sum(axis=1)
     x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e3 * prof_bins
