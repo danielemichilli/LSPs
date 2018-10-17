@@ -154,7 +154,8 @@ def scatter_beam(ax, pulses, pulses_beam, cand):
   
   top = pulses.iloc[:10]
   for i in range(top.shape[0]):
-    ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',verticalalignment='center',color='dodgerblue',size=5,fontweight='bold',zorder=4)
+    ax.annotate(str(i),xy=(top.Time.iloc[i],top.DM.iloc[i]),horizontalalignment='center',\
+      verticalalignment='center',color='dodgerblue',size=5,fontweight='bold',zorder=4)
   ax.tick_params(which='both',direction='out')
   
   return
@@ -220,7 +221,7 @@ def scatter_SNR(ax, pulses, pulses_beam, cand, zoom=False):
   if not zoom: ax.set_xscale('log')
   ax.set_ylabel('S/N')
   ax.set_xlabel('DM (pc cm$^{-3}$)')
-  if zoom: ax.set_xlim((cand.DM - 5, cand.DM + 5))
+  if zoom: ax.set_xlim((cand.DM - cand.dDM * 2, cand.DM + cand.dDM * 2))
   else: ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
@@ -442,7 +443,7 @@ def load_ts(puls, idL, filename):
 
   nDMs = 21
   DM = puls['DM']
-  dDM = puls['dDM'] * 2
+  dDM = puls['dDM'] * 4
   lowDM = DM - dDM / 2.
   stepDM = dDM / (nDMs - 1)
   
@@ -506,14 +507,24 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   ax.plot(x, y,'r', linewidth=.2)
   ax.axvline(0, color='r', linewidth=.2)
 
-  idx = int(np.round(puls.Time_org / RES))
-  ts = prof[idx - 50 : idx + 50 + 1]
+  def inset(prof):
+    idx = int(np.round(puls.Time_org / RES))
+    prof_bins = 4
+    scrunch = int(puls.Downfact / prof_bins)
+    if scrunch < 1: scrunch = 1
+    bins = 101
+    prof = prof[idx - bins / 2 * scrunch : idx + bins / 2 * scrunch]
+    prof = prof.reshape([bins, scrunch]).sum(axis=1)
+    x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e3 * prof_bins
+    return x, prof
+
+  ts = inset(prof)
   
   if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
   prof_ax.plot(ts, 'k')
   prof_ax.set_xlim((0,ts.size))
-  prof_ax.set_xticks([])
   prof_ax.set_yticks([])
+  prof_ax.set_xlabel('Time (ms)')
 
   #Time axis
   ax.set_xlim((-plot_duration/2.,plot_duration/2.))
