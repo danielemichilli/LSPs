@@ -522,11 +522,11 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
     x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e3 * prof_bins
     return x, prof
 
-  ts = inset(prof)
+  x, ts = inset(prof)
   
   if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
-  prof_ax.plot(ts, 'k')
-  prof_ax.set_xlim((0,ts.size))
+  prof_ax.plot(x, ts, 'k')
+  prof_ax.set_xlim((x[0], x[-1]))
   prof_ax.set_yticks([])
   prof_ax.set_xlabel('Time (ms)')
 
