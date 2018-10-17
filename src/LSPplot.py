@@ -479,6 +479,8 @@ def load_ts(puls, idL, filename):
   
   idx = len(ts_list) / 2
   prof = np.fromfile(ts_list[idx], dtype=np.float32)
+  
+  shutil.rmtree(out_dir)
   return data, nBins*scrunch_fact*RES, prof
 
 
