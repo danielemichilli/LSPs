@@ -221,7 +221,9 @@ def scatter_SNR(ax, pulses, pulses_beam, cand, zoom=False):
   if not zoom: ax.set_xscale('log')
   ax.set_ylabel('S/N')
   ax.set_xlabel('DM (pc cm$^{-3}$)')
-  if zoom: ax.set_xlim((cand.DM - cand.dDM * 2, cand.DM + cand.dDM * 2))
+  if zoom: 
+    dDM = pulses.DM.max() - pulses.DM.min()
+    ax.set_xlim((cand.DM - dDM * 2, cand.DM + dDM * 2))
   else: ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
