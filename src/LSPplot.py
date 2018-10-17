@@ -62,9 +62,9 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
   beam = int(cand.BEAM)
   pulses_beam = pulses_all[(pulses_all.SAP==sap) & (pulses_all.BEAM==beam)]
 
-  gs = gridspec.GridSpec(3, 8, wspace=.7, hspace=.3)
-  ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 1), rasterized = True)
-  ax2 = plt.subplot(gs.new_subplotspec((0,1), 2, 7), rasterized = True)
+  gs = gridspec.GridSpec(3, 8, wspace=.8, hspace=.5)
+  ax1 = plt.subplot(gs.new_subplotspec((0,0), 2, 2), rasterized = True)
+  ax2 = plt.subplot(gs.new_subplotspec((0,2), 2, 6), rasterized = True)
   ax3 = plt.subplot(gs.new_subplotspec((2,0), 1, 2), rasterized = True)
   ax4 = plt.subplot(gs.new_subplotspec((2,2), 1, 2), rasterized = True)
   ax5 = plt.subplot(gs.new_subplotspec((2,4), 1, 2), rasterized = True)
@@ -220,8 +220,8 @@ def scatter_SNR(ax, pulses, pulses_beam, cand, zoom=False):
   if not zoom: ax.set_xscale('log')
   ax.set_ylabel('S/N')
   ax.set_xlabel('DM (pc cm$^{-3}$)')
-  if zoom: ax.set_xlim((3., 550.))
-  else: ax.set_xlim((cand.DM - 5, cand.DM + 5))
+  if zoom: ax.set_xlim((cand.DM - 5, cand.DM + 5))
+  else: ax.set_xlim((3., 550.))
   ax.set_ylim((6.5, pulses_beam.Sigma.max()+1))
   ax.axvline(DM_STEP1,c='k',ls='--',lw=.1, zorder=1)
   ax.axvline(DM_STEP2,c='k',ls='--',lw=.1, zorder=1)
@@ -454,13 +454,13 @@ def load_ts(puls, idL, filename):
   nProfBins = 3
   duration = int(np.round(puls['Duration'] / RES))
   k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
-  nPlotBins = int(np.ceil(dDM * k / duration)) * 3
-  nBins = nPlotBins * nProfBins + 1
+  nPlotBins = int(np.ceil(dDM * k / duration))
+  nBins = nPlotBins * nProfBins
   data = np.zeros((nDMs,nBins))
-  peak = int(puls['Time_org'] / RES)
+  peak = int(np.round(puls['Time_org'] / RES))
   scrunch_fact = int(np.round(duration / float(nProfBins)))
   if scrunch_fact < 1: scrunch_fact = 1 
-  bin_start = peak - nBins * scrunch_fact / 2
+  bin_start = peak - (nBins * scrunch_fact - 2) / 2
 
   def natural_sort(l): 
     convert = lambda text: int(text) if text.isdigit() else text.lower() 
@@ -474,7 +474,9 @@ def load_ts(puls, idL, filename):
       data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: data[i] = np.zeros(nBins) + np.nan  
   
-  return data, nBins*scrunch_fact*RES
+  idx = len(ts_list) / 2
+  prof = np.fromfile(ts_list[idx], dtype=np.float32)
+  return data, nBins*scrunch_fact*RES, prof
 
 
 
@@ -488,7 +490,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
   if not os.path.isfile(raw_dir): return -1
 
-  data, plot_duration = load_ts(puls, idL, raw_dir)
+  data, plot_duration, prof = load_ts(puls, idL, raw_dir)
 
   #Image plot
   ax.imshow(data, cmap='Greys', origin="lower", aspect='auto', interpolation='nearest',\
@@ -499,12 +501,13 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
 
   #Plot contours
   k = 4148.808 * (F_MAX**-2 - F_MIN**-2)
-  x = np.array([-plot_duration/2.,plot_duration/2.])
+  x = np.array([-plot_duration/2., plot_duration/2.])
   y = x / k + puls.DM
   ax.plot(x, y,'r', linewidth=.2)
   ax.axvline(0, color='r', linewidth=.2)
 
-  ts = data[data.shape[0]/2+1]
+  idx = int(np.round(puls.Time_org / RES))
+  ts = prof[idx - 50 : idx + 50 + 1]
   
   if not prof_ax: prof_ax = inset_axes(ax, width="30%", height="30%", loc=1)
   prof_ax.plot(ts, 'k')
