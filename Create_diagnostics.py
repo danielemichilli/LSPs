@@ -7,6 +7,7 @@ import pandas as pd
 import src.Paths as PATH
 from LSpS import set_paths
 from src import LSPplot
+from src import Internet
 
 
 def parser():
