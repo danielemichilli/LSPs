@@ -389,7 +389,7 @@ def puls_meta_data(ax, puls, idx, i):
   ax.annotate('Sigma: {0:.1f}'.format(puls.Sigma), xy=(0,4))
   ax.annotate('Width (ms): {0:.0f}'.format(puls.Duration*1000), xy=(0,3))
   ax.annotate('N events: {0:.0f}'.format(puls.N_events), xy=(0,2))
-  ax.annotate('Sample: {}'.format(int(np.round(puls.Time_org / RES)), xy=(0,1))
+  ax.annotate('Sample: {}'.format(int(np.round(puls.Time_org / RES))), xy=(0,1))
   if puls.DM < DM_STEP1: d = 1
   elif puls.DM < DM_STEP2: d = 2
   else: d = 4
