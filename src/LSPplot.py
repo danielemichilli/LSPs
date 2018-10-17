@@ -87,7 +87,7 @@ def beam_plot(pdf, cand, pulses, pulses_all, meta_data, events):
 
 
 def puls_plot(pdf, puls, events, idL, db, i, inc=12):
-  gs = gridspec.GridSpec(2, 6, wspace=0.5, hspace=0.2)
+  gs = gridspec.GridSpec(2, 6, wspace=0.5, hspace=0.4)
   ax1 = plt.subplot(gs.new_subplotspec((0,0), 1, 1), rasterized = True)
   ax2 = plt.subplot(gs.new_subplotspec((0,1), 1, 1), rasterized = True)
   ax3 = plt.subplot(gs.new_subplotspec((1,0), 1, 2), rasterized = True)
@@ -519,7 +519,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
     bins = 200
     prof = prof[idx - bins / 2 * scrunch : idx + bins / 2 * scrunch]
     prof = prof.reshape([bins, scrunch]).sum(axis=1)
-    x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e3 * prof_bins
+    x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e6 * prof_bins
     return x, prof
 
   x, ts = inset(prof)
@@ -528,7 +528,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   prof_ax.plot(x, ts, 'k')
   prof_ax.set_xlim((x[0], x[-1]))
   prof_ax.set_yticks([])
-  prof_ax.set_xlabel('Time (ms)')
+  prof_ax.set_xlabel('$\Delta$Time (s)')
 
   #Time axis
   ax.set_xlim((-plot_duration/2.,plot_duration/2.))

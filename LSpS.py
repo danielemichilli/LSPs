@@ -7,6 +7,7 @@ import warnings
 import sys
 import traceback
 from StringIO import StringIO
+from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -72,6 +73,7 @@ def main(PATH):
     SPclean.main(args)
     print "The DataBase has been created."
     print "Time spent: {:.2f} s.".format(time.time() - time0)
+    for diag_plot in glob(os.path.join(PATH.WRK_FOLDER, 'sp/candidates/*.pdf')): shutil.copy(diag_plot, PATH.DIAG_PLOT_FOLDER)
     
   except Exception:
     with open(os.path.join(PATH.WRK_FOLDER, 'sp/ERROR_log.txt'), 'w') as stderr:
