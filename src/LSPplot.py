@@ -442,7 +442,7 @@ def load_ts(puls, idL, filename):
 
   nDMs = 21
   DM = puls['DM']
-  dDM = puls['dDM']
+  dDM = puls['dDM'] * 2
   lowDM = DM - dDM / 2.
   stepDM = dDM / (nDMs - 1)
   
@@ -454,7 +454,7 @@ def load_ts(puls, idL, filename):
   nProfBins = 3
   duration = int(np.round(puls['Duration'] / RES))
   k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
-  nPlotBins = int(np.ceil(dDM * k / 2. ))
+  nPlotBins = int(np.ceil(dDM * k / duration * 2 ))
   nBins = nPlotBins * nProfBins
   data = np.zeros((nDMs,nBins))
   peak = int(puls['Time_org'] / RES)
@@ -506,7 +506,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
 
   #Inset profile
   def inset(data, puls):
-    nPlotBins = 20
+    nPlotBins = 100
     nProfBins = 5
     nBins = nPlotBins * nProfBins
     ts = data[data.shape[0]/2+1]
