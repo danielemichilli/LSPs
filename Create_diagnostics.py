@@ -42,20 +42,21 @@ def main(PATH):
   PATH = set_paths(args, PATH)
   PATH.DB = os.path.join(PATH.OBS_FOLDER,'sp/SinglePulses.hdf5')
   if os.path.isdir(os.path.join(PATH.OBS_FOLDER, 'sp/candidates')): shutil.rmtree(os.path.join(PATH.OBS_FOLDER, 'sp/candidates'))
-  
-  
+    
   if args.conf: inc = 0
   else: inc = 12
 
   meta_data, pulses, cands = load_DB()
-  if args.plot: LSPplot.output(args.id_obs, pulses, meta_data, cands, PATH.DB, inc=inc)
-  if args.store_online: Internet.upload(cands, args.id_obs, os.path.join(PATH.WRK_FOLDER,'sp/candidates/.'), meta_data, pulses)
-  return
-
-
-if __name__ == '__main__':
-  try: main(PATH)
+  try:
+    if args.plot: LSPplot.output(args.id_obs, pulses, meta_data, cands, PATH.DB, inc=inc)
+    if args.store_online: Internet.upload(cands, args.id_obs, os.path.join(PATH.WRK_FOLDER,'sp/candidates/.'), meta_data, pulses)
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'), os.path.join(PATH.OBS_FOLDER, 'sp/candidates'))
     shutil.rmtree(PATH.WRK_FOLDER)
     shutil.rmtree(PATH.TMP_FOLDER)
+  return
+
+
+if __name__ == '__main__':
+  main(PATH)
+
