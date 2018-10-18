@@ -498,7 +498,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   data, plot_duration, prof = load_ts(puls, idL, raw_dir)
 
   #Image plot
-  ax.imshow(data, cmap='Greys', origin="lower", aspect='auto', interpolation='nearest',\
+  ax.imshow(data, cmap='jet', origin="lower", aspect='auto', interpolation='nearest',\
     extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.])
   ax.set_ylim((puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.))
   ax.set_ylabel('DM (pc cm$^{-3}$)')

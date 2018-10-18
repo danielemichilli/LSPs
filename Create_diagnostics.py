@@ -50,6 +50,7 @@ def main(PATH):
   meta_data, pulses, cands = load_DB()
   try:
     if args.plot: LSPplot.output(args.id_obs, pulses, meta_data, cands, PATH.DB, inc=inc)
+    for diag_plot in glob(os.path.join(PATH.WRK_FOLDER, 'sp/candidates/*.pdf')): shutil.copy(diag_plot, PATH.DIAG_PLOT_FOLDER)
     if args.store_online: Internet.upload(cands, args.id_obs, os.path.join(PATH.WRK_FOLDER,'sp/candidates/.'), meta_data, pulses)
   finally:
     shutil.copytree(os.path.join(PATH.WRK_FOLDER, 'sp/candidates'), os.path.join(PATH.OBS_FOLDER, 'sp/candidates'))
