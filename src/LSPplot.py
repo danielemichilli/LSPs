@@ -49,6 +49,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
         puls_plot(pdf, puls, events, idL, db, i, inc=inc)
     
     plt.close('all')
+    out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
     
   return
