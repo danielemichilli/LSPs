@@ -460,7 +460,7 @@ def create_ts(cand, pulses, inc, idL):
   nDMs = ((nDMs_int - 1) / 23 + 1) * 23
     
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
-  error = subprocess.call(['srun', 'mpiprepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+  error = subprocess.call(['srun', 'mpiprepsubband', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
     '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
     '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
 
