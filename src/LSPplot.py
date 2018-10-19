@@ -410,7 +410,9 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   if inc == 0: conf = 'confirmations'
   else: conf = ''
   filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  print filename
   maskfn = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  print maskfn
   if not os.path.isfile(filename): return -1
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
@@ -441,8 +443,8 @@ def create_ts(cand, pulses, inc, idL):
   else: stokes = 'stokes'
   if inc == 0: conf = 'confirmations'
   else: conf = ''
-  filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  if not os.path.isfile(filename): return -1
+  raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(raw_dir): return -1
 
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   try: shutil.rmtree(out_dir)
@@ -450,8 +452,8 @@ def create_ts(cand, pulses, inc, idL):
   os.makedirs(out_dir)
   
   DM = cand.DM
-  puls_DM_max = pulses.loc[pulses.DM.idxmax()]
-  puls_DM_min = pulses.loc[pulses.DM.idxmin()]
+  puls_DM_max = pulses.loc[pulses.DM.argmax()]
+  puls_DM_min = pulses.loc[pulses.DM.argmin()]
   highDM = puls_DM_max.DM + puls_DM_max.dDM * 2
   lowDM = puls_DM_min.DM - puls_DM_min.dDM * 2
   nDMs = 100
