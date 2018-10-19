@@ -36,6 +36,8 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   plt.close('all')
   fig = plt.figure(figsize=(8,4))
 
+  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
+  if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
@@ -452,8 +454,7 @@ def create_ts(cand, pulses, inc, idL):
   puls_DM_min = pulses.loc[pulses.DM.idxmin()]
   highDM = puls_DM_max.DM + puls_DM_max.dDM * 2
   lowDM = puls_DM_min.DM - puls_DM_min.dDM * 2
-  if cand.N_pulses == 1: nDMs = 20
-  else: nDMs = 100
+  nDMs = 100
   stepDM = (highDM - lowDM) / (nDMs - 1)
     
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
@@ -465,7 +466,8 @@ def create_ts(cand, pulses, inc, idL):
 
 
 def load_ts(puls, idL):
-  dat_list = glob(os.path.join(PATH.TMP_FOLDER, 'timeseries/diagnostic_plot*.dat'))
+  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
+  dat_list = glob(os.path.join(out_dir, 'diagnostic_plot*.dat'))
   
   def natural_sort(l): 
     convert = lambda text: int(text) if text.isdigit() else text.lower() 
@@ -493,10 +495,6 @@ def load_ts(puls, idL):
       ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
       data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: data[i] = np.zeros(nBins) + np.nan  
-  
-  print dat_list
-  print ts_list
-  
   
   idx = len(ts_list) / 2
   prof = np.fromfile(ts_list[idx], dtype=np.float32)
