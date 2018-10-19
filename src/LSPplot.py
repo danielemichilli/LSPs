@@ -494,9 +494,14 @@ def load_ts(puls, idL):
       data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: data[i] = np.zeros(nBins) + np.nan  
   
+  print dat_list
+  print ts_list
+  
+  
   idx = len(ts_list) / 2
   prof = np.fromfile(ts_list[idx], dtype=np.float32)
   
+  shutil.rmtree(out_dir)
   return data, nBins*scrunch_fact*RES, prof
 
 
