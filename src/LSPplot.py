@@ -531,7 +531,7 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
     bins = 200
     prof = prof[idx - bins / 2 * scrunch : idx + bins / 2 * scrunch]
     prof = prof.reshape([bins, scrunch]).sum(axis=1)
-    x = np.linspace(-(bins/2), bins/2, bins) * RES * 1e6 * prof_bins
+    x = np.linspace(-(bins/2), bins/2, bins) * RES * scrunch
     return x, prof
 
   x, ts = inset(prof)
