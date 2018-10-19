@@ -31,7 +31,7 @@ def sift_pulses(pulses, events, idL, sap, beam):
   
 
 def select_real_pulses(pulses,basename, out_name):
-  classifier = os.path.join(PL_FOLDER, "scores_robLyon/PulsarProcessingScripts-master/ML.jar")
+  classifier = os.path.join(PATH.PL_FOLDER, "scores_robLyon/PulsarProcessingScripts-master/ML.jar")
   subprocess.call(['java', '-jar', classifier, '-v', '-m{}'.format(PATH.MODEL_FILE), '-p{}'.format(basename+'.arff'), '-o{}'.format(basename+'.positive'), '-a1'])
   os.remove(basename+'.arff')
   try: pulses_list = np.genfromtxt(basename+'.positive', dtype=int)
