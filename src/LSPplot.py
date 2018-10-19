@@ -499,8 +499,8 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
 
   #Image plot
   ax.imshow(data, cmap='jet', origin="lower", aspect='auto', interpolation='nearest',\
-    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.])
-  ax.set_ylim((puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.))
+    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM, puls.DM + puls.dDM])
+  ax.set_ylim((puls.DM - puls.dDM, puls.DM + puls.dDM))
   ax.set_ylabel('DM (pc cm$^{-3}$)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
@@ -538,3 +538,6 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   ax.set_xlabel('$\Delta$Time (s)') #.format(params['bin_start'] * RES * down * 1000 * params['scrunch_fact']))
 
   return 0
+  
+  
+  
