@@ -334,7 +334,7 @@ class Spectra(object):
         num_to_trim = self.numspectra%factor
         self.trim(num_to_trim)
  
-        print self.numspectra, factor
+        #print self.numspectra, factor
 
         self.data = np.array(np.column_stack([np.sum(subint, axis=1) for \
                         subint in np.hsplit(self.data,new_num_spectra)]))

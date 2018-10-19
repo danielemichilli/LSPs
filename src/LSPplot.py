@@ -423,12 +423,12 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
     else: df = int(round(puls.Duration / 0.0004915 / 4))
   
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-puls.Duration*duration/2, puls.Duration*(duration+1), nsub=16, dm=puls.DM, width_bins=df, maskfn=maskfn, mask=mask, scaleindep=False, bandpass_corr=True, zerodm=True)
-  waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2, ax_ts=ax_ts)
+  _ = waterfaller.plot_waterfall(ds, start, puls.Duration*(duration+1), ax_im=ax1, interactive=False, puls_t=-puls.Duration*duration/2, ax_ts=ax_ts)
   ax1.scatter(0.,F_MIN+1,marker='^',s=50,c='r',lw=0.)
 
   DM_delay = presto.psr_utils.delay_from_DM(puls.DM, F_MIN) - presto.psr_utils.delay_from_DM(puls.DM, F_MAX)
   ds, nbinsextra, nbins, start = waterfaller.waterfall(psrfits.PsrfitsFile(filename), puls.Time_org-0.1, puls.Duration+DM_delay+0.2, dm=0., nsub=32*3, downsamp=df*3, maskfn=maskfn, mask=mask, scaleindep=True, zerodm=True, bandpass_corr=True)
-  waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.2, ax_im=ax2, interactive=False, sweep_dms=[puls.DM], puls_t=-0.1)
+  _ = waterfaller.plot_waterfall(ds, start, puls.Duration+DM_delay+0.2, ax_im=ax2, interactive=False, sweep_dms=[puls.DM], puls_t=-0.1)
 
   return 0
 
