@@ -48,12 +48,10 @@ def main(args):
     return file_list
   
   file_list = get_file_list(PATH.OBS_FOLDER)
-    
-
-  print "time 0:", time.time() - time0
-  time0 = time.time()
-
-
+  
+  if args.debug:
+    print "time 0:", time.time() - time0
+    time0 = time.time()
 
   if args.debug:
     CPUs = mp.cpu_count()
@@ -62,10 +60,9 @@ def main(args):
     pulses = pd.concat(results)
   else: pulses = pulses_parallel(args.id_obs,file_list)
 
-
-  print "time 1:", time.time() - time0
-  time0 = time.time()
-
+  if args.debug:
+    print "time 1:", time.time() - time0
+    time0 = time.time()
   
   def merge_temp_databases(id_obs,store,file):
     store.append('events',pd.read_hdf(os.path.join(PATH.TMP_FOLDER,file),'events'),data_columns=['Pulse','SAP','BEAM','DM','Time'])
@@ -84,11 +81,9 @@ def main(args):
         idx = len(line.split(',')) - 1
         break
 
-
-  print "time 2:", time.time() - time0
-  time0 = time.time()
-
-
+  if args.debug:
+    print "time 2:", time.time() - time0
+    time0 = time.time()
 
   for i in range(idx): features_list += '@attribute Feature{} numeric\n'.format(i)
   header = """@relation Training_v3
@@ -114,16 +109,16 @@ def main(args):
   pulses = RFIexcision.select_real_pulses(pulses,os.path.join(PATH.TMP_FOLDER,'thresholds'), ML_predict)
   print "Pulses positively classified: {}".format(pulses.shape[0])
 
-
-  print "time 3:", time.time() - time0
-  time0 = time.time()
+  if args.debug:
+    print "time 3:", time.time() - time0
+    time0 = time.time()
 
   if not pulses.empty: pulses = RFIexcision.beam_comparison(pulses, database=PATH.DB, inc=inc)
   print "Pulses after beam comparison: {}".format(pulses.shape[0])
 
-
-  print "time 4:", time.time() - time0
-  time0 = time.time()
+  if args.debug:
+    print "time 4:", time.time() - time0
+    time0 = time.time()
 
 
   
@@ -154,9 +149,9 @@ def main(args):
   cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma > 8.)) | ((cands.N_pulses > 1) & (cands.Sigma > 16.)) ]
   cands.sort_values('Sigma', inplace=True, ascending=False)
 
-
-  print "time 5:", time.time() - time0
-  time0 = time.time()
+  if args.debug:
+    print "time 5:", time.time() - time0
+    time0 = time.time()
 
 
   #pulses = pulses[pulses.Candidate.isin(cands.index)]
@@ -164,18 +159,18 @@ def main(args):
   meta_data = pd.read_hdf(PATH.DB, 'meta_data')
   LSPplot.output(args.id_obs, pulses, meta_data, cands, PATH.DB, inc=inc)
 
-
-  print "time 6:", time.time() - time0
-  time0 = time.time()
+  if args.debug:
+    print "time 6:", time.time() - time0
+    time0 = time.time()
 
   
   #Store the best candidates online
   try: Internet.upload(cands,args.id_obs,os.path.join(PATH.WRK_FOLDER,'sp/candidates/.'),meta_data,pulses)
   except: print "WARNING: Connession problem \nConsider running Create_diagnostics.py"
 
-
-  print "time 7:", time.time() - time0
-  time0 = time.time()
+  if args.debug:
+    print "time 7:", time.time() - time0
+    time0 = time.time()
 
   return
 
@@ -183,8 +178,7 @@ def main(args):
 def pulses_parallel(id_obs,dirs):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
-
-  print "CPUs:", CPUs
+  if args.debug: print "CPUs:", CPUs
 
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
