@@ -453,8 +453,8 @@ def create_ts(cand, pulses, inc, idL):
   puls_DM_min = pulses.loc[pulses.DM.idxmin()]
   highDM = puls_DM_max.DM + puls_DM_max.dDM * 2
   lowDM = puls_DM_min.DM - puls_DM_min.dDM * 2
-  if cand.N_pulses == 1: nDMs = 15
-  else: nDMs = 50
+  if cand.N_pulses == 1: nDMs = 20
+  else: nDMs = 100
   stepDM = (highDM - lowDM) / (nDMs - 1)
     
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
