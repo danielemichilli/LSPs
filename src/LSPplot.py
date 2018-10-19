@@ -15,7 +15,7 @@ import logging
 from matplotlib.backends.backend_pdf import PdfPages
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import presto
-import subprocess
+import subprocess32
 import shutil
 from waterfaller import waterfaller
 import psrfits
@@ -460,9 +460,9 @@ def create_ts(cand, pulses, inc, idL):
   nDMs = ((nDMs_int - 1) / 23 + 1) * 23
     
   mask = os.path.splitext(filename)[0] + "_rfifind.mask"
-  error = subprocess.call(['srun', 'mpiprepsubband', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+  error = subprocess32.call(['srun', 'mpiprepsubband', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
     '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
-    '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
+    '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir, timeout=900)
 
   return
 
