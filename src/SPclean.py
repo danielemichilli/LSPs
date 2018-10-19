@@ -21,6 +21,7 @@ import LSPplot
 import Candidates
 import Internet
 import Paths as PATH
+from Parameters import *
 
 import time
 
