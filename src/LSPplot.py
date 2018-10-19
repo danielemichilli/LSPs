@@ -1,8 +1,3 @@
-#############################
-# LOTAAS Single Pulse plots
-# Written by Daniele Michilli
-#############################
-
 from glob import glob
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -436,41 +431,30 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   return 0
 
 
-def create_st(cand, pulses, filename):
+
+def load_ts(puls, idL, filename):
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   try: shutil.rmtree(out_dir)
   except OSError: pass
   os.makedirs(out_dir)
-  
-  DM = cand.DM
-  puls_DM_max = pulses.loc[pulses.DM.argmax()]
-  puls_DM_min = pulses.loc[pulses.DM.argmin()]
-  highDM = puls_DM_max.DM + puls_DM_max.dDM * 2
-  lowDM = puls_DM_min.DM - puls_DM_min.dDM * 2
-  nDMs = 100
-  stepDM = (highDM - lowDM) / (nDMs - 1)
-    
-  mask = os.path.splitext(filename)[0] + "_rfifind.mask"
-  error = subprocess.call(['prepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
-    '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
-    '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
 
-  return
-
-
-def load_ts(puls, idL):
-  dat_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*.dat')))
-  
-  def natural_sort(l): 
-    convert = lambda text: int(text) if text.isdigit() else text.lower() 
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-    return sorted(l, key = alphanum_key)
-  
+  nDMs = 23
   DM = puls['DM']
   dDM = puls['dDM'] * 4
-  ts_list = natural_sort([n for n in dat_list if abs(float(re.findall("DM\d+\.\d+", n)[0][2:]) - DM) <= dDM])
-
-  nDMs = len(ts_list)
+  lowDM = DM - dDM / 2.
+  stepDM = dDM / (nDMs - 1)
+  
+  mask = os.path.splitext(filename)[0] + "_rfifind.mask"
+  
+  if stepDM > 0.01:
+    error = subprocess.call(['srun', 'mpiprepsubband', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+      '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
+      '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)  
+  else:
+    error = subprocess.call(['prepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+      '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
+      '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
+      
   nProfBins = 3
   duration = int(np.round(puls['Duration'] / RES))
   k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
@@ -482,14 +466,19 @@ def load_ts(puls, idL):
   if scrunch_fact < 1: scrunch_fact = 1 
   bin_start = peak - (nBins * scrunch_fact - 2) / 2
 
+  def natural_sort(l): 
+    convert = lambda text: int(text) if text.isdigit() else text.lower() 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    return sorted(l, key = alphanum_key)
+    
+  ts_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*.dat')))
   for i,ts_name in enumerate(ts_list):
     try:
       ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
       data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: data[i] = np.zeros(nBins) + np.nan  
   
-  idx = len(ts_list) / 2
-  prof = np.fromfile(ts_list[idx], dtype=np.float32)
+  prof = np.fromfile(ts_list[11], dtype=np.float32)
   
   shutil.rmtree(out_dir)
   return data, nBins*scrunch_fact*RES, prof
