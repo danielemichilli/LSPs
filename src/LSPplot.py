@@ -246,7 +246,7 @@ def puls_DM_Time(ax, event, all_events, puls):
   x_ev = (event.Time - puls.Time)
   ax.scatter(x_ev, event.DM, s=sig, marker='o', linewidths=[.5,], edgecolor='r', facecolors='none', zorder=0)
   #ax.scatter(event.Time, event.DM, s=20., marker='o', c='k', linewidths=[0.,], zorder=1)
-  #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM/2, lw=.2, fmt='none', ecolor='r', zorder=2)
+  #ax.errorbar(puls.Time, puls.DM, xerr=puls.Duration/2, yerr=puls.dDM, lw=.2, fmt='none', ecolor='r', zorder=2)
   ax.scatter(0, puls.DM, marker='x', s=30., color='dodgerblue', zorder=2)
   ax.set_xlabel('$\Delta$Time (s)')
   ax.set_ylabel('DM (pc cm$^{-3}$)')
@@ -511,8 +511,8 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
 
   #Image plot
   ax.imshow(data, cmap='jet', origin="lower", aspect='auto', interpolation='nearest',\
-    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.])
-  ax.set_ylim((puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.))
+    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM, puls.DM + puls.dDM])
+  ax.set_ylim((puls.DM - puls.dDM, puls.DM + puls.dDM))
   ax.set_ylabel('DM (pc cm$^{-3}$)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
