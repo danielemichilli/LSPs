@@ -46,7 +46,7 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
       beam_plot(pdf, cand, pulses_cand, pulses, meta_data, events)
-      create_ts(cand, pulses_cand, inc, idL)
+      
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         puls_plot(pdf, puls, events, idL, db, i, inc=inc)
     
@@ -436,16 +436,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   return 0
 
 
-def create_ts(cand, pulses, inc, idL):
-  sap = int(cand.SAP)
-  beam = int(cand.BEAM)
-  if beam == inc: stokes = 'incoherentstokes'
-  else: stokes = 'stokes'
-  if inc == 0: conf = 'confirmations'
-  else: conf = ''
-  raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  if not os.path.isfile(raw_dir): return -1
-
+def create_st(cand, pulses, filename):
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   try: shutil.rmtree(out_dir)
   except OSError: pass
@@ -506,7 +497,16 @@ def load_ts(puls, idL):
 
 
 def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
-  data, plot_duration, prof = load_ts(puls, idL)
+  sap = int(puls.SAP)
+  beam = int(puls.BEAM)
+  if beam == inc: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  if inc == 0: conf = 'confirmations'
+  else: conf = ''
+  raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(raw_dir): return -1
+
+  data, plot_duration, prof = load_ts(puls, idL, raw_dir)
 
   #Image plot
   ax.imshow(data, cmap='jet', origin="lower", aspect='auto', interpolation='nearest',\
