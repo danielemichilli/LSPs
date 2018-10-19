@@ -1,3 +1,8 @@
+#############################
+# LOTAAS Single Pulse plots
+# Written by Daniele Michilli
+#############################
+
 from glob import glob
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -31,8 +36,6 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
   plt.close('all')
   fig = plt.figure(figsize=(8,4))
 
-  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
-  if os.path.isdir(out_dir): shutil.rmtree(out_dir)
   for idx_c, cand in candidates.iterrows():
     sap = int(cand.SAP)
     beam = int(cand.BEAM)
@@ -41,11 +44,12 @@ def output(idL, pulses, meta_data, candidates, db, inc=12):
     with PdfPages(store) as pdf:
       pulses_cand = pulses[pulses.Candidate == idx_c]
       beam_plot(pdf, cand, pulses_cand, pulses, meta_data, events)
-      
+      create_ts(cand, pulses_cand, inc, idL)
       for i, (idx_p, puls) in enumerate(pulses_cand.head(5).iterrows()):
         puls_plot(pdf, puls, events, idL, db, i, inc=inc)
     
     plt.close('all')
+    out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
     if os.path.isdir(out_dir): shutil.rmtree(out_dir)
     
   return
@@ -405,9 +409,7 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   if inc == 0: conf = 'confirmations'
   else: conf = ''
   filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  print filename
   maskfn = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}_rfifind.mask'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  print maskfn
   if not os.path.isfile(filename): return -1
   if os.path.isfile(maskfn): mask = True  
   else: mask = False
@@ -431,30 +433,54 @@ def puls_dynSpec(ax1, ax2, puls, idL, inc=12, ax_ts=None):
   return 0
 
 
+def create_ts(cand, pulses, inc, idL):
+  sap = int(cand.SAP)
+  beam = int(cand.BEAM)
+  if beam == inc: stokes = 'incoherentstokes'
+  else: stokes = 'stokes'
+  if inc == 0: conf = 'confirmations'
+  else: conf = ''
+  filename = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
+  if not os.path.isfile(filename): return -1
 
-def load_ts(puls, idL, filename):
   out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   try: shutil.rmtree(out_dir)
   except OSError: pass
   os.makedirs(out_dir)
+  
+  DM = cand.DM
+  puls_DM_max = pulses.loc[pulses.DM.idxmax()]
+  puls_DM_min = pulses.loc[pulses.DM.idxmin()]
+  highDM = puls_DM_max.DM + puls_DM_max.dDM * 4
+  lowDM = puls_DM_min.DM - puls_DM_min.dDM * 4
+  if DM < DM_STEP1: stepDM = 0.01
+  elif DM < DM_STEP2: stepDM = 0.1
+  else: stepDM = 1.
+  nDMs_int = int(np.round((highDM - lowDM) / stepDM))
+  nDMs = ((nDMs_int - 1) / 23 + 1) * 23
+    
+  mask = os.path.splitext(filename)[0] + "_rfifind.mask"
+  error = subprocess.call(['srun', 'mpiprepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
+    '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
+    '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
 
-  nDMs = 23
+  return
+
+
+def load_ts(puls, idL):
+  dat_list = glob(os.path.join(PATH.TMP_FOLDER, 'timeseries/diagnostic_plot*.dat'))
+  
+  def natural_sort(l): 
+    convert = lambda text: int(text) if text.isdigit() else text.lower() 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    return sorted(l, key = alphanum_key)
+  
   DM = puls['DM']
   dDM = puls['dDM'] * 4
-  lowDM = DM - dDM / 2.
-  stepDM = dDM / (nDMs - 1)
-  
-  mask = os.path.splitext(filename)[0] + "_rfifind.mask"
-  
-  if stepDM > 0.01:
-    error = subprocess.call(['srun', 'mpiprepsubband', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
-      '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
-      '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)  
-  else:
-    error = subprocess.call(['prepsubband', '-dmprec', '4', '-numdms', str(nDMs), '-dmstep', str(stepDM), \
-      '-nsub', '288', '-lodm', str(lowDM), '-mask', mask, '-runavg', '-noscales', '-noweights',\
-      '-nooffsets', '-o', 'diagnostic_plot', filename], cwd=out_dir)
-      
+  DM_list = [float(re.findall("DM\d+\.\d+", n)[0][2:]) for n in dat_list]
+  ts_list = natural_sort([n for i,n in enumerate(dat_list) if abs(DM_list[i] - DM) <= dDM])
+
+  nDMs = len(ts_list)
   nProfBins = 3
   duration = int(np.round(puls['Duration'] / RES))
   k = 4148.808 * (F_MIN**-2 - F_MAX**-2) / RES
@@ -466,41 +492,27 @@ def load_ts(puls, idL, filename):
   if scrunch_fact < 1: scrunch_fact = 1 
   bin_start = peak - (nBins * scrunch_fact - 2) / 2
 
-  def natural_sort(l): 
-    convert = lambda text: int(text) if text.isdigit() else text.lower() 
-    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
-    return sorted(l, key = alphanum_key)
-    
-  ts_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*.dat')))
   for i,ts_name in enumerate(ts_list):
     try:
       ts = np.memmap(ts_name, dtype=np.float32, mode='r', offset=bin_start*4, shape=(nBins*scrunch_fact,))
       data[i] = np.mean(np.reshape(ts, (nBins, scrunch_fact)), axis=1)
     except IOError: data[i] = np.zeros(nBins) + np.nan  
   
-  prof = np.fromfile(ts_list[11], dtype=np.float32)
   
-  shutil.rmtree(out_dir)
+  idx = np.abs(np.subtract(DM_list, DM)).argmin()
+  prof = np.fromfile(dat_list[idx], dtype=np.float32)
+  
   return data, nBins*scrunch_fact*RES, prof
 
 
 
 def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
-  sap = int(puls.SAP)
-  beam = int(puls.BEAM)
-  if beam == inc: stokes = 'incoherentstokes'
-  else: stokes = 'stokes'
-  if inc == 0: conf = 'confirmations'
-  else: conf = ''
-  raw_dir = '{folder}_red/{stokes}/SAP{sap}/BEAM{beam}/{idL}_SAP{sap}_BEAM{beam}.fits'.format(folder=PATH.RAW_FOLDER,conf=conf,idL=idL,stokes=stokes,sap=sap,beam=beam)
-  if not os.path.isfile(raw_dir): return -1
-
-  data, plot_duration, prof = load_ts(puls, idL, raw_dir)
+  data, plot_duration, prof = load_ts(puls, idL)
 
   #Image plot
   ax.imshow(data, cmap='jet', origin="lower", aspect='auto', interpolation='nearest',\
-    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM, puls.DM + puls.dDM])
-  ax.set_ylim((puls.DM - puls.dDM, puls.DM + puls.dDM))
+    extent=[-plot_duration / 2., plot_duration / 2., puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.])
+  ax.set_ylim((puls.DM - puls.dDM / 2., puls.DM + puls.dDM / 2.))
   ax.set_ylabel('DM (pc cm$^{-3}$)')
   if pulseN: ax.set_title('{obs} SAP{sap} BEAM{beam} - Candidate {cand} Pulse {puls}'.format(obs=idL,sap=puls.SAP,beam=puls.BEAM,cand=puls.Candidate,puls=pulseN), y=1.08)
 
@@ -538,6 +550,3 @@ def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
   ax.set_xlabel('$\Delta$Time (s)') #.format(params['bin_start'] * RES * down * 1000 * params['scrunch_fact']))
 
   return 0
-  
-  
-  
