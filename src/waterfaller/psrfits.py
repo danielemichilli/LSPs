@@ -30,7 +30,7 @@ date_obs_re = re.compile(r"^(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-" \
                             "(?:\.[0-9]+)?)$")
 
 # Default global debugging mode
-debug = True 
+debug = False 
 
 def unpack_2bit(data):
     """Unpack 2-bit data that has been read in as bytes.
@@ -605,12 +605,12 @@ def debug_mode(mode=None):
 
 def main():
     specinf = SpectraInfo(args.files)
-    if args.output is not None:
-        print args.output % specinf
-    else:
-        if debug:
-            print "Reading '%s'" % args.files[0]
-        print specinf
+    if debug:
+      if args.output is not None:
+          print args.output % specinf
+      else:
+          print "Reading '%s'" % args.files[0]
+          print specinf
 
 
 if __name__=='__main__':
