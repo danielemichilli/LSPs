@@ -466,7 +466,7 @@ def create_ts(cand, pulses, inc, idL):
 
 
 def load_ts(puls, idL):
-  dat_list = glob(os.path.join(out_dir, 'diagnostic_plot*.dat'))
+  dat_list = natural_sort(glob(os.path.join(out_dir, 'diagnostic_plot*.dat')))
   
   def natural_sort(l): 
     convert = lambda text: int(text) if text.isdigit() else text.lower() 
