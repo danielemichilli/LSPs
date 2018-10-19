@@ -178,7 +178,6 @@ def main(args):
 def pulses_parallel(id_obs,dirs):    
   #Create events, meta_data and pulses lists
   CPUs = mp.cpu_count()
-  if args.debug: print "CPUs:", CPUs
 
   dirs_range = int(np.ceil(len(dirs)/float(CPUs)))
   
