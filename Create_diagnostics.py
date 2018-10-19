@@ -1,7 +1,6 @@
 import argparse
 import os
 import shutil
-from glob import glob
 
 import pandas as pd
 
