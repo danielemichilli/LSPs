@@ -466,7 +466,6 @@ def create_ts(cand, pulses, inc, idL):
 
 
 def load_ts(puls, idL):
-  out_dir = os.path.join(PATH.TMP_FOLDER, 'timeseries')
   dat_list = glob(os.path.join(out_dir, 'diagnostic_plot*.dat'))
   
   def natural_sort(l): 
