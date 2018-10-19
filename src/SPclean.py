@@ -150,7 +150,7 @@ def main(args):
   cands = cands.head(50)
   #best_cands = cands[cands.N_pulses==1].groupby('BEAM').head(2).groupby('SAP').head(4)  #Select brightest unique candidates, 2 per BEAM and 4 per SAP
   #best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(6))  #Select brightest unique candidates, 2 per BEAM and 6 per SAP
-  cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma>10.)) | ((cands.N_pulses > 1) & (cands.Sigma>16.)) ]
+  cands = cands[ ((cands.N_pulses == 1) & (cands.Sigma > 8.)) | ((cands.N_pulses > 1) & (cands.Sigma > 16.)) ]
   cands.sort_values('Sigma', inplace=True, ascending=False)
 
 
@@ -237,8 +237,8 @@ def pulses_from_events(id_obs, directory, sap, beam):
 
   #Generate the pulses
   pulses = Pulses.Generator(events)
-  pulses = pulses[pulses.Sigma >= 6.5]
-  pulses = pulses[pulses.DM >= 3.]
+  pulses = pulses[pulses.Sigma >= SNR_MIN]
+  pulses = pulses[pulses.DM >= DM_MIN]
 
   #Set a maximum amout of pulses to prevent bad observations to block the pipeline
   pulses.sort_values('Sigma',ascending=False,inplace=True)
