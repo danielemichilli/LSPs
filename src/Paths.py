@@ -1,4 +1,12 @@
-OBS_FOLDER = '/projects/0/lotaas2/data/out' + '/'
-RAW_FOLDER = '/projects/0/lotaas2/data/raw' + '/'
-SITE_CERT = '/projects/0/lotaas2/software/LSP/.site_cert.json'
-TEMP_FOLDER = '/dev/shm/tmp/{}'
+import os
+
+OBS_FOLDER = os.environ["LOTAAS_OUTDIR"]
+RAW_FOLDER = os.environ["LOTAAS_RAW1"]
+PL_FOLDER = os.environ["LOTAAS_PL"]
+WRK_FOLDER = '/dev/shm/wrk'
+TMP_FOLDER = '/dev/shm/tmp'
+RAW_TEMP = os.environ["LOTAAS_RAW2"]
+DIAG_PLOT_FOLDER = os.path.join(OBS_FOLDER, 'SP_Diagnostic_Plots')
+
+#MODEL_FILE = os.path.join(os.environ["LOTAAS_PL"], "LSP/sp_ML.model")
+MODEL_FILE = "/lustre4/0/lotaas2/software4/LOTAAS-Scripts_v2/LSP/sp_ML.model"

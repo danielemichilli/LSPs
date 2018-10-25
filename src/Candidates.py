@@ -8,76 +8,69 @@ import Utilities
 
 
 def candidates(pulses,idL):
-  pulses.sort(['Pulse','Sigma'],ascending=[1,0],inplace=True)
+  pulses.sort_values(['Sigma','Pulse'],ascending=[0,1],inplace=True)
   
-  pulses.Candidate[pulses.Pulse==0] = Repeated_candidates_beam(pulses[pulses.Pulse==0],0).astype(pulses.Candidate.dtype)
+  Repeated_candidates_beam(pulses)
   
-  if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[(pulses.Pulse<=1)&(pulses.Candidate<0)] = Repeated_candidates_beam(pulses[(pulses.Pulse<=1)&(pulses.Candidate<0)],1).astype(pulses.Candidate.dtype)
-
-  if pulses.Candidate.unique().size <=12:
-    pulses.Candidate[pulses.Candidate<0] = Repeated_candidates_beam(pulses[pulses.Candidate<0],2).astype(pulses.Candidate.dtype)
-
   cands_unique = pulses[(pulses.Candidate==-1)&(pulses.Sigma>=10)].groupby(['SAP','BEAM'],sort=False)[['SAP','BEAM']].head(5).astype(np.int32)
-  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = np.arange(cands_unique.shape[0]) * 1000 + cands_unique.SAP * 100 + cands_unique.BEAM
+  pulses.Candidate.loc[cands_unique.index.get_level_values('idx')] = 2 * (np.arange(cands_unique.shape[0]) * 10000 + cands_unique.SAP * 1000 + cands_unique.BEAM)
+  #Unique candidates have even ID
   
   if not pulses[pulses.Candidate>=0].empty:
-    cands = candidates_generator(pulses[pulses.Candidate>=0].copy(),idL)
+    cands = candidates_generator(pulses[pulses.Candidate>=0].copy(), idL)
     cands['main_cand'] = 0
   
     #Unify the same repeated candidates in different beams
-    cands.sort(['Rank','Sigma'],ascending=[0,1],inplace=True)
-    new_cand = cands.index
+    cands.sort_values('Sigma',ascending=True,inplace=True)
 
     C_Funct.Compare_candidates(cands.DM.astype(np.float32).values,cands.Time.astype(np.float32).values,cands.index.values,cands.main_cand.values)
     
-    #selezionare solo top 2 signle candidates
-  
+    cands.sort_values(['main_cand', 'Sigma'], ascending=[1,0], inplace=True)
+    
   else: cands = pd.DataFrame()
   
   return cands
 
 
-def Repeated_candidates_beam(pulses,rank):
+def Repeated_candidates_beam(pulses):
   gb_puls = pulses.groupby(['SAP','BEAM'],sort=False)
   dirs = [n for n in gb_puls.indices.iterkeys()]
-  pulses['cand'] = -1
+  pulses.Candidate[:] = -1
+
+  span = 0.151
 
   for (sap,beam) in dirs:
-    puls = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)].copy()
-    puls.DM = 3*(puls.DM.astype(np.float64)/3).round(2)
+    puls_beam = pulses[(pulses.SAP==sap)&(pulses.BEAM==beam)]
     
-    span = 0.25
+    def group_SNR(DM, pulses):                                                 
+      return pulses.Sigma[(pulses.DM >= DM - span) & (pulses.DM <= DM + span)].sum()
+    def group_count(DM, pulses):                                                 
+      return pulses[(pulses.DM >= DM - span) & (pulses.DM <= DM + span)].shape[0]
+    puls_beam['top_SNR'] = puls_beam.apply(lambda x: group_SNR(x.DM, puls_beam), axis=1)
+    puls_beam['top_count'] = puls_beam.apply(lambda x: group_count(x.DM, puls_beam), axis=1)
+    puls_beam = puls_beam[puls_beam.top_count > 1]
     
-    top_count = puls.groupby('DM')['Sigma'].count()
-    top_sum = puls.groupby('DM')['Sigma'].sum()
-    
-    top_sum = top_sum[top_count >= 2]
-    #top_count = top_count[top_count >= 2]
-
     i = 1
-
-    while not top_sum[top_sum!=0].empty:
-      DM = top_sum.argmax()
-      #Sigma = top_sum.loc[DM-span:DM+span].sum()
-      #N_puls = top_count.loc[DM-span:DM+span].sum()
-      selected_pulses = puls.cand[(puls.DM>=DM-span)&(puls.DM<=DM+span)]
+    while puls_beam.shape[0] > 0:
+      DM = puls_beam.DM[puls_beam.top_SNR.argmax()]
+      selected_pulses = puls_beam.Candidate[(puls_beam.DM >= DM - span) & (puls_beam.DM <= DM + span)]
       if selected_pulses.shape[0] > 1:
-        pulses.cand.loc[selected_pulses.index] = i * 100000 + sap * 1000 + beam * 10 + rank
-      #top_count.loc[DM-span:DM+span] = 0
-      top_sum.loc[DM-span:DM+span] = 0
-      i += 1    
-
-  return pulses.cand
+        pulses.Candidate.loc[selected_pulses.index] = 1 + 2 * (i * 10000 + sap * 1000 + beam)  #Repeated candidates have odd ID
+      puls_beam = puls_beam.drop(selected_pulses.index)
+      i += 1
+    
+  return
 
 
 def period(x):
   if x.size<=1: return 0
   else: return Utilities.rrat_period(x)[0]
 
+
 def period_err(x):
   if x.size<=1: return 0
   else: return Utilities.rrat_period(x)[1]
+
 
 def candidates_generator(pulses,idL):
   pulses['Period'] = pulses.Time
@@ -94,9 +87,4 @@ def candidates_generator(pulses,idL):
   cands = cands.drop('Candidate',axis=1)
   cands.Time[cands.N_pulses>1] = 0
   cands['id'] = idL + '_' + cands.SAP.astype(str) + '_' + cands.BEAM.astype(str) + '_' + cands.index.astype(str)
-  
-  cands.sort(['Rank','Sigma'],ascending=[1,0],inplace=True)
-  best_cands = cands[cands.N_pulses==1].groupby('SAP').head(4)
-  best_cands = best_cands.append(cands[cands.N_pulses>1].groupby('BEAM').head(2).groupby('SAP').head(4))
-  
-  return best_cands
+  return cands

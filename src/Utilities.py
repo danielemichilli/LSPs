@@ -21,6 +21,8 @@ def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False,mask=
     logging.warning("Utilities - Additional modules missing")
     return
   
+  bin_start = np.int(bin_start)
+  
   #Read data from filterbank file
   head = filterbank.read_header(filename)[0]
 
@@ -72,16 +74,16 @@ def read_filterbank(filename,DM,bin_start,duration,offset,RFI_reduct=False,mask=
  
 
 
-def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
+def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False,mask=False):
+  if (not 'pyfits' in sys.modules):
+    logging.warning("Utilities - Additional modules missing")
+    return
+  
   bin_start = np.int(bin_start)
-  
-  duration = np.int(duration/RES+1)
-  
+  duration = np.int(duration)
+    
   if isinstance(fits,str):
-    try: fits = pyfits.open(fits,memmap=True)
-    except NameError: 
-      logging.warning("Utilities - Additional modules missing")
-      return    
+    fits = pyfits.open(fits,memmap=True)
   header = fits['SUBINT'].header
   
   N_channels = header['NCHAN']
@@ -101,28 +103,33 @@ def read_fits(fits,DM,bin_start,duration,offset,RFI_reduct=False):
   subint = fits['SUBINT'].data[subint_start:subint_end]['DATA']
   fits.close()
   subint = subint.reshape((subint_end-subint_start)*N_spectra,N_channels)
-    
-  #ATTENZIONE! Salvare .mask file nella pipeline!!
-  try:
-    #Zap the channels from the mask file
-    filename = ''
-    zap_chans, zap_ints, chans_per_int = read_mask(filename,subint_start,subint_end)
-    med_value = np.median(subint)
-    subint[:,zap_chans] = med_value
-    zap_ints = zap_ints[(zap_ints>=bin_start)&(zap_ints<=bin_end)]
-    subint[zap_ints,:] = med_value
+  
+  if mask:
+    try:
+      #Zap the channels from the mask file
+      zap_chans, zap_ints, chans_per_int, ptsperint = read_mask(mask,subint_start,subint_end)
+      med_value = np.median(subint)
+      
+      subint[:,zap_chans] = med_value
+      zap_ints = zap_ints[(zap_ints>=bin_start)&(zap_ints<=bin_end)]
+      subint[zap_ints,:] = med_value
 
-    for i,chans in enumerate(chans_per_int):
-      chunk = subint[i*N_spectra:(i+1)*N_spectra]
-      chunk[:,chans] = med_value
-      if RFI_reduct: np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
-    
-  except IOError:
-    if RFI_reduct:
-      for i in range(subint_end-subint_start):
+      for i,chans in enumerate(chans_per_int):
         chunk = subint[i*N_spectra:(i+1)*N_spectra]
-        np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+        chunk[:,chans] = med_value
+        if RFI_reduct: np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
     
+    except IOError:
+      if RFI_reduct:
+        for i in range(subint_end-subint_start):
+          chunk = subint[i*N_spectra:(i+1)*N_spectra]
+          np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+
+  elif RFI_reduct:
+    for i in range(subint_end-subint_start):
+      chunk = subint[i*N_spectra:(i+1)*N_spectra]
+      np.clip(chunk - np.median(chunk,axis=0) + 128, 0, 255, out=chunk)
+        
   bin_start = bin_start%N_spectra
   bin_end = (subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1
   subint = subint[bin_start%N_spectra:(subint_end-subint_start-1)*N_spectra+bin_end%N_spectra+1]
