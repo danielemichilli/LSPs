@@ -59,7 +59,7 @@ def upload_sheet(cands,idL,meta_data,pulses):
     wks.append_row(row)  #Possible to append all together (faster)?
 
   #Sort spreadsheet
-  wks = sh.worksheet("new_classifier")
+  wks = sh.worksheet("Classifier_v4")
   col_size = wks.col_count
   col_size_letter = chr(col_size-1 + ord('A'))
   row_size = wks.row_count
