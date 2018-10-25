@@ -507,6 +507,7 @@ def load_ts(puls, idL):
 
 
 def puls_dedispersed(ax, puls, idL, pulseN=False, inc=12, prof_ax=False):
+  if len(glob(os.path.join(PATH.TMP_FOLDER, 'timeseries/diagnostic_plot*.dat'))) == 0: return -1
   data, plot_duration, prof = load_ts(puls, idL)
 
   #Image plot

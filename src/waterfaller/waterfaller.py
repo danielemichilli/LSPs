@@ -220,8 +220,8 @@ def plot_waterfall(data, start, duration, colour="k",
                 extent=(data.starttime, data.starttime+ nbinlim*data.dt, \
                         data.freqs.min(), data.freqs.max()))
               
-    ax_im.set_xlim((data.starttime, data.starttime+ nbinlim*data.dt))
-    ax_im.set_ylim((data.freqs.min(), data.freqs.max()))
+    _ = ax_im.set_xlim((data.starttime, data.starttime+ nbinlim*data.dt))
+    _ = ax_im.set_ylim((data.freqs.min(), data.freqs.max()))
 
     if show_cb:
         cb = ax_im.get_figure().colorbar(img)
@@ -257,7 +257,7 @@ def plot_waterfall(data, start, duration, colour="k",
         Dedisp_ts = Data.sum(axis=0)
         times = (np.arange(data.numspectra)*data.dt + start)[..., :nbinlim]
         ax_ts.plot(times, Dedisp_ts, colour) #edited: added colour=k for autowater_faller plotter func
-        ax_ts.set_xlim([times.min(),times.max()])
+        _ = ax_ts.set_xlim([times.min(),times.max()])
 	plt.setp(ax_ts.get_xticklabels(), visible = False)
 	plt.setp(ax_ts.get_yticklabels(), visible = False)
 
@@ -273,7 +273,7 @@ def plot_waterfall(data, start, duration, colour="k",
         ax_spec.plot(Dedisp_spec,freqs,"k")                                       
         plt.setp(ax_spec.get_xticklabels(), visible = False)                   
         plt.setp(ax_spec.get_yticklabels(), visible = False)                    
-        ax_spec.set_ylim([data.freqs.min(),data.freqs.max()])                   
+        _ = ax_spec.set_ylim([data.freqs.min(),data.freqs.max()])                   
         if integrate_ts:
             ax_ts.axvline(times[burst_bin]-spectrum_window,ls="--",c="grey")                  
             ax_ts.axvline(times[burst_bin]+spectrum_window,ls="--",c="grey")                  
